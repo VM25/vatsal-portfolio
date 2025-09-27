@@ -109,7 +109,7 @@ export const Hero = () => {
   transition={{ duration: 0.8, delay: 0.4 }}
 >
   <img
-    src="/vatsal.jpg"
+    src="/vatsal_maniar.jpg"
     alt="Vatsal Maniar"
     className="
       relative block
