@@ -28,7 +28,7 @@ export const ContactSection = () => {
       title: "GitHub",
       description: "Code repositories",
       action: "View Portfolio Code",
-      href: "https://github.com/VM25/Portfolio.git",
+      href: "https://github.com/VM25/vatsal-portfolio.git",
       variant: "outline" as const,
     },
     {
