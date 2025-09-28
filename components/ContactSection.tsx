@@ -109,7 +109,7 @@ export const ContactSection = () => {
           viewport={{ once: true }}
         >
           <p className="text-sm text-muted-foreground font-mono">
-            © {new Date().getFullYear()} Vatsal Maniar. Built with React, Next.js, and a lot of ☕.
+            © {new Date().getFullYear()} Vatsal Maniar. Built with React, Next.js, Framer, ShadCN.
           </p>
         </motion.div>
       </div>
