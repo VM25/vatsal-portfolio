@@ -100,6 +100,8 @@
     --primary: 218 85% 35%;
     --accent: 43 96% 46%;
   }
+  
+  html { scroll-behavior: smooth; }
 
   /* Animation Keyframes */
   @keyframes matrix-rain {
