@@ -1,0 +1,8 @@
+# Netlify deploy config. The official Next.js runtime plugin is auto-installed
+# by Netlify and handles SSR, image optimization, and routing.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

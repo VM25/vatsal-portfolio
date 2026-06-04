@@ -1,26 +1,179 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+  One cohesive theme: a warm graphite "observatory" — near-black surfaces,
+  parchment-warm text, restrained amber/copper/gold accents, and muted
+  market red/green used only where it carries meaning.
+*/
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-base: #0c0a09;
+  --color-base-soft: #110e0c;
+  --color-surface: #16120f;
+  --color-surface-2: #1d1814;
+  --color-ink: #ece3d6;
+  --color-ink-dim: #b3a795;
+  --color-ink-faint: #7c7060;
+  --color-line: rgba(237, 230, 218, 0.09);
+  --color-line-strong: rgba(237, 230, 218, 0.18);
+
+  --color-amber: #e8a23d;
+  --color-copper: #c47b4a;
+  --color-gold: #d9a441;
+  --color-ember: #c2410c;
+  --color-up: #5bb98c;
+  --color-down: #d9596b;
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+
+  --shadow-panel: 0 1px 0 0 rgba(237, 230, 218, 0.04) inset,
+    0 24px 60px -28px rgba(0, 0, 0, 0.85);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: auto; /* Lenis owns smooth scrolling */
+  background-color: var(--color-base);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Atmospheric vignette + faint warm bloom, fixed behind everything. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(232, 162, 61, 0.06), transparent 60%),
+    radial-gradient(100% 60% at 100% 110%, rgba(196, 123, 74, 0.05), transparent 55%),
+    radial-gradient(80% 80% at 0% 100%, rgba(0, 0, 0, 0.5), transparent 70%);
+}
+
+::selection {
+  background: rgba(232, 162, 61, 0.26);
+  color: #fff;
+}
+
+/* Lenis smooth-scroll integration */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* Slim, warm scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-base);
+}
+::-webkit-scrollbar-thumb {
+  background: #2a231d;
+  border-radius: 999px;
+  border: 2px solid var(--color-base);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3128;
+}
+
+/* Visible focus for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), Georgia, "Times New Roman", serif;
+  }
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+  /* Tabular, lined figures for anything that reads like market data. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  .text-gradient-amber {
+    background: linear-gradient(100deg, #f3c178 0%, #e8a23d 45%, #c47b4a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hairline {
+    border: 1px solid var(--color-line);
+  }
+  .panel {
+    background:
+      linear-gradient(180deg, rgba(237, 230, 218, 0.02), transparent 40%),
+      var(--color-surface);
+    border: 1px solid var(--color-line);
+    box-shadow: var(--shadow-panel);
+  }
+  /* utility to clamp section width consistently */
+  .shell {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+}
+
+/* Respect reduced-motion globally as a safety net beyond JS guards. */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Magic UI Marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap, 2rem)));
+  }
+}
+.animate-marquee {
+  animation: marquee var(--duration, 40s) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

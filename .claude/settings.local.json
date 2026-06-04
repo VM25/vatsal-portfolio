@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm -v)",
-      "Bash(npm view *)",
-      "Bash(npx --yes create-next-app@latest /Users/vatsal/Documents/new-portfolio --typescript --tailwind --app --eslint --src-dir --import-alias \"@/*\" --use-npm --turbopack)"
-    ]
-  }
-}

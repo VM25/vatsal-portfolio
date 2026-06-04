@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vatsal Maniar — Portfolio
 
-## Getting Started
+A cinematic, scroll-driven personal portfolio for **Vatsal Maniar** (M.S. Financial
+Engineering, Stevens · B.S. Computer Science, ASU) — positioned for quant trading,
+quant research, derivatives risk, and capital-markets roles.
 
-First, run the development server:
+The experience reads like walking through a quant-finance observatory: each section
+is a "room" that proves one part of the profile, with an evidence-first project
+dossier at its core.
+
+## Stack
+
+- **Next.js 16** (App Router) · **React 19** · **TypeScript**
+- **Tailwind CSS v4** (design tokens via `@theme` — single warm-graphite theme, no toggle)
+- **React Three Fiber** + **three** + **@react-three/postprocessing** — procedural hero scene (volatility surface, particle field, bloom/fog)
+- **Lenis** (smooth scroll) wired to **GSAP ScrollTrigger**
+- **Framer Motion** — entrance reveals & micro-interactions
+- **Zustand** — lightweight cross-scene state (active section, reduced-motion, scene-ready)
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
+npm run build   # production build
+npm start       # serve the production build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  app/                  layout, page, globals.css, metadata, robots, sitemap, OG image
+  components/
+    layout/             Nav, Footer
+    providers/          SmoothScrollProvider (Lenis↔GSAP), CanvasErrorBoundary
+    sections/           Hero, Origin, Skills, Work, ProjectsDossier, Experience,
+                        ResearchDirection, Contact
+    three/              SceneCanvas (lazy, client-only) + HeroScene
+    ui/                 Button, Reveal, SectionHeader/Shell, Tag, Stat,
+                        ProjectCaseFile, EvidencePanel, icons
+    visuals/            GridField, ContourField (CSS/SVG motifs)
+  data/                 profile, nav, skills, education, experience, projects  ← edit content here
+  hooks/                usePrefersReducedMotion, useWebGLSupport
+  store/                useStore (zustand)
+  types/                shared content types
+public/
+  images/               vatsal-maniar.jpg (optimized portrait)
+  resume/               Vatsal-Maniar-Resume.pdf
+  research/             Maniar-Writing-Sample.pdf
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Editing content
 
-## Learn More
+All copy lives in typed files under `src/data/` — no content is hard-coded in
+components. Update those files and everything re-renders:
 
-To learn more about Next.js, take a look at the following resources:
+- `profile.ts` — name, location, positioning, links (LinkedIn, GitHub, résumé, ApexGP)
+- `projects.ts` — the project case files (problem, methods, evidence, metrics, roadmap)
+- `experience.ts`, `education.ts`, `skills.ts`, `nav.ts`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Adding project screenshots
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Each project lists a `placeholders` note describing what to drop in. Add your images
+to `public/images/<project-id>/` (e.g. `public/images/apexgp/`) and wire them into the
+`EvidencePanel` — these are intentionally **placeholders**, never fabricated charts.
 
-## Deploy on Vercel
+## Things to confirm / replace
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Domain:** `metadataBase`, `robots.ts`, and `sitemap.ts` use `https://vatsalmaniar.com`
+  as a placeholder — change to your real deployed URL.
+- **GPA:** the résumé (source of truth) lists a 3.67 graduate GPA; an older LinkedIn
+  export said 3.92. Using the résumé value — update `education.ts` if needed.
+- **Currency pair (FE635):** sourced as **GBP/MXN** from LinkedIn. Adjust in
+  `projects.ts` if your live book differs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Accessibility & performance
+
+- Semantic HTML, keyboard-navigable nav with a skip link, visible focus rings, aria labels.
+- **Reduced motion:** Lenis and scene animation are bypassed when
+  `prefers-reduced-motion: reduce` is set; content remains fully readable.
+- **No WebGL?** The hero 3D scene is feature-detected, lazy-loaded client-only, and
+  wrapped in an error boundary — the site is fully usable without it.
+- The portrait is optimized (~300 KB) and served through `next/image`.
+
+## Deploy
+
+- **Vercel:** zero config — import the repo and deploy.
+- **Netlify:** `netlify.toml` is included; Netlify auto-installs the Next.js runtime.
+
+---
+
+Built with Next.js, React Three Fiber, GSAP, and Framer Motion.

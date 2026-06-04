@@ -1,0 +1,39 @@
+diff --git a/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js b/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js
+index f3834fa..750a5ab 100644
+--- a/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js
++++ b/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js
+@@ -1038,7 +1038,7 @@ const createStore = (invalidate, advance) => {
+       linear: false,
+       flat: false,
+       controls: null,
+-      clock: new THREE__namespace.Clock(),
++      clock: /* patched: Clock->perf.now (no THREE.Clock deprecation) */ (()=>{const N=()=>(typeof performance==="undefined"?Date:performance).now();return{autoStart:true,startTime:0,oldTime:0,elapsedTime:0,running:false,start(){this.startTime=N();this.oldTime=this.startTime;this.elapsedTime=0;this.running=true;},stop(){this.getDelta();this.running=false;this.autoStart=false;},getElapsedTime(){this.getDelta();return this.elapsedTime;},getDelta(){let d=0;if(this.autoStart&&!this.running){this.start();return 0;}if(this.running){const t=N();d=(t-this.oldTime)/1000;this.oldTime=t;this.elapsedTime+=d;}return d;}};})(),
+       pointer,
+       mouse: pointer,
+       frameloop: 'always',
+diff --git a/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js b/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js
+index 76f308c..51deb8e 100644
+--- a/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js
++++ b/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js
+@@ -1013,7 +1013,7 @@ const createStore = (invalidate, advance) => {
+       linear: false,
+       flat: false,
+       controls: null,
+-      clock: new THREE.Clock(),
++      clock: /* patched: Clock->perf.now (no THREE.Clock deprecation) */ (()=>{const N=()=>(typeof performance==="undefined"?Date:performance).now();return{autoStart:true,startTime:0,oldTime:0,elapsedTime:0,running:false,start(){this.startTime=N();this.oldTime=this.startTime;this.elapsedTime=0;this.running=true;},stop(){this.getDelta();this.running=false;this.autoStart=false;},getElapsedTime(){this.getDelta();return this.elapsedTime;},getDelta(){let d=0;if(this.autoStart&&!this.running){this.start();return 0;}if(this.running){const t=N();d=(t-this.oldTime)/1000;this.oldTime=t;this.elapsedTime+=d;}return d;}};})(),
+       pointer,
+       mouse: pointer,
+       frameloop: 'always',
+diff --git a/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js b/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js
+index 07d45d4..aea771e 100644
+--- a/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js
++++ b/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js
+@@ -1038,7 +1038,7 @@ const createStore = (invalidate, advance) => {
+       linear: false,
+       flat: false,
+       controls: null,
+-      clock: new THREE__namespace.Clock(),
++      clock: /* patched: Clock->perf.now (no THREE.Clock deprecation) */ (()=>{const N=()=>(typeof performance==="undefined"?Date:performance).now();return{autoStart:true,startTime:0,oldTime:0,elapsedTime:0,running:false,start(){this.startTime=N();this.oldTime=this.startTime;this.elapsedTime=0;this.running=true;},stop(){this.getDelta();this.running=false;this.autoStart=false;},getElapsedTime(){this.getDelta();return this.elapsedTime;},getDelta(){let d=0;if(this.autoStart&&!this.running){this.start();return 0;}if(this.running){const t=N();d=(t-this.oldTime)/1000;this.oldTime=t;this.elapsedTime+=d;}return d;}};})(),
+       pointer,
+       mouse: pointer,
+       frameloop: 'always',
