@@ -35,7 +35,7 @@ export interface MarketMapping {
 
 export interface Project {
   id: string;
-  /** Short tag shown on the case-file tab, e.g. "Flagship" or "FE635". */
+  /** Short domain/category label, e.g. "Probabilistic Pricing". */
   tag: string;
   title: string;
   /** Institutional, one-line framing. */
@@ -70,6 +70,8 @@ export interface ExperienceItem {
   period: string;
   /** Honest positioning of the role (operational / analytical / technical). */
   frame: string;
+  /** At-a-glance impact, surfaced without a click. */
+  metric: { value: string; label: string };
   bullets: string[];
 }
 

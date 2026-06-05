@@ -1,57 +1,66 @@
 @import "tailwindcss";
 
 /*
-  One cohesive theme: a warm graphite "observatory" — near-black surfaces,
-  parchment-warm text, restrained amber/copper/gold accents, and muted
-  market red/green used only where it carries meaning.
+  v4.1 — "Quant Dossier": an institutional trading-system surface.
+  Warm graphite ink base, warm paper-white text, a single muted brass signal,
+  and deep green / restrained oxblood reserved strictly for market-data + risk.
+  No cyan, no neon, no dominant grid, no space/astronomy motifs.
+
+  Three voices:
+    - Spectral (serif)        → the dossier voice: large editorial scene titles.
+    - Schibsted Grotesk (sans)→ the institutional voice: body + UI.
+    - JetBrains Mono (mono)   → the terminal voice: data, tickers, labels.
 */
 @theme inline {
-  --color-base: #0c0a09;
-  --color-base-soft: #110e0c;
-  --color-surface: #16120f;
-  --color-surface-2: #1d1814;
-  --color-ink: #ece3d6;
-  --color-ink-dim: #b3a795;
-  --color-ink-faint: #7c7060;
-  --color-line: rgba(237, 230, 218, 0.09);
-  --color-line-strong: rgba(237, 230, 218, 0.18);
+  --color-base: #0e0d0b;
+  --color-base-2: #090807;
+  --color-surface: #161410;
+  --color-surface-2: #1e1b15;
+  --color-ink: #efe9dd;
+  --color-ink-dim: #c2b9a6;
+  --color-ink-faint: #8c8472;
+  --color-line: rgba(239, 233, 221, 0.09);
+  --color-line-strong: rgba(239, 233, 221, 0.17);
 
-  --color-amber: #e8a23d;
-  --color-copper: #c47b4a;
-  --color-gold: #d9a441;
-  --color-ember: #c2410c;
-  --color-up: #5bb98c;
-  --color-down: #d9596b;
+  /* The lone identity accent. Aged brass — appears on ≤10% of any view. */
+  --color-brass: #c6a45c;
+  --color-brass-bright: #dcc081;
+  --color-brass-deep: #9a7d3f;
 
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-plex-mono);
+  /* Market-data semantics only — never decoration. */
+  --color-up: #6aa87f; /* deep muted green: bids / positive / open */
+  --color-down: #c5604f; /* restrained oxblood: asks / negative / risk */
 
-  --shadow-panel: 0 1px 0 0 rgba(237, 230, 218, 0.04) inset,
-    0 24px 60px -28px rgba(0, 0, 0, 0.85);
+  --font-display: var(--font-spectral);
+  --font-sans: var(--font-schibsted);
+  --font-mono: var(--font-jetbrains);
 }
 
 :root {
   color-scheme: dark;
+  --ease-cine: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: auto; /* Lenis owns smooth scrolling */
-  background-color: var(--color-base);
+  scroll-behavior: auto; /* Lenis owns scrolling */
+  background: var(--color-base);
 }
 
 body {
-  background-color: var(--color-base);
+  background: var(--color-base);
   color: var(--color-ink);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "ss01", "cv01";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv01";
   overflow-x: hidden;
 }
 
-/* Atmospheric vignette + faint warm bloom, fixed behind everything. */
+/*
+  Composed graphite surface — a warm vignette with a faint, heavily-masked
+  ledger ruling. Reads as a quiet trading-desk field, not a grid template.
+*/
 body::before {
   content: "";
   position: fixed;
@@ -59,17 +68,33 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(232, 162, 61, 0.06), transparent 60%),
-    radial-gradient(100% 60% at 100% 110%, rgba(196, 123, 74, 0.05), transparent 55%),
-    radial-gradient(80% 80% at 0% 100%, rgba(0, 0, 0, 0.5), transparent 70%);
+    radial-gradient(120% 90% at 50% -10%, rgba(198, 164, 92, 0.06), transparent 55%),
+    radial-gradient(100% 70% at 85% 110%, rgba(106, 168, 127, 0.035), transparent 60%),
+    linear-gradient(180deg, #100f0c 0%, #0e0d0b 45%, #0a0908 100%);
+}
+
+/* Optional faint ruling, opt-in per surface via .ledger. Never global. */
+.ledger {
+  position: relative;
+}
+.ledger::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, rgba(239, 233, 221, 0.025) 1px, transparent 1px) 0 0 / 72px 100%,
+    linear-gradient(to bottom, rgba(239, 233, 221, 0.02) 1px, transparent 1px) 0 0 / 100% 72px;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 50%, black 30%, transparent 82%);
+  mask-image: radial-gradient(120% 90% at 50% 50%, black 30%, transparent 82%);
 }
 
 ::selection {
-  background: rgba(232, 162, 61, 0.26);
+  background: rgba(198, 164, 92, 0.26);
   color: #fff;
 }
 
-/* Lenis smooth-scroll integration */
+/* Lenis */
 html.lenis,
 html.lenis body {
   height: auto;
@@ -84,27 +109,26 @@ html.lenis body {
   overflow: clip;
 }
 
-/* Slim, warm scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-base);
+  background: var(--color-base-2);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a231d;
+  background: #2a2620;
   border-radius: 999px;
-  border: 2px solid var(--color-base);
+  border: 2px solid var(--color-base-2);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3128;
+  background: #3a352c;
 }
 
-/* Visible focus for keyboard users */
 :focus-visible {
-  outline: 2px solid var(--color-amber);
+  outline: 2px solid var(--color-brass);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 @layer utilities {
@@ -112,59 +136,64 @@ html.lenis body {
     font-family: var(--font-display), Georgia, "Times New Roman", serif;
   }
   .font-mono {
-    font-family: var(--font-mono), ui-monospace, monospace;
+    font-family: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
   }
-  /* Tabular, lined figures for anything that reads like market data. */
   .tnum {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
-  .text-gradient-amber {
-    background: linear-gradient(100deg, #f3c178 0%, #e8a23d 45%, #c47b4a 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+
+  /* Emphasis: solid brass, never a gradient on text. */
+  .accent {
+    color: var(--color-brass);
+  }
+
+  /* Scene title — the loud, premium per-chapter heading. */
+  .scene-title {
+    font-family: var(--font-display), Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2.5rem, 5.4vw, 4.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+  }
+
+  /* Instrument panel — a machined surface seated on the field. */
+  .panel {
+    background:
+      linear-gradient(180deg, rgba(239, 233, 221, 0.035), rgba(239, 233, 221, 0.008)),
+      var(--color-surface);
+    border: 1px solid var(--color-line);
+    box-shadow:
+      inset 0 1px 0 rgba(239, 233, 221, 0.05),
+      0 30px 64px -36px rgba(0, 0, 0, 0.95);
+  }
+  .panel-2 {
+    background:
+      linear-gradient(180deg, rgba(239, 233, 221, 0.05), rgba(239, 233, 221, 0.012)),
+      var(--color-surface-2);
+    border: 1px solid var(--color-line-strong);
+    box-shadow:
+      inset 0 1px 0 rgba(239, 233, 221, 0.06),
+      0 30px 64px -34px rgba(0, 0, 0, 0.95);
   }
   .hairline {
     border: 1px solid var(--color-line);
   }
-  .panel {
-    background:
-      linear-gradient(180deg, rgba(237, 230, 218, 0.02), transparent 40%),
-      var(--color-surface);
-    border: 1px solid var(--color-line);
-    box-shadow: var(--shadow-panel);
-  }
-  /* utility to clamp section width consistently */
-  .shell {
-    width: 100%;
-    max-width: 80rem;
-    margin-inline: auto;
-    padding-inline: 1.5rem;
-  }
-}
 
-/* Respect reduced-motion globally as a safety net beyond JS guards. */
-@keyframes ticker-scroll {
-  from {
-    transform: translateX(0);
+  /* Mono micro-label baseline. */
+  .label {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
   }
-  to {
-    transform: translateX(-50%);
-  }
-}
 
-/* Magic UI Marquee */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
+  /* A faint brass status bead. */
+  .bead {
+    box-shadow: 0 0 0 3px rgba(198, 164, 92, 0.12);
   }
-  to {
-    transform: translateX(calc(-100% - var(--gap, 2rem)));
-  }
-}
-.animate-marquee {
-  animation: marquee var(--duration, 40s) linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -8,7 +8,7 @@ import { links } from "@/data/profile";
 export const projects: Project[] = [
   {
     id: "apexgp",
-    tag: "Flagship",
+    tag: "Probabilistic Pricing",
     title: "ApexGP Markets",
     framing: "A real-time probabilistic pricing and risk engine for Formula 1 event markets.",
     period: "2026",
@@ -66,7 +66,7 @@ export const projects: Project[] = [
   },
   {
     id: "market-making",
-    tag: "FE635",
+    tag: "Derivatives Market-Making",
     title: "Live FX Derivatives Market-Making System",
     framing:
       "An options market-making and hedging desk in software — quoting, booking, and risk-managing an FX book in live Bloomberg sessions.",
@@ -106,7 +106,7 @@ export const projects: Project[] = [
   },
   {
     id: "portfolio",
-    tag: "FE630",
+    tag: "Portfolio Construction",
     title: "Portfolio Optimization & Factor Risk",
     framing:
       "Mean-variance portfolio construction with factor analytics and regime-aware risk — built to grow into a reusable analytics system.",
@@ -150,7 +150,7 @@ export const projects: Project[] = [
   },
   {
     id: "rates-fx",
-    tag: "Pricing",
+    tag: "Multi-Asset Pricing",
     title: "Rates, FX & Options Pricing Engine",
     framing:
       "A multi-asset pricing and risk toolkit spanning FX Monte Carlo VaR and a bootstrapped Treasury curve.",
@@ -189,5 +189,3 @@ export const projects: Project[] = [
     accent: "ember",
   },
 ];
-
-export const flagship = projects[0];

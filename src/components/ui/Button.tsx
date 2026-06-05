@@ -15,9 +15,9 @@ interface ButtonProps {
 
 const variants: Record<Variant, string> = {
   solid:
-    "bg-amber text-[#1a1206] hover:bg-[#f2b65a] border border-amber/60 font-medium",
+    "bg-brass text-[#1a1408] hover:bg-brass-bright border border-brass/60 font-medium",
   outline:
-    "text-ink border border-line-strong hover:border-amber/60 hover:text-amber bg-transparent",
+    "text-ink border border-line-strong hover:border-brass/60 hover:text-brass bg-transparent",
   ghost: "text-ink-dim hover:text-ink border border-transparent",
 };
 

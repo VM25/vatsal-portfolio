@@ -35,7 +35,11 @@ export const profile = {
     "MFE candidate with a Computer Science foundation, building derivatives pricing engines, MLE-calibrated stochastic risk models, and live options market-making systems. Core work spans Monte Carlo simulation, VaR/CVaR, options Greeks, fixed-income analytics, and systematic trading frameworks.",
 
   status:
-    "Recruiting for 2026 internships and co-ops across quant trading, quant research, derivatives, and risk.",
+    "Open to a Fall 2026 quant co-op / internship and Full-Time 2027 roles — across quant trading, quant research, derivatives, and risk.",
+
+  availability: "Fall 2026 Co-op / Internship · Full-Time 2027",
+
+  targets: ["Quant Trading", "Quant Research", "Derivatives Risk", "Market-Making"],
 
   certification: "GARP Financial Risk Manager (FRM) — Part I Candidate, Aug 2026",
 } as const;

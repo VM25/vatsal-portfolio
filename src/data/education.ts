@@ -21,9 +21,17 @@ export const education: EducationItem[] = [
     id: "asu",
     school: "Arizona State University",
     degree: "B.S. Computer Science",
-    detail: "GPA 3.74 / 4.00",
+    detail: "GPA 3.74 / 4.00 · Magna Cum Laude",
     period: "Aug 2021 – May 2025",
     location: "Tempe, AZ",
+    coursework: [
+      "Data Structures & Algorithms",
+      "Systems Programming (C++)",
+      "Software Engineering",
+      "Operating Systems",
+      "Probability & Statistics",
+      "Numerical Computing",
+    ],
     honors: ["Magna Cum Laude"],
   },
 ];

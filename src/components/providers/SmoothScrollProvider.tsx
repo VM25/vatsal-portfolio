@@ -2,15 +2,14 @@
 
 import { useEffect } from "react";
 import Lenis from "lenis";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useStore } from "@/store/useStore";
 
 /**
- * Smooth scrolling via Lenis, run off the GSAP ticker and synced to
- * ScrollTrigger (which the JourneyController uses for the camera journey + pins).
- * Under reduced-motion, Lenis is skipped — native scroll, static scene.
+ * Premium smooth wheel/trackpad scrolling via Lenis, driving the real document
+ * scroll (so CSS `position: sticky` pinning and Framer Motion `useScroll` both
+ * read it natively). Under reduced motion Lenis is skipped — native scroll, no
+ * scrubbed choreography. No GSAP: pinning is CSS sticky, not ScrollTrigger.
  */
 export function SmoothScrollProvider({
   children,
@@ -20,26 +19,23 @@ export function SmoothScrollProvider({
   const prefersReduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
     useStore.getState().setReducedMotion(prefersReduced);
-
-    if (prefersReduced) {
-      ScrollTrigger.refresh();
-      return;
-    }
+    if (prefersReduced) return;
 
     const lenis = new Lenis({
-      duration: 1.15,
+      duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       touchMultiplier: 1.4,
     });
+    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
 
-    lenis.on("scroll", ScrollTrigger.update);
-
-    const onTick = (time: number) => lenis.raf(time * 1000);
-    gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(0);
+    let raf = 0;
+    const loop = (time: number) => {
+      lenis.raf(time);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
 
     const onAnchorClick = (e: MouseEvent) => {
       const a = (e.target as HTMLElement)?.closest<HTMLAnchorElement>(
@@ -51,13 +47,14 @@ export function SmoothScrollProvider({
       const el = document.querySelector(id);
       if (!el) return;
       e.preventDefault();
-      lenis.scrollTo(el as HTMLElement, { offset: -72, duration: 1.3 });
+      lenis.scrollTo(el as HTMLElement, { offset: 0, duration: 1.2 });
     };
     document.addEventListener("click", onAnchorClick);
 
     return () => {
       document.removeEventListener("click", onAnchorClick);
-      gsap.ticker.remove(onTick);
+      cancelAnimationFrame(raf);
+      delete (window as unknown as { __lenis?: Lenis }).__lenis;
       lenis.destroy();
     };
   }, [prefersReduced]);
