@@ -43,6 +43,7 @@ next-env.d.ts
 # agent tooling (local skills + settings — not part of the portfolio)
 /.claude/
 /.agents/
+/.mcp.json
 /skills-lock.json
 /.impeccable/
 .Rhistory

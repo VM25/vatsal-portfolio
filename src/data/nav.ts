@@ -1,28 +1,14 @@
 import type { NavItem } from "@/types";
 
-// Section anchors used across the page. The full ordered set drives scrollspy;
-// the nav itself only surfaces a curated subset so it never dominates.
-export const sectionIds = [
-  "hero",
-  "origin",
-  "arsenal",
-  "work",
-  "apexgp",
-  "market-making",
-  "portfolio",
-  "rates-fx",
-  "experience",
-  "research",
-  "contact",
-] as const;
-
-export type SectionId = (typeof sectionIds)[number];
-
+// Section anchors, in document order. Drives both the in-page nav and scrollspy.
 export const navItems: NavItem[] = [
+  { id: "home", label: "Home" },
   { id: "origin", label: "Origin" },
-  { id: "arsenal", label: "Arsenal" },
-  { id: "work", label: "Work" },
+  { id: "capabilities", label: "Capabilities" },
+  { id: "projects", label: "Projects" },
   { id: "experience", label: "Experience" },
   { id: "research", label: "Research" },
   { id: "contact", label: "Contact" },
 ];
+
+export const sectionIds = navItems.map((n) => n.id);

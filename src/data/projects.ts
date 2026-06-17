@@ -1,191 +1,122 @@
 import type { Project } from "@/types";
 import { links } from "@/data/profile";
 
-// Evidence-first case files. Metrics and evidence bullets are lifted from the
-// résumé / LinkedIn. Forward-looking quant extensions live in `roadmap`, kept
-// explicitly separate from shipped work so nothing is overclaimed.
+// Evidence-first case files. Metrics and "On The Record" bullets are lifted from
+// each project's repo / live site - never fabricated. Exactly four systems.
 
 export const projects: Project[] = [
   {
     id: "apexgp",
-    tag: "Probabilistic Pricing",
+    category: "Probabilistic Event Markets",
     title: "ApexGP Markets",
-    framing: "A real-time probabilistic pricing and risk engine for Formula 1 event markets.",
-    period: "2026",
-    stackLabel: "Python · FastF1 · Recharts",
-    problem:
-      "Treat a live sporting season as a tradable event market: turn each race into a book of binary contracts whose prices update as new information arrives, then manage the book like a capital allocation problem rather than a betting slip.",
-    methods: [
-      "Dynamic probability repricing as race state evolves",
-      "Mark-to-market valuation of open positions",
-      "Position-level exposure limits and risk caps",
-      "Sharpe and drawdown analytics on the book",
-      "Full transaction audit across every settled event",
-    ],
-    concepts: [
-      "Event-market microstructure",
-      "Binary contract pricing",
-      "Portfolio risk limits",
-      "Mark-to-market & settlement",
-      "Drawdown / risk-adjusted return",
-    ],
-    stack: ["Python", "FastF1", "Recharts", "Probability modeling"],
-    evidence: [
-      "Transformed 24 Formula 1 races into 500+ tradable binary contracts with dynamic probability repricing, race settlement, and season-long championship futures markets.",
-      "Built portfolio risk infrastructure: mark-to-market valuation, exposure limits (30% portfolio, 15% single-market), Sharpe analytics, drawdown monitoring, and full transaction audit across 24 events.",
-    ],
-    takeaway:
-      "I can design a pricing-and-risk system end to end — instrument definition, live repricing, position limits, and P&L attribution — and reason about a market in the language of contracts, exposure, and drawdown.",
-    roadmap: [
-      "Monte Carlo race-path simulation for distributional pricing",
-      "Bayesian live probability updating from lap telemetry",
-      "Model-implied vs market-implied edge and EV signals",
-      "Fractional-Kelly position sizing under risk caps",
-      "Scenario stress testing (safety car, DNF) and a GARCH-based VaR/ES layer",
-    ],
-    mapping: [
-      { domain: "Race event", market: "Market shock" },
-      { domain: "Safety car", market: "Macro shock" },
-      { domain: "DNF", market: "Credit event" },
-      { domain: "Pit stop", market: "Earnings surprise" },
-      { domain: "Lap update", market: "Tick data" },
-      { domain: "Odds", market: "Price" },
-      { domain: "Bet", market: "Contract" },
-      { domain: "Bankroll", market: "Capital book" },
-    ],
+    subtitle:
+      "A real-time probabilistic pricing and risk engine that treats a live Formula 1 season as a book of tradable binary event-markets, repriced as race information arrives and managed like a capital allocation problem.",
     metrics: [
       { value: "500+", label: "tradable binary contracts" },
       { value: "24", label: "races modeled & settled" },
       { value: "30% / 15%", label: "portfolio / single-market caps" },
     ],
-    links: [
-      { label: "Live platform", href: links.apexgpLive, kind: "live" },
-      { label: "Source", href: links.apexgpRepo, kind: "repo" },
+    record: [
+      "Transformed 24 Formula 1 races into 500+ tradable binary contracts with dynamic probability repricing, race settlement, and season-long championship futures markets.",
+      "Built portfolio risk infrastructure - mark-to-market valuation, exposure limits (30% portfolio, 15% single-market), Sharpe analytics, drawdown monitoring, and a full transaction audit across every settled event.",
     ],
-    accent: "amber",
+    tags: [
+      "Event-market microstructure",
+      "Binary contract pricing",
+      "Mark-to-market & settlement",
+      "Portfolio risk limits",
+      "Drawdown / Sharpe",
+      "Transaction audit",
+    ],
+    website: links.apexgpLive,
+    github: links.apexgpRepo,
+    visual: "apexgp",
   },
   {
-    id: "market-making",
-    tag: "Derivatives Market-Making",
-    title: "Live FX Derivatives Market-Making System",
-    framing:
-      "An options market-making and hedging desk in software — quoting, booking, and risk-managing an FX book in live Bloomberg sessions.",
-    period: "Jan 2026 – May 2026",
-    stackLabel: "Excel VBA · Bloomberg",
-    problem:
-      "Stand up a working market-making loop for FX options: stream two-sided quotes, book trades, keep the Greeks inside risk limits, and explain the day's P&L — under live market data, not a static spreadsheet.",
-    methods: [
-      "Automated real-time bid/ask quoting",
-      "Greeks-aware delta / gamma hedging",
-      "Position booking across multi-leg strategies",
-      "Intraday P&L attribution (P&L explain)",
-      "Black–Scholes theoretical vs live implied-vol benchmarking",
-    ],
-    concepts: [
-      "FX options market-making",
-      "Delta / gamma / vega / rho",
-      "Hedging & risk limits",
-      "Bid/offer & spread capture",
-      "P&L explain",
-      "Rolling market dates",
-    ],
-    stack: ["Excel", "VBA", "Bloomberg Terminal"],
-    evidence: [
-      "Engineered a VBA options market-making engine: automated real-time bid–ask quoting, Greeks-aware delta/gamma hedging, position booking, and intraday P&L attribution across multi-leg derivatives strategies in live Bloomberg sessions.",
-      "Quoted GBP/MXN forwards and options; benchmarked Black–Scholes theoretical prices against live Bloomberg implied-vol quotes and bid–ask spreads, managing net delta, gamma, and vega within defined risk limits each session.",
-    ],
-    takeaway:
-      "This is the project that proves desk literacy: I understand how a quote becomes a position, how the Greeks move against you, and how to explain a day's P&L — practical derivatives risk management, not just modeling.",
+    id: "rates",
+    category: "Treasury Rates Risk",
+    title: "Inflation Regime Rates Risk Engine",
+    subtitle:
+      "A U.S. Treasury rates-risk attribution engine for repricing curve shocks, decomposing inflation-regime losses, and measuring hedge-overlay recovery across synthetic Treasury books.",
     metrics: [
-      { value: "GBP/MXN", label: "forwards & options book" },
-      { value: "Δ · Γ · V", label: "live Greek limits managed" },
-      { value: "BS ↔ IV", label: "theory benchmarked to market" },
+      { value: "10", label: "curve-shock scenarios" },
+      { value: "200", label: "shock / book / overlay states" },
+      { value: "10,000", label: "simulated rate paths" },
     ],
-    links: [],
-    accent: "copper",
+    record: [
+      "Built a Treasury curve-risk engine that reprices synthetic bond books under inflation-regime shocks and decomposes scenario P&L across duration, convexity, curve-shape, real-rate, breakeven, and residual channels.",
+      "Implemented DV01, key-rate DV01, cash-flow repricing, hedge overlays, attribution waterfalls, and Vasicek / CIR VaR/ES simulations to analyze rates-driven losses and residual hedge risk.",
+    ],
+    tags: [
+      "Treasury curve risk",
+      "Inflation regimes",
+      "DV01",
+      "Key-rate DV01",
+      "Cash-flow repricing",
+      "P&L attribution",
+      "Hedge overlays",
+      "Vasicek / CIR",
+      "VaR / Expected Shortfall",
+      "Rates risk simulation",
+    ],
+    website: "https://yieldshock.netlify.app",
+    github: "https://github.com/VM25/inflation-lab",
+    visual: "rates",
   },
   {
     id: "portfolio",
-    tag: "Portfolio Construction",
-    title: "Portfolio Optimization & Factor Risk",
-    framing:
-      "Mean-variance portfolio construction with factor analytics and regime-aware risk — built to grow into a reusable analytics system.",
-    period: "2025 – 2026",
-    stackLabel: "Python · NumPy · SciPy",
-    problem:
-      "Construct and evaluate portfolios the way a desk would: optimize across a real asset universe, decompose risk into factors, and test how risk estimates hold up as volatility regimes shift.",
-    methods: [
-      "Mean-variance optimization / efficient frontier",
-      "CAPM alpha & beta estimation",
-      "Tracking error & information ratio",
-      "Historical vs parametric VaR comparison",
-      "Regime-aware risk evaluation",
-    ],
-    concepts: [
-      "Portfolio construction",
-      "Factor modeling",
-      "Risk-adjusted performance",
-      "VaR under changing volatility",
-      "Constraints & backtesting",
-    ],
-    stack: ["Python", "NumPy", "SciPy", "pandas"],
-    evidence: [
-      "Built a mean-variance efficient-frontier model across 20+ ETFs; tested CAPM alpha/beta and computed tracking error and information ratios.",
-      "Compared historical vs parametric VaR under changing volatility regimes to gauge how diversification assumptions hold up.",
-    ],
-    takeaway:
-      "I can take portfolio theory off the page — optimization, factor exposure, and risk attribution — and I treat coursework as the first version of a system worth hardening, not a finished assignment.",
-    roadmap: [
-      "Constraint sets (sector / turnover / leverage) and transaction costs",
-      "Walk-forward backtesting with drawdown and turnover reporting",
-      "Factor-tilt overlays and risk-parity comparison",
-    ],
+    category: "Multi-Asset Allocation",
+    title: "Portfolio Risk & Allocation Analytics",
+    subtitle:
+      "A multi-asset allocation research system comparing portfolio construction rules across rolling lookbacks, transaction costs, crisis windows, and factor exposures.",
     metrics: [
-      { value: "20+", label: "ETFs in the universe" },
-      { value: "α / β", label: "CAPM tested" },
-      { value: "Hist. vs param.", label: "VaR across regimes" },
+      { value: "13", label: "ETF proxies" },
+      { value: "4", label: "allocation rules" },
+      { value: "2008 / 2020 / 2022", label: "crisis windows" },
     ],
-    links: [],
-    accent: "gold",
+    record: [
+      "Built a portfolio analytics engine comparing Equal Weight, Global Minimum Variance, Max Sharpe, and regime-aware allocation under common constraints, costs, and benchmark assumptions.",
+      "Evaluated strategy behavior through drawdowns, VaR/CVaR, turnover, concentration, cumulative cost drag, crisis-window returns, and Fama-French factor exposure diagnostics.",
+    ],
+    tags: [
+      "Portfolio construction",
+      "Asset allocation",
+      "Drawdown analysis",
+      "Transaction costs",
+      "Factor exposure",
+      "Crisis-window testing",
+    ],
+    website: "https://pra-analytics.netlify.app",
+    github: "https://github.com/VM25/portfolio-lab",
+    visual: "portfolio",
   },
   {
-    id: "rates-fx",
-    tag: "Multi-Asset Pricing",
-    title: "Rates, FX & Options Pricing Engine",
-    framing:
-      "A multi-asset pricing and risk toolkit spanning FX Monte Carlo VaR and a bootstrapped Treasury curve.",
-    period: "Oct 2025 – Dec 2025",
-    stackLabel: "Python · Excel · Bloomberg · FRED",
-    problem:
-      "Price and risk two different books with the same rigor: simulate FX exposure to a 99% VaR, and build a clean Treasury curve with the full set of rate sensitivities — each validated against market data.",
-    methods: [
-      "GBM FX calibration on 30+ years of history",
-      "20,000+ path Monte Carlo VaR",
-      "European option pricing vs Black–Scholes",
-      "Yield-curve bootstrapping",
-      "DV01 / duration / convexity sensitivities",
-      "Delta-hedge ratio validation",
-    ],
-    concepts: [
-      "Monte Carlo VaR",
-      "Black–Scholes benchmarking",
-      "Yield-curve construction",
-      "Fixed-income risk (DV01 / duration / convexity)",
-      "Hedge-ratio validation",
-    ],
-    stack: ["Python", "Excel", "Bloomberg Terminal", "FRED"],
-    evidence: [
-      "Calibrated a GBM FX model on 30+ years of history and ran 20,000+ Monte Carlo simulations to estimate 99% VaR (~$264K unhedged exposure); priced European options benchmarked to Black–Scholes.",
-      "Priced 24 Treasury bonds across 4 maturity buckets, bootstrapped yield curves, computed DV01/duration/convexity, and validated delta-hedging ratios against Bloomberg and FRED data.",
-    ],
-    takeaway:
-      "Across FX and rates, I calibrate to real data, quantify tail risk, and check my models against the market — the core loop of a risk or pricing seat.",
+    id: "fx",
+    category: "FX Derivatives Risk",
+    title: "FX Options Risk Lab",
+    subtitle:
+      "A derivatives risk analytics platform for pricing, stress testing, hedging, and risk attribution of a USD/MXN FX options portfolio.",
     metrics: [
-      { value: "~$264K", label: "99% VaR, unhedged FX" },
-      { value: "20,000+", label: "Monte Carlo paths" },
-      { value: "24", label: "Treasuries priced & bootstrapped" },
+      { value: "USD 4.65M", label: "gross notional" },
+      { value: "MXN 159.1K", label: "95% Monte Carlo VaR" },
+      { value: "100%", label: "delta cut after hedge" },
     ],
-    links: [],
-    accent: "ember",
+    record: [
+      "Built a Garman-Kohlhagen pricing and risk framework with portfolio-level Greeks aggregation, hedge analysis, Monte Carlo VaR/ES, and full-repricing stress scenarios.",
+      "Decomposed portfolio P&L into delta, gamma, vega, theta, and residual effects to explain how market shocks propagate through an FX derivatives book.",
+    ],
+    tags: [
+      "FX options risk",
+      "Garman-Kohlhagen",
+      "Monte Carlo VaR",
+      "Expected shortfall",
+      "Greeks attribution",
+      "Stress testing",
+      "Portfolio hedging",
+      "QuantLib validation",
+    ],
+    website: "https://fxrisklab.netlify.app",
+    github: "https://github.com/VM25/fx-options-risk-lab",
+    visual: "fx",
   },
 ];

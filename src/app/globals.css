@@ -1,208 +1,308 @@
 @import "tailwindcss";
 
 /*
-  v4.1 — "Quant Dossier": an institutional trading-system surface.
-  Warm graphite ink base, warm paper-white text, a single muted brass signal,
-  and deep green / restrained oxblood reserved strictly for market-data + risk.
-  No cyan, no neon, no dominant grid, no space/astronomy motifs.
-
-  Three voices:
-    - Spectral (serif)        → the dossier voice: large editorial scene titles.
-    - Schibsted Grotesk (sans)→ the institutional voice: body + UI.
-    - JetBrains Mono (mono)   → the terminal voice: data, tickers, labels.
+  "Desk" — a dark-only software -> finance instrument. A cool graphite field
+  (the IDE / terminal side), warm amber-gold as the single signal accent (the
+  trading-desk / ledger side), and a deep steel-slate structural glow for spatial
+  depth. No cyan, no neon. Per-project hues span gold -> copper -> steel -> platinum.
+  Muted sage / clay are reserved strictly for risk gain / loss inside data, never
+  as the page's color language. Type: Syne / Chivo / Space Mono.
 */
-@theme inline {
-  --color-base: #0e0d0b;
-  --color-base-2: #090807;
-  --color-surface: #161410;
-  --color-surface-2: #1e1b15;
-  --color-ink: #efe9dd;
-  --color-ink-dim: #c2b9a6;
-  --color-ink-faint: #8c8472;
-  --color-line: rgba(239, 233, 221, 0.09);
-  --color-line-strong: rgba(239, 233, 221, 0.17);
+:root {
+  --bg: #0a0c10;
+  --bg-2: #0e1117;
+  --paper: #0a0c10;
+  --paper-2: #0e1117;
+  --card: #14181f;
+  --card-2: #1a1f28;
 
-  /* The lone identity accent. Aged brass — appears on ≤10% of any view. */
-  --color-brass: #c6a45c;
-  --color-brass-bright: #dcc081;
-  --color-brass-deep: #9a7d3f;
+  --ink: #e9ebee; /* cool neutral bone */
+  --ink-2: rgba(233, 235, 238, 0.6);
+  --ink-3: rgba(233, 235, 238, 0.38);
+  --line: rgba(233, 235, 238, 0.09);
+  --line-2: rgba(233, 235, 238, 0.16);
 
-  /* Market-data semantics only — never decoration. */
-  --color-up: #6aa87f; /* deep muted green: bids / positive / open */
-  --color-down: #c5604f; /* restrained oxblood: asks / negative / risk */
+  /* one restrained signal accent (refined amber-gold), used sparingly */
+  --accent: #d3a24f;
+  --accent-strong: #e6b866;
+  --accent-wash: rgba(211, 162, 79, 0.13);
+  --accent-ink: #0a0c10;
+  --cosmos: #16222e; /* deep steel-slate structural glow (spatial depth) */
 
-  --font-display: var(--font-spectral);
-  --font-sans: var(--font-schibsted);
-  --font-mono: var(--font-jetbrains);
+  /* restrained per-project signal hues: gold -> steel -> platinum -> copper */
+  --p-apexgp: #d9a74f; /* event / probabilistic - gold */
+  --p-rates: #6f9ec9; /* treasury - steel blue */
+  --p-portfolio: #a9b7c9; /* allocation - platinum */
+  --p-fx: #c47e4e; /* fx - copper */
+
+  /* risk semantics (muted, data-only - never the palette's language) */
+  --up: #6fae83;
+  --down: #cf7460;
+
+  --scrim: rgba(5, 7, 10, 0.68);
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --nav-h: 64px;
+  color-scheme: dark;
 }
 
-:root {
-  color-scheme: dark;
-  --ease-cine: cubic-bezier(0.22, 0.61, 0.36, 1);
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-ink: var(--accent-ink);
+  --color-cosmos: var(--cosmos);
+
+  --color-p-apexgp: var(--p-apexgp);
+  --color-p-rates: var(--p-rates);
+  --color-p-portfolio: var(--p-portfolio);
+  --color-p-fx: var(--p-fx);
+
+  --color-up: var(--up);
+  --color-down: var(--down);
+
+  --font-display: var(--font-display), "Arial Black", sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: auto; /* Lenis owns scrolling */
-  background: var(--color-base);
+  scroll-behavior: smooth;
+  background: var(--bg);
+  /* clip (not hidden) so neither the root nor body becomes a scroll container,
+     which would break position: sticky (the Academic Arc panel). */
+  overflow-x: clip;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
-  background: var(--color-base);
-  color: var(--color-ink);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "ss01", "cv01";
-  overflow-x: hidden;
-}
-
-/*
-  Composed graphite surface — a warm vignette with a faint, heavily-masked
-  ledger ruling. Reads as a quiet trading-desk field, not a grid template.
-*/
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(120% 90% at 50% -10%, rgba(198, 164, 92, 0.06), transparent 55%),
-    radial-gradient(100% 70% at 85% 110%, rgba(106, 168, 127, 0.035), transparent 60%),
-    linear-gradient(180deg, #100f0c 0%, #0e0d0b 45%, #0a0908 100%);
-}
-
-/* Optional faint ruling, opt-in per surface via .ledger. Never global. */
-.ledger {
-  position: relative;
-}
-.ledger::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(to right, rgba(239, 233, 221, 0.025) 1px, transparent 1px) 0 0 / 72px 100%,
-    linear-gradient(to bottom, rgba(239, 233, 221, 0.02) 1px, transparent 1px) 0 0 / 100% 72px;
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 50%, black 30%, transparent 82%);
-  mask-image: radial-gradient(120% 90% at 50% 50%, black 30%, transparent 82%);
+  overflow-x: clip;
 }
 
 ::selection {
-  background: rgba(198, 164, 92, 0.26);
-  color: #fff;
-}
-
-/* Lenis */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-.lenis.lenis-stopped {
-  overflow: clip;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-base-2);
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2620;
+  background: color-mix(in oklab, var(--ink) 16%, transparent);
   border-radius: 999px;
-  border: 2px solid var(--color-base-2);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3a352c;
+  border: 3px solid var(--bg);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brass);
-  outline-offset: 3px;
-  border-radius: 3px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+[id] {
+  scroll-margin-top: calc(var(--nav-h) + 16px);
 }
 
 @layer utilities {
   .font-display {
-    font-family: var(--font-display), Georgia, "Times New Roman", serif;
+    font-family: var(--font-display);
   }
   .font-mono {
-    font-family: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
+    font-family: var(--font-mono);
   }
   .tnum {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
 
-  /* Emphasis: solid brass, never a gradient on text. */
-  .accent {
-    color: var(--color-brass);
-  }
-
-  /* Scene title — the loud, premium per-chapter heading. */
-  .scene-title {
-    font-family: var(--font-display), Georgia, serif;
-    font-weight: 600;
-    font-size: clamp(2.5rem, 5.4vw, 4.5rem);
-    line-height: 0.95;
-    letter-spacing: -0.028em;
+  /* Hero name - humongous block. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.85;
     text-wrap: balance;
   }
 
-  /* Instrument panel — a machined surface seated on the field. */
-  .panel {
-    background:
-      linear-gradient(180deg, rgba(239, 233, 221, 0.035), rgba(239, 233, 221, 0.008)),
-      var(--color-surface);
-    border: 1px solid var(--color-line);
-    box-shadow:
-      inset 0 1px 0 rgba(239, 233, 221, 0.05),
-      0 30px 64px -36px rgba(0, 0, 0, 0.95);
-  }
-  .panel-2 {
-    background:
-      linear-gradient(180deg, rgba(239, 233, 221, 0.05), rgba(239, 233, 221, 0.012)),
-      var(--color-surface-2);
-    border: 1px solid var(--color-line-strong);
-    box-shadow:
-      inset 0 1px 0 rgba(239, 233, 221, 0.06),
-      0 30px 64px -34px rgba(0, 0, 0, 0.95);
-  }
-  .hairline {
-    border: 1px solid var(--color-line);
-  }
-
-  /* Mono micro-label baseline. */
-  .label {
-    font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: 0.66rem;
-    letter-spacing: 0.18em;
+  /* Section title - controlled architectural block (sized so sections compose
+     within a laptop viewport, not so huge it pushes content off-screen). */
+  .h-sec {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 0.92;
     text-transform: uppercase;
-    color: var(--color-ink-faint);
+    text-wrap: balance;
   }
 
-  /* A faint brass status bead. */
-  .bead {
-    box-shadow: 0 0 0 3px rgba(198, 164, 92, 0.12);
+  /* Editorial title - mixed case, used for quieter / reflective sections so the
+     page is not every-section-the-same all-caps block. */
+  .h-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 0.98;
+    text-wrap: balance;
+  }
+
+  .h-card {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1;
+  }
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.018em;
+    line-height: 1;
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow:
+      0 1px 0 color-mix(in oklab, var(--ink) 5%, transparent) inset,
+      0 28px 60px -40px rgba(0, 0, 0, 0.8);
+  }
+  .panel-flat {
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+  .inset {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--line-2);
+    color: var(--ink-2);
+    border-radius: 3px;
+    padding: 0.14rem 0.48rem;
+    background: var(--card-2);
+    white-space: nowrap;
+  }
+
+  /* hairline tick row used for "instrument" framing */
+  .rule-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+/*
+  Entrances are CSS so content is never gated on a JS animation loop. The hero
+  uses a transform-only on-load fade; section content uses a scroll-driven reveal
+  (driven by scroll position, not rAF) that resolves to fully visible in view.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes enter-up {
+    from {
+      transform: translateY(20px);
+    }
+    to {
+      transform: none;
+    }
   }
+  .enter {
+    animation: enter-up 0.6s var(--ease-out) both;
+  }
+
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .reveal {
+    animation: reveal-up 0.6s var(--ease-out) both;
+  }
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation-timeline: view();
+      animation-range: entry 0% entry 34%;
+    }
+  }
+
+  /* Lateral "lock-in" used by the capability modules as they bolt onto the spine. */
+  @keyframes reveal-x {
+    from {
+      opacity: 0;
+      transform: translateX(38px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .reveal-x {
+    animation: reveal-x 0.55s var(--ease-out) both;
+  }
+  @supports (animation-timeline: view()) {
+    .reveal-x {
+      animation-timeline: view();
+      animation-range: entry 2% entry 40%;
+    }
+  }
+}
+
+/*
+  Capability sticky-stack: each card pins and piles into one assembled stack on
+  EVERY viewport - no media-query gate, no plain-list fallback. The pile stays
+  intact from mobile to desktop by SIZING DOWN rather than switching off: the
+  per-step pin offset, card min-height and inter-card gap all clamp() smaller on
+  narrow / short screens. Per-card index is the inline --i variable; the wrapping
+  container bounds the sticky run, so the pile can never overflow into Projects.
+*/
+.stack-card {
+  --stack-step: clamp(1.4rem, 0.9rem + 1.4vw, 2.25rem); /* peek / overlap amount */
+  position: sticky;
+  top: calc(
+    var(--nav-h) + clamp(0.75rem, 0.4rem + 1vw, 1.5rem) + var(--i, 0) * var(--stack-step)
+  );
+  min-height: clamp(8.5rem, 7rem + 8vw, 12.5rem);
+}
+.stack-card.stack-gap {
+  margin-bottom: clamp(9vh, 7vh + 3vw, 14vh);
 }

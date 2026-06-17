@@ -1,58 +1,66 @@
 import type { SkillGroup } from "@/types";
 
-// A capability map — grouped by what the tools let me do, not a flat résumé list.
-// Each group names the projects it shows up in, so skills and evidence connect.
+// A capability map grouped by what the tools let me do - each group names the
+// projects it shows up in, so skills and evidence stay wired together.
 export const skillGroups: SkillGroup[] = [
   {
     id: "pricing",
-    title: "Pricing & Hedging",
-    blurb: "Valuing and risk-managing derivatives — seen in the FX market-making and pricing-engine work.",
+    title: "Pricing & Derivatives",
+    blurb:
+      "Valuing and risk-managing derivatives - the engine room of the FX options and event-market work.",
     skills: [
-      "Black–Scholes",
+      "Garman-Kohlhagen",
+      "Black-Scholes",
       "FX options",
       "Options Greeks",
-      "Delta / gamma hedging",
+      "Binary / event pricing",
       "Monte Carlo simulation",
-      "Stochastic calculus",
     ],
+    appearsIn: ["fx", "apexgp"],
+  },
+  {
+    id: "rates",
+    title: "Rates & Fixed Income",
+    blurb:
+      "Building and shocking the Treasury curve - the foundation of the rates-risk attribution engine.",
+    skills: [
+      "Yield-curve construction",
+      "DV01 / key-rate DV01",
+      "Duration & convexity",
+      "Cash-flow repricing",
+      "Vasicek / CIR",
+      "Hedge overlays",
+    ],
+    appearsIn: ["rates"],
   },
   {
     id: "risk",
     title: "Risk & Portfolio",
-    blurb: "Sizing exposure and constructing portfolios — behind the optimization and rates/FX projects.",
+    blurb:
+      "Sizing exposure, decomposing P&L, and stressing books - across the rates, FX, and allocation systems.",
     skills: [
-      "VaR / CVaR",
-      "Volatility modeling",
-      "Factor models",
-      "Portfolio optimization",
-      "Sharpe / drawdown",
-      "Yield-curve & fixed-income risk",
+      "VaR / CVaR / Expected Shortfall",
+      "P&L attribution",
+      "Stress testing",
+      "Drawdown & turnover",
+      "Factor exposure",
+      "Allocation rules",
     ],
-  },
-  {
-    id: "systems",
-    title: "Market Systems & Data",
-    blurb: "Turning live markets into something tradable and explainable — the ApexGP and desk work.",
-    skills: [
-      "Market microstructure",
-      "Order-book depth",
-      "Market-making logic",
-      "P&L explain",
-      "Bloomberg · LSEG · Capital IQ",
-      "FRED · FastF1",
-    ],
+    appearsIn: ["rates", "fx", "portfolio"],
   },
   {
     id: "software",
-    title: "Software & Implementation",
-    blurb: "Building the models so they actually run — the Computer Science foundation under all of it.",
+    title: "Software & Data",
+    blurb:
+      "Making the models actually run - the Computer Science foundation under every project here.",
     skills: [
-      "Python (NumPy · SciPy · pandas)",
+      "Python · NumPy · SciPy · pandas",
       "C++ · R · MATLAB",
-      "Excel / VBA",
       "TypeScript · React · Next.js",
+      "Bloomberg · LSEG · FRED",
       "Numerical optimization",
       "Git / GitHub",
     ],
+    appearsIn: ["apexgp", "rates", "portfolio", "fx"],
   },
 ];

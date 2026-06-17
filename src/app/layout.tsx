@@ -1,39 +1,40 @@
 import type { Metadata } from "next";
-import { Spectral, Schibsted_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Syne, Chivo, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { profile, links } from "@/data/profile";
-import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 
-// The dossier voice — institutional serif for large scene titles.
-const display = Spectral({
+// Display - architectural, high-conviction block type for the name + section titles.
+const display = Syne({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["600", "700", "800"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+// Interface - a sharp, slightly industrial grotesque for body + UI.
+const sans = Chivo({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "900"],
   style: ["normal", "italic"],
-  variable: "--font-spectral",
+  variable: "--font-sans",
   display: "swap",
 });
 
-// The institutional voice — clean grotesque for body + UI (variable).
-const sans = Schibsted_Grotesk({
+// Data - engineered monospace for tickers, metrics, key-rate labels, code.
+const mono = Space_Mono({
   subsets: ["latin"],
-  variable: "--font-schibsted",
-  display: "swap",
-});
-
-// The terminal voice — technical mono for data, tickers, labels (variable).
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
+  weight: ["400", "700"],
+  variable: "--font-mono",
   display: "swap",
 });
 
 const description =
-  "Vatsal Maniar — M.S. Financial Engineering at Stevens with a Computer Science foundation. Probabilistic pricing engines, derivatives risk and market-making systems, and portfolio analytics.";
+  "Vatsal Maniar - M.S. Financial Engineering at Stevens with a Computer Science foundation. Treasury rates-risk attribution, FX options risk, portfolio analytics, and probabilistic event-market pricing engines.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://vatsalmaniar.com"),
   title: {
-    default: "Vatsal Maniar — Quant Finance · Derivatives Risk · Trading Systems",
+    default: "Vatsal Maniar - Financial Engineering · Risk Systems · Quant",
     template: "%s · Vatsal Maniar",
   },
   description,
@@ -41,23 +42,24 @@ export const metadata: Metadata = {
     "Vatsal Maniar",
     "quant finance",
     "financial engineering",
-    "derivatives risk",
-    "market making",
-    "portfolio optimization",
+    "rates risk",
+    "DV01",
+    "FX options risk",
     "Monte Carlo VaR",
+    "portfolio analytics",
     "Stevens Institute of Technology",
   ],
   authors: [{ name: profile.name, url: links.linkedin }],
   creator: profile.name,
   openGraph: {
     type: "website",
-    title: "Vatsal Maniar — Quant Finance · Derivatives Risk · Trading Systems",
+    title: "Vatsal Maniar - Financial Engineering · Risk Systems · Quant",
     description,
     siteName: "Vatsal Maniar",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vatsal Maniar — Quant Finance · Derivatives Risk · Trading Systems",
+    title: "Vatsal Maniar - Financial Engineering · Risk Systems · Quant",
     description,
   },
   robots: { index: true, follow: true },
@@ -71,9 +73,7 @@ export default function RootLayout({
       lang="en"
       className={`${display.variable} ${sans.variable} ${mono.variable} antialiased`}
     >
-      <body>
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

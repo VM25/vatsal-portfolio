@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type Variant = "solid" | "outline" | "ghost";
+type Variant = "solid" | "accent" | "outline" | "ghost";
 
 interface ButtonProps {
   href: string;
@@ -8,17 +8,16 @@ interface ButtonProps {
   variant?: Variant;
   icon?: React.ReactNode;
   external?: boolean;
-  download?: boolean;
   className?: string;
   ariaLabel?: string;
 }
 
 const variants: Record<Variant, string> = {
-  solid:
-    "bg-brass text-[#1a1408] hover:bg-brass-bright border border-brass/60 font-medium",
-  outline:
-    "text-ink border border-line-strong hover:border-brass/60 hover:text-brass bg-transparent",
-  ghost: "text-ink-dim hover:text-ink border border-transparent",
+  // high-contrast ink block - the bold default (keeps cobalt off the main CTA)
+  solid: "bg-ink text-paper border border-ink hover:bg-accent hover:border-accent hover:text-accent-ink",
+  accent: "bg-accent text-accent-ink border border-accent hover:bg-accent-strong hover:border-accent-strong",
+  outline: "text-ink border border-line-2 bg-card hover:border-ink",
+  ghost: "text-ink-2 hover:text-ink border border-transparent hover:bg-card",
 };
 
 export function Button({
@@ -27,7 +26,6 @@ export function Button({
   variant = "solid",
   icon,
   external,
-  download,
   className,
   ariaLabel,
 }: ButtonProps) {
@@ -36,18 +34,17 @@ export function Button({
       href={href}
       aria-label={ariaLabel}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      {...(download ? { download: "" } : {})}
       className={cn(
-        "group inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm tracking-tight",
-        "transition-[background-color,border-color,color,transform] duration-300 will-change-transform",
-        "hover:-translate-y-0.5 active:translate-y-0",
+        "group inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.05em]",
+        "transition-[background-color,border-color,color,transform] duration-200 will-change-transform",
+        "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]",
         variants[variant],
         className,
       )}
     >
       <span>{children}</span>
       {icon ? (
-        <span className="text-[1.05em] transition-transform duration-300 group-hover:translate-x-0.5">
+        <span className="text-[1.05em] transition-transform duration-200 group-hover:translate-x-0.5">
           {icon}
         </span>
       ) : null}
