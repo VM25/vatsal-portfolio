@@ -45,7 +45,7 @@ export const profile = {
 } as const;
 
 export const links = {
-  resume: "/resume/Vatsal-Maniar-Resume.pdf",
+  resume: "/resume/Maniar_Vatsal.pdf",
   writingSample: "/research/Maniar-Writing-Sample.pdf",
   linkedin: "https://www.linkedin.com/in/vatsal-maniar/",
   github: "https://github.com/VM25",
