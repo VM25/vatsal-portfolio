@@ -1,37 +1,36 @@
-import type { EducationItem } from "@/types";
+import type { Study } from "@/types";
 
-export const education: EducationItem[] = [
+export const study: Study[] = [
   {
     id: "stevens",
     school: "Stevens Institute of Technology",
     degree: "M.S. Financial Engineering",
-    detail: "GPA 3.67 / 4.00 · Graduate Certificate in Financial Risk Engineering",
-    period: "Sep 2025 - Dec 2026 (expected)",
+    detail: "GPA 3.67 · Graduate Certificate in Financial Risk Engineering",
+    period: "Sep 2025 — Dec 2026",
     location: "Hoboken, NJ",
-    coursework: [
+    courses: [
       "Stochastic Calculus",
       "Pricing & Hedging",
       "Advanced Derivatives",
-      "Computational Methods in Finance",
-      "Market Microstructure & Trading",
-      "Risk Engineering & Management",
+      "Computational Finance",
+      "Market Microstructure",
+      "Risk Management",
     ],
   },
   {
     id: "asu",
     school: "Arizona State University",
     degree: "B.S. Computer Science",
-    detail: "GPA 3.74 / 4.00 · Magna Cum Laude",
-    period: "Aug 2021 - May 2025",
+    detail: "GPA 3.74 · Magna Cum Laude",
+    period: "Aug 2021 — May 2025",
     location: "Tempe, AZ",
-    coursework: [
+    courses: [
       "Data Structures & Algorithms",
-      "Systems Programming (C++)",
+      "Systems Programming",
       "Software Engineering",
       "Operating Systems",
       "Probability & Statistics",
       "Numerical Computing",
     ],
-    honors: ["Magna Cum Laude"],
   },
 ];

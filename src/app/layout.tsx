@@ -1,71 +1,63 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { profile, links } from "@/data/profile";
 
-// Display — a high-contrast editorial serif. Static 400 with a true italic;
-// at masthead sizes it needs no other weight, and the italic is the only
-// emphasis it ever takes.
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-// Text — a variable grotesque, so the 550 and 650 weights the subheads use are
-// real instances rather than synthesised.
-const sans = Archivo({
+// Everything structural — name, headings, body, buttons.
+const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-// Data — every figure, ticker, DV01, and plate number on the page. Two weights
-// only: a third static instance is another font file on the critical path for a
-// difference nobody can see at 11px.
-const mono = IBM_Plex_Mono({
+// Labels, figures, years. Anything that should line up in a column.
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["400", "500"],
   variable: "--font-mono",
   display: "swap",
 });
 
+// Reserved for the single pull quote. It appears once on the page.
+const quote = Fraunces({
+  subsets: ["latin"],
+  style: ["italic"],
+  weight: ["400"],
+  variable: "--font-quote",
+  display: "swap",
+});
+
 const description =
-  "Vatsal Maniar — M.S. Financial Engineering at Stevens with a Computer Science foundation. Seven systems across Treasury rates attribution, FX options risk, credit decisioning, multi-asset allocation, systematic signal research, and C++ derivatives numerics.";
+  "Vatsal Maniar builds systems that measure risk — across interest rates, currencies, credit, and portfolios. Master's in Financial Engineering at Stevens, with a computer science degree behind it.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://maniar-portfolio.netlify.app"),
   title: {
-    default: "Vatsal Maniar — Risk Systems, Derivatives Numerics, Quant Research",
+    default: "Vatsal Maniar",
     template: "%s · Vatsal Maniar",
   },
   description,
   keywords: [
     "Vatsal Maniar",
-    "quant finance",
+    "quantitative finance",
     "financial engineering",
-    "rates risk attribution",
-    "DV01",
-    "FX options risk",
-    "Monte Carlo VaR",
-    "systematic alpha research",
-    "derivatives numerics",
-    "credit risk decisioning",
+    "risk",
+    "derivatives",
+    "interest rates",
+    "portfolio analysis",
     "Stevens Institute of Technology",
   ],
   authors: [{ name: profile.name, url: links.linkedin }],
   creator: profile.name,
   openGraph: {
     type: "website",
-    title: "Vatsal Maniar — Risk Systems, Derivatives Numerics, Quant Research",
+    title: "Vatsal Maniar",
     description,
     siteName: "Vatsal Maniar",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vatsal Maniar — Risk Systems, Derivatives Numerics, Quant Research",
+    title: "Vatsal Maniar",
     description,
   },
   robots: { index: true, follow: true },
@@ -77,16 +69,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      className={`${sans.variable} ${mono.variable} ${quote.variable}`}
     >
       <body>
-        {/*
-          Without JavaScript the reveal observer never runs, and every
-          `data-reveal` element would stay at opacity 0 — a blank page. This
-          hands the whole record to anyone who arrives with scripting off.
-        */}
+        {/* Without scripting the reveal observer never runs. Show everything. */}
         <noscript>
-          <style>{`[data-reveal]{opacity:1!important;transform:none!important;clip-path:none!important}.plate__svg [data-draw]{stroke-dashoffset:0!important}.plate__svg [data-grow]{transform:none!important}.plate__svg [data-pop]{opacity:1!important}`}</style>
+          <style>{`[data-r]{opacity:1!important;transform:none!important;filter:none!important}`}</style>
         </noscript>
         {children}
       </body>

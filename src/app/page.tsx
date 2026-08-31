@@ -1,39 +1,30 @@
-import { ColumnRules } from "@/components/site/ColumnRules";
-import { RunningHead } from "@/components/site/RunningHead";
-import { Colophon } from "@/components/site/Colophon";
-import { Masthead } from "@/components/sections/Masthead";
-import { Abstract } from "@/components/sections/Abstract";
-import { Methods } from "@/components/sections/Methods";
-import { Systems } from "@/components/sections/Systems";
-import { Record } from "@/components/sections/Record";
-import { Research } from "@/components/sections/Research";
-import { Correspondence } from "@/components/sections/Correspondence";
+import { Bar } from "@/components/site/Bar";
+import { Foot } from "@/components/site/Foot";
+import { Hero } from "@/components/sections/Hero";
+import { Work } from "@/components/sections/Work";
+import { About } from "@/components/sections/About";
+import { Paper } from "@/components/sections/Paper";
+import { Experience } from "@/components/sections/Experience";
+import { Contact } from "@/components/sections/Contact";
 
-/**
- * The record, in order. Everything below the running head is a server
- * component — the only JavaScript that reaches the browser is the running
- * head's scrollspy and the single reveal observer it owns.
- */
 export default function Page() {
   return (
     <>
-      <ColumnRules />
-      <RunningHead />
+      <Bar />
       <a
-        href="#systems"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
+        href="#work"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-accent focus:px-4 focus:py-2 focus:text-bg"
       >
-        Skip to the systems
+        Skip to the work
       </a>
       <main className="shell">
-        <Masthead />
-        <Abstract />
-        <Methods />
-        <Systems />
-        <Record />
-        <Research />
-        <Correspondence />
-        <Colophon />
+        <Hero />
+        <Work />
+        <About />
+        <Paper />
+        <Experience />
+        <Contact />
+        <Foot />
       </main>
     </>
   );
