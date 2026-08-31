@@ -1,46 +1,40 @@
-import { Backdrop } from "@/components/site/Backdrop";
-import { SiteHeader } from "@/components/site/SiteHeader";
-import { Footer } from "@/components/site/Footer";
-import { Connector } from "@/components/site/Connector";
-import { Hero } from "@/components/sections/Hero";
-import { Origin } from "@/components/sections/Origin";
-import { Capabilities } from "@/components/sections/Capabilities";
-import { Projects } from "@/components/sections/Projects";
-import { Experience } from "@/components/sections/Experience";
+import { ColumnRules } from "@/components/site/ColumnRules";
+import { RunningHead } from "@/components/site/RunningHead";
+import { Colophon } from "@/components/site/Colophon";
+import { Masthead } from "@/components/sections/Masthead";
+import { Abstract } from "@/components/sections/Abstract";
+import { Methods } from "@/components/sections/Methods";
+import { Systems } from "@/components/sections/Systems";
+import { Record } from "@/components/sections/Record";
 import { Research } from "@/components/sections/Research";
-import { Contact } from "@/components/sections/Contact";
-import { profile } from "@/data/profile";
+import { Correspondence } from "@/components/sections/Correspondence";
 
-export default function Home() {
+/**
+ * The record, in order. Everything below the running head is a server
+ * component — the only JavaScript that reaches the browser is the running
+ * head's scrollspy and the single reveal observer it owns.
+ */
+export default function Page() {
   return (
     <>
+      <ColumnRules />
+      <RunningHead />
       <a
-        href="#home"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+        href="#systems"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
       >
-        Skip to content
+        Skip to the systems
       </a>
-
-      <Backdrop />
-      <SiteHeader />
-
-      <main className="relative z-10">
-        <Hero />
-        <Origin />
-        <Connector label="From foundation to capability" />
-        <Capabilities />
-        <Connector label="Capabilities compile into live systems" />
-        <Projects />
-        <Connector label="Operating history" />
-        <Experience />
-        <Connector label="From execution to what's next" />
+      <main className="shell">
+        <Masthead />
+        <Abstract />
+        <Methods />
+        <Systems />
+        <Record />
         <Research />
-        <Contact />
+        <Correspondence />
+        <Colophon />
       </main>
-
-      <Footer />
-
-      <span className="sr-only">{profile.summary}</span>
     </>
   );
 }

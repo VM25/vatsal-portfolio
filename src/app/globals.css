@@ -1,308 +1,753 @@
 @import "tailwindcss";
 
 /*
-  "Desk" — a dark-only software -> finance instrument. A cool graphite field
-  (the IDE / terminal side), warm amber-gold as the single signal accent (the
-  trading-desk / ledger side), and a deep steel-slate structural glow for spatial
-  depth. No cyan, no neon. Per-project hues span gold -> copper -> steel -> platinum.
-  Muted sage / clay are reserved strictly for risk gain / loss inside data, never
-  as the page's color language. Type: Syne / Chivo / Space Mono.
+  THE RECORD
+  ----------
+  A published research record, not a landing page. Off-white stock, navy as the
+  ink, petrol for structure, and a single orange rationed to signal: section
+  numerals, verdicts, one accented word per headline, and the marks on a plate.
+
+  Four colours, strictly. Every other tone is a mix of these four with the paper,
+  so the palette can never drift.
+
+  Type:  Instrument Serif (display) / Archivo (text) / IBM Plex Mono (data).
+  Motion: transform and opacity only. No sticky pinning anywhere — that is what
+  makes Safari and Chrome render this identically.
 */
+
 :root {
-  --bg: #0a0c10;
-  --bg-2: #0e1117;
-  --paper: #0a0c10;
-  --paper-2: #0e1117;
-  --card: #14181f;
-  --card-2: #1a1f28;
+  --paper: #f9f9f9;
+  --ink: #092363;
+  --rule: #004e72;
+  --signal: #ff6342;
 
-  --ink: #e9ebee; /* cool neutral bone */
-  --ink-2: rgba(233, 235, 238, 0.6);
-  --ink-3: rgba(233, 235, 238, 0.38);
-  --line: rgba(233, 235, 238, 0.09);
-  --line-2: rgba(233, 235, 238, 0.16);
+  /*
+    Text tiers. The mix percentages are solved, not picked: each one was measured
+    against the stock and lands at or above 4.5:1, so no tier of real text on
+    this page falls below AA. Hierarchy is carried by size, case, and hue —
+    never by fading text until it stops being readable.
+      ink-90  10.6:1   headings and emphasis
+      ink-70   5.99:1  body prose
+      ink-55   4.97:1  secondary text, captions, labels
+      ink-38   4.63:1  metadata — petrol-tinted, so it reads as a different
+                       role rather than a fainter one
+  */
+  --ink-90: color-mix(in srgb, var(--ink) 90%, var(--paper));
+  --ink-70: color-mix(in srgb, var(--ink) 72%, var(--paper));
+  --ink-55: color-mix(in srgb, var(--ink) 66%, var(--paper));
+  --ink-38: color-mix(in srgb, var(--rule) 75%, var(--paper));
 
-  /* one restrained signal accent (refined amber-gold), used sparingly */
-  --accent: #d3a24f;
-  --accent-strong: #e6b866;
-  --accent-wash: rgba(211, 162, 79, 0.13);
-  --accent-ink: #0a0c10;
-  --cosmos: #16222e; /* deep steel-slate structural glow (spatial depth) */
+  /* Structure — petrol at printing weights. */
+  --hair: color-mix(in srgb, var(--rule) 20%, var(--paper));
+  --hair-2: color-mix(in srgb, var(--rule) 38%, var(--paper));
+  --hair-3: color-mix(in srgb, var(--rule) 62%, var(--paper));
+  --rule-70: color-mix(in srgb, var(--rule) 78%, var(--paper));
 
-  /* restrained per-project signal hues: gold -> steel -> platinum -> copper */
-  --p-apexgp: #d9a74f; /* event / probabilistic - gold */
-  --p-rates: #6f9ec9; /* treasury - steel blue */
-  --p-portfolio: #a9b7c9; /* allocation - platinum */
-  --p-fx: #c47e4e; /* fx - copper */
+  /* Surfaces — tinted stock, never grey. */
+  --surface: color-mix(in srgb, var(--rule) 4%, var(--paper));
+  --surface-2: color-mix(in srgb, var(--rule) 8%, var(--paper));
 
-  /* risk semantics (muted, data-only - never the palette's language) */
-  --up: #6fae83;
-  --down: #cf7460;
+  /*
+    Signal — rationed, and split by job. Pure #ff6342 is a graphic colour: it
+    fills bars, dots, ticks, and rules, where it is a shape rather than
+    something to be read. Orange text on this stock is only 2.8:1, so signal
+    text uses these two derivations instead — both mixed toward the navy, so
+    the palette gains no fifth hue.
+      signal-display  3.42:1  accent set at display sizes (AA-large)
+      signal-ink      4.73:1  every other piece of signal-coloured text
+  */
+  --signal-display: color-mix(in srgb, var(--signal) 88%, var(--ink));
+  --signal-ink: color-mix(in srgb, var(--signal) 70%, var(--ink));
+  --signal-wash: color-mix(in srgb, var(--signal) 14%, var(--paper));
+  --signal-hair: color-mix(in srgb, var(--signal) 45%, var(--paper));
 
-  --scrim: rgba(5, 7, 10, 0.68);
-  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --nav-h: 64px;
-  color-scheme: dark;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-rule: cubic-bezier(0.65, 0, 0.35, 1);
+  --gutter: clamp(1.25rem, 5vw, 5.5rem);
+  --measure: 68ch;
+  --head-h: 3.25rem;
+
+  color-scheme: light;
 }
 
 @theme inline {
   --color-paper: var(--paper);
-  --color-paper-2: var(--paper-2);
-  --color-card: var(--card);
-  --color-card-2: var(--card-2);
   --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-line: var(--line);
-  --color-line-2: var(--line-2);
+  --color-ink-90: var(--ink-90);
+  --color-ink-70: var(--ink-70);
+  --color-ink-55: var(--ink-55);
+  --color-ink-38: var(--ink-38);
+  --color-rule: var(--rule);
+  --color-rule-70: var(--rule-70);
+  --color-hair: var(--hair);
+  --color-hair-2: var(--hair-2);
+  --color-hair-3: var(--hair-3);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-signal: var(--signal);
+  --color-signal-display: var(--signal-display);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-wash: var(--signal-wash);
+  --color-signal-hair: var(--signal-hair);
 
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-wash: var(--accent-wash);
-  --color-accent-ink: var(--accent-ink);
-  --color-cosmos: var(--cosmos);
-
-  --color-p-apexgp: var(--p-apexgp);
-  --color-p-rates: var(--p-rates);
-  --color-p-portfolio: var(--p-portfolio);
-  --color-p-fx: var(--p-fx);
-
-  --color-up: var(--up);
-  --color-down: var(--down);
-
-  --font-display: var(--font-display), "Arial Black", sans-serif;
+  --font-display: var(--font-display), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+/* ---------------------------------------------------------------- base ---- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
-  background: var(--bg);
-  /* clip (not hidden) so neither the root nor body becomes a scroll container,
-     which would break position: sticky (the Academic Arc panel). */
+  scroll-padding-top: calc(var(--head-h) + 1.5rem);
+  background: var(--paper);
   overflow-x: clip;
 }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-90);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Printed stock. A 180px turbulence tile the browser rasterises once and
+   repeats — no full-page filter, so it costs nothing to scroll. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--hair-2);
+  margin: 0;
+}
+
+/* -------------------------------------------------------------- layout ---- */
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* The column rules — faint vertical hairlines behind the whole page, the way a
+   memo's margin rules sit under the text. Desktop only; they read as noise on
+   a phone. */
+.rules {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .rules {
+    display: block;
+  }
+  .rules__inner {
+    width: 100%;
+    max-width: 90rem;
+    height: 100%;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+  }
+  .rules__inner span {
+    border-left: 1px solid color-mix(in srgb, var(--rule) 9%, var(--paper));
+  }
+  .rules__inner span:first-child,
+  .rules__inner span:last-child {
+    border-left-color: color-mix(in srgb, var(--rule) 16%, var(--paper));
+  }
+}
+
+/* ---------------------------------------------------------------- type ---- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.display--xl {
+  font-size: clamp(3.5rem, 13vw, 12rem);
+  letter-spacing: -0.035em;
+}
+.display--lg {
+  font-size: clamp(2.5rem, 6.2vw, 5.25rem);
+}
+.display--md {
+  font-size: clamp(1.9rem, 3.6vw, 3.1rem);
+  line-height: 1;
+}
+.display--sm {
+  font-size: clamp(1.45rem, 2.3vw, 2.05rem);
+  line-height: 1.05;
+}
+
+/* The serif's italic is the only emphasis the display face needs. */
+.display em {
+  font-style: italic;
+  color: var(--signal-display);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rule-70);
+}
+
+.numeral {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--signal-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.lede {
+  font-size: clamp(1.125rem, 1.7vw, 1.4rem);
+  line-height: 1.5;
+  color: var(--ink-70);
+  max-width: 46ch;
+  margin: 0;
+}
+
+.prose {
+  font-size: 1.0625rem;
+  line-height: 1.68;
+  color: var(--ink-70);
+  max-width: var(--measure);
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.subhead {
+  font-family: var(--font-sans);
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  line-height: 1.15;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------- section ---- */
+
+.section {
+  position: relative;
+  padding-block: clamp(4.5rem, 10vw, 9rem);
+  border-top: 1px solid var(--hair-2);
+}
+
+.section:first-of-type {
+  border-top: 0;
+}
+
+.section__head {
+  display: grid;
+  gap: 1.25rem;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+@media (min-width: 1024px) {
+  .section__head {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0 2rem;
+    align-items: start;
+  }
+  /* The numeral hangs in the margin, the way a paper's section number does. */
+  .section__rail {
+    position: sticky;
+    top: calc(var(--head-h) + 2rem);
+    /* Sticky on a short, self-contained rail only — never a pinned panel. */
+  }
+}
+
+/* ---------------------------------------------------------------- mark ---- */
+
+/* A signal-coloured tick used to mark a finding. Two rules, no icon font. */
+.tick {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-left: 2px solid var(--signal);
+  border-bottom: 2px solid var(--signal);
+  transform: rotate(-45deg) translateY(-0.15em);
+}
+
+.finding {
+  position: relative;
+  padding-left: 1.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink);
+  max-width: 62ch;
+}
+
+.finding::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.34em;
+  width: 3px;
+  height: calc(100% - 0.6em);
+  background: var(--signal);
+}
+
+/* ---------------------------------------------------------------- link ---- */
+
+.link {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--ink);
+  font-weight: 550;
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.42s var(--ease);
+}
+
+.link:hover::after,
+.link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.link__arrow {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--signal-ink);
+  transition: transform 0.42s var(--ease);
+}
+
+.link:hover .link__arrow {
+  transform: translate(0.18em, -0.18em);
+}
+
+/* Filled action. Square, printed, no gradient. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.35rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--ink);
+  transition:
+    background 0.3s var(--ease),
+    color 0.3s var(--ease),
+    border-color 0.3s var(--ease);
+}
+
+.action:hover,
+.action:focus-visible {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--paper);
+}
+
+.action--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--hair-3);
+}
+
+.action--ghost:hover,
+.action--ghost:focus-visible {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------------------------------------------------------------- chip ---- */
+
+.chip {
+  display: inline-block;
+  padding: 0.24rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--rule-70);
+  border: 1px solid var(--hair-2);
+  background: var(--paper);
+}
+
+/* --------------------------------------------------------------- plate ---- */
+
+/* A figure, set the way a journal sets one: rule above, caption below, number
+   in the margin. The SVG inside is drawn from the system's own output. */
+.plate {
+  border-top: 1px solid var(--hair-3);
+  padding-top: 0.75rem;
+}
+
+.plate__frame {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  padding: clamp(0.875rem, 2vw, 1.5rem);
+}
+
+.plate__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.plate__caption {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-55);
+  max-width: 54ch;
+}
+
+.plate__caption b {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--signal-ink);
+  margin-right: 0.5rem;
+}
+
+/* Plate ink. Set here so every figure inherits one drawing language. */
+.plate__svg .p-axis {
+  stroke: var(--hair-3);
+  stroke-width: 1;
+  fill: none;
+}
+.plate__svg .p-grid {
+  stroke: var(--hair);
+  stroke-width: 1;
+  fill: none;
+}
+.plate__svg .p-line {
+  stroke: var(--rule);
+  stroke-width: 1.75;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.plate__svg .p-line--signal {
+  stroke: var(--signal);
+}
+.plate__svg .p-fill {
+  fill: var(--rule);
+}
+.plate__svg .p-fill--signal {
+  fill: var(--signal);
+}
+.plate__svg .p-fill--soft {
+  fill: color-mix(in srgb, var(--rule) 28%, var(--paper));
+}
+.plate__svg .p-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  fill: var(--ink-55);
+}
+.plate__svg .p-label--signal {
+  fill: var(--signal-ink);
+}
+.plate__svg .p-label--ink {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------- ledger ---- */
+
+.ledger-row {
+  display: grid;
+  gap: 0.35rem 1.5rem;
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--hair);
+  transition: background 0.35s var(--ease);
+}
+
+.ledger-row:hover {
+  background: var(--surface);
+}
+
+@media (min-width: 900px) {
+  .ledger-row {
+    grid-template-columns: 8.5rem minmax(0, 1fr) 11rem;
+    align-items: baseline;
+  }
+}
+
+/* --------------------------------------------------------------- index ---- */
+
+.index-row {
+  display: grid;
+  gap: 0.2rem 1.25rem;
+  padding-block: 1.05rem;
+  border-top: 1px solid var(--hair);
+  align-items: baseline;
+  transition:
+    background 0.3s var(--ease),
+    padding-left 0.35s var(--ease);
+}
+
+.index-row:hover {
+  background: var(--surface);
+}
+
+@media (min-width: 860px) {
+  .index-row {
+    grid-template-columns: 3.5rem minmax(0, 1.1fr) minmax(0, 1.5fr) 9.5rem 1.5rem;
+  }
+  .index-row:hover {
+    padding-left: 0.5rem;
+  }
+}
+
+/* ------------------------------------------------------------ portrait ---- */
+
+/* A printed plate, not a cut-out: navy duotone under a halftone screen, with
+   orange registration marks at the corners. */
+.portrait {
+  position: relative;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+.portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Flattened to a single channel first, then screened over the navy ground so
+     the shadows land on the ink rather than on grey. The extra contrast is what
+     stops a bright office background from washing the whole plate out. */
+  filter: grayscale(1) contrast(1.34) brightness(0.86);
+  mix-blend-mode: screen;
+}
+
+/* A second pass of navy across the midtones — without it the plate reads as a
+   pale blue photograph instead of something that was printed. */
+.portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  mix-blend-mode: multiply;
+  opacity: 0.36;
+  pointer-events: none;
+}
+
+/* Halftone screen. A 3px dot grid — visible up close, invisible as texture. */
+.portrait__screen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  background-image: radial-gradient(var(--paper) 0.5px, transparent 0.6px);
+  background-size: 3px 3px;
+}
+
+.reg-mark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 0 solid var(--signal);
+  pointer-events: none;
+}
+.reg-mark--tl {
+  top: 8px;
+  left: 8px;
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+}
+.reg-mark--br {
+  bottom: 8px;
+  right: 8px;
+  border-bottom-width: 1.5px;
+  border-right-width: 1.5px;
+}
+
+/* -------------------------------------------------------------- motion ---- */
+
+/*
+  One vocabulary, driven by a single IntersectionObserver that adds `.is-in`.
+  Only transform, opacity, and clip-path — never a layout property — so Safari
+  and Chrome resolve these identically. Stagger comes from --i.
+*/
+
+[data-reveal] {
+  transition-property: opacity, transform, clip-path;
+  transition-duration: 0.72s;
+  transition-timing-function: var(--ease);
+  transition-delay: calc(var(--i, 0) * 65ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal="rise"] {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+}
+
+[data-reveal="fade"] {
+  opacity: 0;
+}
+
+[data-reveal="wipe"] {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transform: translate3d(0, 8px, 0);
+}
+
+[data-reveal="rule"] {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition-duration: 0.95s;
+  transition-timing-function: var(--ease-rule);
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 0 0 0);
+}
+
+/* Plate strokes draw themselves. Pure CSS off pathLength="1". */
+.plate__svg [data-draw] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.3s var(--ease-rule);
+  transition-delay: calc(0.15s + var(--i, 0) * 90ms);
+}
+
+.is-in .plate__svg [data-draw],
+.plate__svg.is-in [data-draw] {
+  stroke-dashoffset: 0;
+}
+
+.plate__svg [data-grow] {
+  transform: scaleY(0);
+  /* fill-box so the origin is the shape's own box, not the SVG viewport —
+     without this the bars grow from the wrong edge in every browser. */
+  transform-box: fill-box;
+  transform-origin: var(--origin, bottom);
+  transition: transform 0.85s var(--ease);
+  transition-delay: calc(0.2s + var(--i, 0) * 70ms);
+}
+
+.is-in .plate__svg [data-grow],
+.plate__svg.is-in [data-grow] {
+  transform: scaleY(1);
+}
+
+.plate__svg [data-pop] {
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+  transition-delay: calc(0.85s + var(--i, 0) * 60ms);
+}
+
+.is-in .plate__svg [data-pop],
+.plate__svg.is-in [data-pop] {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  overflow-x: clip;
-}
-
-::selection {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-::-webkit-scrollbar {
-  width: 11px;
-  height: 11px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-  background: color-mix(in oklab, var(--ink) 16%, transparent);
-  border-radius: 999px;
-  border: 3px solid var(--bg);
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-[id] {
-  scroll-margin-top: calc(var(--nav-h) + 16px);
-}
-
-@layer utilities {
-  .font-display {
-    font-family: var(--font-display);
+  [data-reveal],
+  .plate__svg [data-draw],
+  .plate__svg [data-grow],
+  .plate__svg [data-pop] {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    stroke-dashoffset: 0 !important;
   }
-  .font-mono {
-    font-family: var(--font-mono);
-  }
-  .tnum {
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
-  }
-
-  /* Hero name - humongous block. */
-  .display {
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    line-height: 0.85;
-    text-wrap: balance;
-  }
-
-  /* Section title - controlled architectural block (sized so sections compose
-     within a laptop viewport, not so huge it pushes content off-screen). */
-  .h-sec {
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 0.92;
-    text-transform: uppercase;
-    text-wrap: balance;
-  }
-
-  /* Editorial title - mixed case, used for quieter / reflective sections so the
-     page is not every-section-the-same all-caps block. */
-  .h-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.022em;
-    line-height: 0.98;
-    text-wrap: balance;
-  }
-
-  .h-card {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1;
-  }
-  .title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.018em;
-    line-height: 1;
-  }
-
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-
-  .panel {
-    background: var(--card);
-    border: 1px solid var(--line);
-    box-shadow:
-      0 1px 0 color-mix(in oklab, var(--ink) 5%, transparent) inset,
-      0 28px 60px -40px rgba(0, 0, 0, 0.8);
-  }
-  .panel-flat {
-    background: var(--card);
-    border: 1px solid var(--line);
-  }
-  .inset {
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-  }
-
-  .chip {
-    font-family: var(--font-mono);
-    font-size: 0.64rem;
-    letter-spacing: 0.02em;
-    border: 1px solid var(--line-2);
-    color: var(--ink-2);
-    border-radius: 3px;
-    padding: 0.14rem 0.48rem;
-    background: var(--card-2);
-    white-space: nowrap;
-  }
-
-  /* hairline tick row used for "instrument" framing */
-  .rule-label {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ink-3);
+  .link::after {
+    transition: none;
   }
 }
 
-/*
-  Entrances are CSS so content is never gated on a JS animation loop. The hero
-  uses a transform-only on-load fade; section content uses a scroll-driven reveal
-  (driven by scroll position, not rAF) that resolves to fully visible in view.
-*/
-@media (prefers-reduced-motion: no-preference) {
-  @keyframes enter-up {
-    from {
-      transform: translateY(20px);
-    }
-    to {
-      transform: none;
-    }
-  }
-  .enter {
-    animation: enter-up 0.6s var(--ease-out) both;
-  }
+/* --------------------------------------------------------------- print ---- */
 
-  @keyframes reveal-up {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
+@media print {
+  .rules,
+  body::before {
+    display: none;
   }
-  .reveal {
-    animation: reveal-up 0.6s var(--ease-out) both;
+  .section {
+    break-inside: avoid;
   }
-  @supports (animation-timeline: view()) {
-    .reveal {
-      animation-timeline: view();
-      animation-range: entry 0% entry 34%;
-    }
-  }
-
-  /* Lateral "lock-in" used by the capability modules as they bolt onto the spine. */
-  @keyframes reveal-x {
-    from {
-      opacity: 0;
-      transform: translateX(38px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-  .reveal-x {
-    animation: reveal-x 0.55s var(--ease-out) both;
-  }
-  @supports (animation-timeline: view()) {
-    .reveal-x {
-      animation-timeline: view();
-      animation-range: entry 2% entry 40%;
-    }
-  }
-}
-
-/*
-  Capability sticky-stack: each card pins and piles into one assembled stack on
-  EVERY viewport - no media-query gate, no plain-list fallback. The pile stays
-  intact from mobile to desktop by SIZING DOWN rather than switching off: the
-  per-step pin offset, card min-height and inter-card gap all clamp() smaller on
-  narrow / short screens. Per-card index is the inline --i variable; the wrapping
-  container bounds the sticky run, so the pile can never overflow into Projects.
-*/
-.stack-card {
-  --stack-step: clamp(1.4rem, 0.9rem + 1.4vw, 2.25rem); /* peek / overlap amount */
-  position: sticky;
-  top: calc(
-    var(--nav-h) + clamp(0.75rem, 0.4rem + 1vw, 1.5rem) + var(--i, 0) * var(--stack-step)
-  );
-  min-height: clamp(8.5rem, 7rem + 8vw, 12.5rem);
-}
-.stack-card.stack-gap {
-  margin-bottom: clamp(9vh, 7vh + 3vw, 14vh);
 }

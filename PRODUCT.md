@@ -6,8 +6,7 @@ brand
 
 ## Users
 
-Quant-finance recruiters and hiring managers evaluating Vatsal Maniar for 2026
-internships and co-ops, across:
+Quant-finance recruiters and hiring managers evaluating Vatsal Maniar for Fall 2026 co-ops and Full-Time 2027 roles, across:
 
 - front-office-adjacent quant (trading, research),
 - derivatives risk, structuring, and capital-markets desks,
