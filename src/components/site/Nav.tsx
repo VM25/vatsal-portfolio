@@ -36,7 +36,11 @@ export function Nav() {
       cancelAnimationFrame(f);
       f = requestAnimationFrame(() => {
         const max = document.documentElement.scrollHeight - window.innerHeight;
-        setP(max > 0 ? window.scrollY / max : 0);
+        const p = max > 0 ? window.scrollY / max : 0;
+        setP(p);
+        // The atmosphere reads this. Written to the root rather than passed
+        // through React so the blooms update without re-rendering the page.
+        document.documentElement.style.setProperty("--sp", p.toFixed(4));
       });
     };
     onScroll();
@@ -46,6 +50,25 @@ export function Nav() {
     const ctx = gsap.context(() => {
       // Headings drift slightly slower than the page. Small enough that it
       // reads as depth rather than as an effect.
+      // Cards drift a touch against the scroll. Small enough to read as depth
+      // rather than as an effect, and transform-only.
+      gsap.utils.toArray<HTMLElement>("[data-drift]").forEach((el) => {
+        gsap.fromTo(
+          el,
+          { y: 22 },
+          {
+            y: -22,
+            ease: "none",
+            scrollTrigger: {
+              trigger: el,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 1,
+            },
+          },
+        );
+      });
+
       gsap.utils.toArray<HTMLElement>(".sec-head").forEach((el) => {
         gsap.fromTo(
           el,

@@ -204,47 +204,81 @@
 /* ----------------------------------------------------------------- shell -- */
 
 /*
-  A single field behind the entire document — not one per section. Sections were
-  each painting their own radial wash, which drew a hard rectangle around every
-  one of them and made the page read as a stack of separate cages.
+  The atmosphere.
 
-  This is one very slow vertical gradient through deep, desaturated tones. It is
-  deliberately weak: at these mixes it registers as depth rather than as colour,
-  which is the difference between looking expensive and looking like a theme.
+  Fixed to the viewport, never absolute: an absolutely positioned element with no
+  positioned ancestor is sized by the initial containing block, so it ends after
+  exactly one screen and leaves a hard horizontal seam across the document — one
+  that moves as you zoom, because the viewport height in CSS pixels moves too.
+
+  Colour lives in a few very large, very soft blooms. They drift and cross-fade
+  against scroll progress (--sp, written from JS), so the page travels from cool
+  at the top to warm further down. That drift is the transition between sections:
+  because the field is one continuous surface, nothing can band at a boundary.
+
+  Only transform and opacity change, so this costs nothing to scroll.
 */
 .field {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    radial-gradient(
-      120rem 60rem at 78% 4%,
-      color-mix(in srgb, var(--nocturnal) 22%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      90rem 50rem at 4% 34%,
-      color-mix(in srgb, var(--saffron) 5%, transparent),
-      transparent 58%
-    ),
-    radial-gradient(
-      100rem 55rem at 92% 62%,
-      color-mix(in srgb, var(--midnight) 40%, transparent),
-      transparent 62%
-    ),
-    radial-gradient(
-      90rem 50rem at 10% 88%,
-      color-mix(in srgb, var(--oceanic) 46%, transparent),
-      transparent 62%
-    ),
-    linear-gradient(
-      to bottom,
-      var(--onyx) 0%,
-      color-mix(in srgb, var(--oceanic) 16%, var(--onyx)) 30%,
-      color-mix(in srgb, var(--midnight) 14%, var(--onyx)) 62%,
-      var(--onyx) 100%
-    );
+  overflow: hidden;
+  background: var(--onyx);
+}
+
+.bloom {
+  position: absolute;
+  width: 92vw;
+  height: 78vh;
+  background: radial-gradient(closest-side, var(--c), transparent 72%);
+  transform: translate3d(var(--tx, 0), var(--ty, 0), 0);
+  will-change: transform, opacity;
+}
+
+/* Cool group — strongest at the top of the document. */
+.bloom--a {
+  --c: color-mix(in srgb, var(--nocturnal) 62%, transparent);
+  top: -26vh;
+  right: -18vw;
+  --ty: calc(var(--sp, 0) * -16vh);
+  opacity: calc(0.92 - var(--sp, 0) * 0.5);
+}
+
+.bloom--b {
+  --c: color-mix(in srgb, var(--midnight) 78%, transparent);
+  bottom: -30vh;
+  left: -20vw;
+  --ty: calc(var(--sp, 0) * -12vh);
+  opacity: calc(0.85 - var(--sp, 0) * 0.35);
+}
+
+/* Warm group — takes over as you move down. */
+.bloom--c {
+  --c: color-mix(in srgb, var(--saffron) 27%, transparent);
+  top: 22vh;
+  left: -26vw;
+  --ty: calc(24vh - var(--sp, 0) * 58vh);
+  opacity: calc(0.25 + var(--sp, 0) * 0.6);
+}
+
+.bloom--d {
+  --c: color-mix(in srgb, var(--garnet) 46%, transparent);
+  bottom: -22vh;
+  right: -22vw;
+  --ty: calc(30vh - var(--sp, 0) * 52vh);
+  opacity: calc(0.18 + var(--sp, 0) * 0.52);
+}
+
+/* A steady deep base so the blooms never expose flat black between them. */
+.bloom--e {
+  --c: color-mix(in srgb, var(--oceanic) 62%, transparent);
+  top: -10vh;
+  left: 12vw;
+  width: 120vw;
+  height: 110vh;
+  --ty: calc(var(--sp, 0) * -22vh);
+  opacity: 0.55;
 }
 
 .shell {

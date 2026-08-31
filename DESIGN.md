@@ -72,11 +72,20 @@ B612 and B612 Mono for reading and figures, drawn for cockpit displays.
 
 ## Colour
 
-**One field for the whole document**, not one per section. Sections used to each
-paint their own radial wash, which drew a hard rectangle around every one of them
-and made the page read as a stack of separate cages. There is now a single
-`.field` behind everything: a slow vertical gradient through deep, desaturated
-tones with a few very large, very weak radial accents.
+**One field, fixed to the viewport.** Sections used to each paint their own
+radial wash, which drew a hard rectangle around every one of them. Replacing that
+with a single absolutely-positioned field only moved the problem: an absolutely
+positioned element with no positioned ancestor is sized by the *initial
+containing block*, so it ended after exactly one screen and left a hard seam
+across the document — one that moved as you zoomed, because the viewport height
+in CSS pixels moves too.
+
+The field is now `position: fixed`, so it always covers the viewport and can
+never band at a boundary. Colour comes from five very large, very soft blooms
+inside it. They drift and cross-fade against scroll progress (`--sp`, written to
+the root from JS), carrying the page from cool at the top to warm further down.
+That drift *is* the transition between sections — one continuous surface changing
+under continuous content.
 
 It is deliberately restrained — mixes in the 5–22% range. At that strength colour
 registers as depth rather than as decoration, which is the difference between

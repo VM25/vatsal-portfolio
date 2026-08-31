@@ -27,7 +27,7 @@ export function Research() {
 
         <div className="grid gap-8 lg:grid-cols-12">
           <R d={2} className="min-w-0 lg:col-span-7">
-            <div className="card card--lit card--ticked h-full p-6 sm:p-8">
+            <div data-drift className="card card--lit card--ticked h-full p-6 sm:p-8">
               <p className="lede !max-w-[34ch] !text-creamy">{paper.premise}</p>
               <h3 className="h2 mt-8 text-[clamp(1.3rem,2.2vw,1.8rem)]">{paper.title}</h3>
               <p className="num mt-2 text-[0.7rem] uppercase tracking-[0.16em] text-aqua">

@@ -116,7 +116,7 @@ export function Background() {
           <div className="flex min-w-0 flex-col gap-4 lg:col-span-5 lg:col-start-8">
             {study.map((s, i) => (
               <R key={s.id} d={i + 1}>
-                <div className="card card--lit p-4">
+                <div data-drift className="card card--lit p-4">
                   <div className="flex items-baseline justify-between gap-4">
                     <h3 className="h3 text-[1rem]">{s.school}</h3>
                     <span className="num shrink-0 text-[0.68rem] text-aqua">{s.period}</span>
