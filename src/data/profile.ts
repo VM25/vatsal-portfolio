@@ -19,6 +19,14 @@ export const profile = {
     "Now I work on the measurement side of markets — what a position is worth, what it could lose, and which part of it is responsible. Seven of those systems are on this page. Two of them concluded that the clever idea did not beat the simple one, and I have left those conclusions where they are.",
   ],
 
+  /** The route actually taken. Drives the second chapter. */
+  route: [
+    { place: "Mumbai", note: "Where it starts" },
+    { place: "Arizona", note: "Computer science" },
+    { place: "New Jersey", note: "Financial engineering" },
+    { place: "New York", note: "Where it points" },
+  ],
+
   status: "Looking for a quantitative role — Fall 2026 internship, full-time 2027.",
   availability: "Available Fall 2026",
   interests: ["Trading", "Research", "Derivatives", "Risk"],

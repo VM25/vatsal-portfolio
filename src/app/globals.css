@@ -1,102 +1,69 @@
 @import "tailwindcss";
 
 /*
-  Dark, type-led, near-black and vermillion.
-
-  Palette roles below are a straight mapping of the fixed brand colours onto
-  semantic tokens. Nothing outside this list is introduced anywhere in the app.
+  A journey, not a page. The world sits on a fixed canvas behind everything;
+  type and panels travel over it. Surfaces are translucent so the world stays
+  visible through them, and every brand colour has a job somewhere on the route.
 */
 
 :root {
-  /* --- ground ------------------------------------------------------------ */
-  --onyx: #020202;
+  /* blacks */
   --noir: #1b1716;
   --carbon: #171717;
+  --onyx: #020202;
   --raspberry: #14130a;
-
-  /* --- light -------------------------------------------------------------- */
+  /* whites */
   --praxeti: #f6f7ed;
   --snow: #ececdc;
+  --creamy: #ffecc3;
   --arctic: #f1f6f4;
-
-  /* --- cool --------------------------------------------------------------- */
+  /* blues */
   --aqua: #a0c9cb;
   --blue: #004e72;
-  --navy: #092363;
+  --navy: #092634;
   --midnight: #001f3f;
   --nocturnal: #114c5a;
   --oceanic: #172b36;
-
-  /* --- warm --------------------------------------------------------------- */
+  /* oranges */
   --saffron: #ff9932;
   --toxic: #ff6037;
   --garnet: #733635;
   --kite: #351e1c;
 
-  /* --- semantic ----------------------------------------------------------- */
-  --bg: var(--onyx);
-  --bg-raised: var(--noir);
-  --bg-sunken: #000;
+  /* Per-chapter accent, set from the chapter as you travel. */
+  --here: var(--saffron);
 
-  --fg: var(--praxeti);
-  --fg-2: color-mix(in srgb, var(--snow) 68%, var(--onyx));
-  /*
-    Both cool tiers are solved against the ground rather than eyeballed:
-    fg-3 reads 5.3:1 and fg-4 reads 4.7:1 on the base black, so dates, years and
-    locations stay above AA instead of dissolving into it.
-  */
-  --fg-3: color-mix(in srgb, var(--aqua) 72%, var(--onyx));
-  --fg-4: color-mix(in srgb, var(--aqua) 62%, var(--onyx));
-
-  /* one accent, per the style rule — everything else is ground or type */
-  --accent: var(--saffron);
-  --accent-2: var(--toxic);
-  --accent-dim: color-mix(in srgb, var(--saffron) 26%, var(--onyx));
-
-  --edge: color-mix(in srgb, var(--nocturnal) 42%, var(--onyx));
-  --edge-2: color-mix(in srgb, var(--nocturnal) 78%, var(--onyx));
-  --edge-warm: color-mix(in srgb, var(--kite) 88%, var(--onyx));
-
-  /* --- motion ------------------------------------------------------------- */
-  /* Production curve: strong deceleration, no overshoot. Never a bare ease. */
-  --out: cubic-bezier(0.22, 1, 0.36, 1);
-  --inout: cubic-bezier(0.65, 0, 0.35, 1);
-  --enter: 420ms;
-  --exit: 260ms;
-  --hover: 180ms;
-
-  /* --- metrics ------------------------------------------------------------ */
-  --gutter: clamp(1.25rem, 4.5vw, 4.5rem);
-  --shell: 84rem;
-  --bar: 4rem;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --gutter: clamp(1.25rem, 5vw, 5rem);
 
   color-scheme: dark;
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-bg-raised: var(--bg-raised);
-  --color-bg-sunken: var(--bg-sunken);
-  --color-fg: var(--fg);
-  --color-fg-2: var(--fg-2);
-  --color-fg-3: var(--fg-3);
-  --color-fg-4: var(--fg-4);
-  --color-accent: var(--accent);
-  --color-accent-2: var(--accent-2);
-  --color-accent-dim: var(--accent-dim);
-  --color-edge: var(--edge);
-  --color-edge-2: var(--edge-2);
-  --color-edge-warm: var(--edge-warm);
+  --color-noir: var(--noir);
+  --color-carbon: var(--carbon);
+  --color-onyx: var(--onyx);
+  --color-raspberry: var(--raspberry);
+  --color-praxeti: var(--praxeti);
+  --color-snow: var(--snow);
+  --color-creamy: var(--creamy);
+  --color-arctic: var(--arctic);
   --color-aqua: var(--aqua);
+  --color-blue: var(--blue);
+  --color-navy: var(--navy);
+  --color-midnight: var(--midnight);
+  --color-nocturnal: var(--nocturnal);
   --color-oceanic: var(--oceanic);
+  --color-saffron: var(--saffron);
+  --color-toxic: var(--toxic);
+  --color-garnet: var(--garnet);
   --color-kite: var(--kite);
+  --color-here: var(--here);
 
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
-  --font-quote: var(--font-quote), Georgia, serif;
+  --font-display: var(--font-display), "Haettenschweiler", Impact, sans-serif;
+  --font-body: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
 }
-
-/* ------------------------------------------------------------------ base -- */
 
 *,
 *::before,
@@ -106,30 +73,27 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--bar) + 2rem);
-  background: var(--bg);
+  background: var(--onyx);
   overflow-x: clip;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg-2);
-  font-family: var(--font-sans);
+  background: var(--onyx);
+  color: var(--snow);
+  font-family: var(--font-body);
   font-size: 1rem;
-  line-height: 1.6;
-  font-synthesis-weight: none;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: var(--accent);
+  background: var(--saffron);
   color: var(--onyx);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--saffron);
   outline-offset: 3px;
 }
 
@@ -147,393 +111,260 @@ button {
   cursor: pointer;
 }
 
-/* No rounded anything. Square by decision, everywhere. */
-* {
-  border-radius: 0;
-}
-
-.shell {
-  width: 100%;
-  max-width: var(--shell);
-  margin-inline: auto;
-  padding-inline: var(--gutter);
-}
-
 /* ------------------------------------------------------------------ type -- */
-/*
-  Scale: 12 label · 16 body · 22 sub · 32 section · 40 h2 · 56 h1 · 72+ hero.
-  Hero-to-body ratio is held at 5:1 or greater. Tight tracking on the large
-  end only — body text keeps its default spacing.
-*/
 
-.hero-type {
-  font-family: var(--font-sans);
+.mega {
+  font-family: var(--font-display);
   font-weight: 800;
-  /* Floor raised so the hero still dominates on a 375px screen — the type
-     scale wants the name at roughly 5x the body size at every width. */
-  font-size: clamp(4.5rem, 13vw, 10.5rem);
-  line-height: 0.86;
-  letter-spacing: -0.05em;
-  color: var(--fg);
-  margin: 0;
-  text-wrap: balance;
-}
-
-.h1 {
-  font-weight: 700;
-  font-size: clamp(2.25rem, 5.5vw, 3.5rem);
-  line-height: 1;
-  letter-spacing: -0.035em;
-  color: var(--fg);
-  margin: 0;
-  text-wrap: balance;
-}
-
-.h2 {
-  font-weight: 700;
-  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
-  line-height: 1.04;
-  letter-spacing: -0.028em;
-  color: var(--fg);
-  margin: 0;
-}
-
-.h3 {
-  font-weight: 650;
-  font-size: clamp(1.25rem, 1.9vw, 1.5rem);
-  line-height: 1.15;
-  letter-spacing: -0.018em;
-  color: var(--fg);
-  margin: 0;
-}
-
-.sub {
-  font-size: clamp(1.0625rem, 1.5vw, 1.375rem);
-  line-height: 1.5;
-  color: var(--fg-2);
-  margin: 0;
-  max-width: 46ch;
-}
-
-.body {
-  font-size: 1rem;
-  line-height: 1.68;
-  color: var(--fg-2);
-  max-width: 68ch;
-}
-
-.label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-size: clamp(3.5rem, 13vw, 13rem);
+  line-height: 0.8;
+  letter-spacing: 0.005em;
   text-transform: uppercase;
-  color: var(--fg-3);
-}
-
-.num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-/* Serif italic is reserved for one thing: a pull quote. Nowhere else. */
-.quote {
-  font-family: var(--font-quote);
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(1.6rem, 3.6vw, 2.75rem);
-  line-height: 1.18;
-  letter-spacing: -0.02em;
-  color: var(--fg);
+  color: var(--praxeti);
   margin: 0;
-  text-wrap: balance;
 }
 
-.quote em {
-  font-style: italic;
-  color: var(--accent);
+.chapter-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3.25rem, 11vw, 9rem);
+  line-height: 0.82;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--praxeti);
+  margin: 0;
 }
 
-/* --------------------------------------------------------------- section -- */
-
-.section {
-  padding-block: clamp(5rem, 11vw, 10rem);
-  border-top: 1px solid var(--edge);
+.sub-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--creamy);
+  margin: 0;
 }
 
-.rule {
-  height: 1px;
-  width: 100%;
-  background: var(--edge);
+.readout {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--aqua);
 }
 
-/* ------------------------------------------------------------ disclosure -- */
+.prose {
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--snow);
+  max-width: 54ch;
+  text-shadow: 0 1px 14px rgba(2, 2, 2, 0.85);
+}
+
+.lede {
+  font-size: clamp(1.125rem, 1.7vw, 1.4rem);
+  line-height: 1.5;
+  color: var(--praxeti);
+  max-width: 42ch;
+  text-shadow: 0 1px 16px rgba(2, 2, 2, 0.9);
+}
+
+.figure-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--creamy);
+}
+
+/* ---------------------------------------------------------------- panels -- */
 /*
-  Click-to-open rows. The panel animates via grid-template-rows 0fr → 1fr,
-  which is the only way to reveal an unknown content height without hard-coding
-  it; the inner content carries the actual enter motion (fade, lift, unblur) so
-  the movement the eye follows is on transform and filter, not on layout.
+  Panels are glass over the world, not opaque cards — the journey has to stay
+  visible behind the reading. Square corners throughout.
 */
 
-.row {
-  border-bottom: 1px solid var(--edge);
+.panel {
+  background: color-mix(in srgb, var(--onyx) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nocturnal) 70%, transparent);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
 }
 
-.row__head {
-  display: grid;
-  width: 100%;
-  text-align: left;
-  align-items: baseline;
-  gap: 0.35rem 1.5rem;
-  padding-block: clamp(1.35rem, 2.4vw, 2rem);
-  transition: opacity var(--hover) var(--out);
+.panel--warm {
+  background: color-mix(in srgb, var(--kite) 60%, transparent);
+  border-color: color-mix(in srgb, var(--garnet) 75%, transparent);
 }
 
-@media (min-width: 900px) {
-  .row__head {
-    grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 0.9fr) 2.5rem;
-  }
+.panel--deep {
+  background: color-mix(in srgb, var(--midnight) 62%, transparent);
+  border-color: color-mix(in srgb, var(--blue) 70%, transparent);
 }
 
-.row__head:hover .row__title,
-.row__head:focus-visible .row__title {
-  color: var(--accent);
+.panel--slate {
+  background: color-mix(in srgb, var(--oceanic) 66%, transparent);
+  border-color: color-mix(in srgb, var(--nocturnal) 80%, transparent);
 }
 
-.row__title {
-  transition: color var(--hover) var(--out);
+.panel--ink {
+  background: color-mix(in srgb, var(--navy) 70%, transparent);
+  border-color: color-mix(in srgb, var(--blue) 65%, transparent);
 }
 
-/* The open/close affordance: a plus that becomes a minus. */
-.sign {
-  position: relative;
-  width: 15px;
-  height: 15px;
-  justify-self: start;
-  flex: none;
+.panel--dark {
+  background: color-mix(in srgb, var(--carbon) 76%, transparent);
+  border-color: color-mix(in srgb, var(--noir) 90%, transparent);
 }
 
-@media (min-width: 900px) {
-  .sign {
-    justify-self: end;
-  }
-}
+/* ----------------------------------------------------------------- chips -- */
 
-.sign::before,
-.sign::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  background: var(--accent);
-  transition: transform var(--exit) var(--out);
-}
-
-.sign::before {
-  width: 15px;
-  height: 1.5px;
-}
-
-.sign::after {
-  width: 1.5px;
-  height: 15px;
-}
-
-[aria-expanded="true"] .sign::after {
-  transform: scaleY(0);
-}
-
-.row__panel {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows var(--exit) var(--inout);
-}
-
-.row__panel[data-open="true"] {
-  grid-template-rows: 1fr;
-  transition-duration: var(--enter);
-}
-
-.row__panel > div {
-  overflow: hidden;
-}
-
-.row__inner {
-  opacity: 0;
-  transform: translateY(8px);
-  filter: blur(4px);
-  transition:
-    opacity var(--exit) var(--out),
-    transform var(--exit) var(--out),
-    filter var(--exit) var(--out);
-  padding-bottom: clamp(1.75rem, 3vw, 2.75rem);
-}
-
-.row__panel[data-open="true"] .row__inner {
-  opacity: 1;
-  transform: none;
-  filter: blur(0);
-  transition-duration: var(--enter);
-  transition-delay: 90ms;
+.chip {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--arctic);
+  border: 1px solid color-mix(in srgb, var(--nocturnal) 80%, transparent);
+  background: color-mix(in srgb, var(--onyx) 55%, transparent);
 }
 
 /* ---------------------------------------------------------------- action -- */
 
-.action {
+.go {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1.4rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  background: var(--accent);
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.75rem 1.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--saffron);
   color: var(--onyx);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--saffron);
   transition:
-    background var(--hover) var(--out),
-    border-color var(--hover) var(--out),
-    color var(--hover) var(--out),
-    transform var(--hover) var(--out);
+    background 0.25s var(--ease),
+    border-color 0.25s var(--ease),
+    color 0.25s var(--ease),
+    transform 0.25s var(--ease);
 }
 
-.action:hover,
-.action:focus-visible {
-  background: var(--accent-2);
-  border-color: var(--accent-2);
+.go:hover,
+.go:focus-visible {
+  background: var(--toxic);
+  border-color: var(--toxic);
 }
 
-.action:active {
+.go:active {
   transform: scale(0.98);
 }
 
-.action--quiet {
+.go--ghost {
   background: transparent;
-  color: var(--fg);
-  border-color: var(--edge-2);
+  color: var(--creamy);
+  border-color: color-mix(in srgb, var(--saffron) 60%, transparent);
 }
 
-.action--quiet:hover,
-.action--quiet:focus-visible {
+.go--ghost:hover,
+.go--ghost:focus-visible {
   background: transparent;
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--saffron);
+  color: var(--saffron);
 }
 
 /* ------------------------------------------------------------------ link -- */
 
-.link {
+.tie {
   position: relative;
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  color: var(--fg);
-  font-weight: 500;
-}
-
-/*
-  A standalone link is a tap target, not a word in a sentence, so it carries a
-  full-height hit area. The underline still sits on the text.
-*/
-.link--tap {
   align-items: center;
+  gap: 0.4rem;
   min-height: 44px;
+  color: var(--creamy);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
 }
 
-.link::after {
+.tie::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -3px;
+  bottom: 10px;
   height: 1px;
-  background: var(--accent);
+  background: var(--saffron);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--enter) var(--out);
+  transition: transform 0.4s var(--ease);
 }
 
-.link:hover::after,
-.link:focus-visible::after {
+.tie:hover::after,
+.tie:focus-visible::after {
   transform: scaleX(1);
 }
 
-.link:hover,
-.link:focus-visible {
-  color: var(--accent);
+.tie:hover,
+.tie:focus-visible {
+  color: var(--saffron);
 }
 
-/* ------------------------------------------------------------------ tag --- */
+/* ------------------------------------------------------------------ hud --- */
 
-.tag {
-  display: inline-block;
-  padding: 0.28rem 0.65rem;
+.hud {
+  position: fixed;
+  z-index: 40;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.06em;
-  color: var(--fg-3);
-  border: 1px solid var(--edge);
-  background: var(--bg-raised);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--aqua);
+  pointer-events: none;
 }
 
-/* ---------------------------------------------------------------- reveal -- */
-/*
-  Enter recipe: opacity + 10px lift + 4px blur, materialising rather than
-  fading. One shared observer flips `.in`; nothing runs per-frame.
-*/
-
-[data-r] {
-  opacity: 0;
-  transform: translateY(10px);
-  filter: blur(4px);
-  transition:
-    opacity var(--enter) var(--out),
-    transform var(--enter) var(--out),
-    filter var(--enter) var(--out);
-  transition-delay: calc(var(--d, 0) * 70ms);
+.hud-bar {
+  height: 2px;
+  background: color-mix(in srgb, var(--nocturnal) 70%, transparent);
+  overflow: hidden;
 }
 
-[data-r].in {
-  opacity: 1;
-  transform: none;
-  filter: blur(0);
+.hud-bar span {
+  display: block;
+  height: 100%;
+  background: var(--here);
+  transform-origin: left;
+  transition: transform 120ms linear;
 }
 
-/* ------------------------------------------------------------------ misc -- */
+/* ---------------------------------------------------------------- layout -- */
 
-.marquee-edge {
-  background: var(--bg-raised);
-  border: 1px solid var(--edge);
+.chapter {
+  position: relative;
+  z-index: 10;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding-block: clamp(5rem, 12vh, 9rem);
 }
 
-.stat {
-  border-top: 1px solid var(--edge-2);
-  padding-top: 0.85rem;
+.wrap {
+  width: 100%;
+  max-width: 82rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
 }
 
 /* ------------------------------------------------------- reduced motion --- */
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  [data-r] {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-  .row__inner {
-    opacity: 1;
-    transform: none;
-    filter: none;
   }
 }
