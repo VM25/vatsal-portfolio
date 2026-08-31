@@ -27,7 +27,7 @@ export function Experience() {
             <p className="tag">04 — Experience</p>
           </R>
           <R d={1}>
-            <h2 className="h1">Previously</h2>
+            <h2 className="h1">Roles</h2>
           </R>
         </div>
 

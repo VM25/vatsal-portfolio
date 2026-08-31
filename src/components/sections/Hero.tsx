@@ -28,27 +28,14 @@ export function Hero() {
   return (
     <header
       id="top"
-      className="relative overflow-hidden pt-[calc(var(--bar)+clamp(3rem,8vw,6rem))]"
+      className="relative pt-[calc(var(--bar)+clamp(2rem,5vw,3.75rem))]"
     >
-      {/*
-        Two soft fields of colour behind the masthead — saffron low and left,
-        a cool one high and right. They are what keep the opening from reading
-        as a flat black rectangle.
-      */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(48rem 32rem at 6% 86%, color-mix(in srgb, var(--saffron) 22%, transparent), transparent 66%), radial-gradient(42rem 30rem at 88% 4%, color-mix(in srgb, var(--nocturnal) 78%, transparent), transparent 68%), radial-gradient(30rem 24rem at 62% 60%, color-mix(in srgb, var(--midnight) 85%, transparent), transparent 72%)",
-        }}
-      />
       <div className="shell">
         <R>
           <p className="tag">{profile.location}</p>
         </R>
 
-        <div className="mt-7 grid items-end gap-10 lg:grid-cols-12">
+        <div className="mt-5 grid items-end gap-8 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-8">
             <R d={1}>
               <h1 className="mega">
@@ -58,10 +45,10 @@ export function Hero() {
               </h1>
             </R>
             <R d={3}>
-              <p className="lede mt-8">{profile.standfirst}</p>
+              <p className="lede mt-6">{profile.standfirst}</p>
             </R>
             <R d={4}>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 <a href="#projects" className="btn">
                   See the projects
                 </a>
@@ -98,7 +85,7 @@ export function Hero() {
         </div>
       </div>
 
-      <R d={5} className="mt-14">
+      <R d={5} className="mt-10">
         <div className="ticker">
           <div className="ticker__track">
             {[0, 1].map((copy) => (

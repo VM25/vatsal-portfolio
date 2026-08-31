@@ -2,6 +2,7 @@
 
 import { profile, links } from "@/data/profile";
 import { R } from "@/components/ui/Bits";
+import { ContactForm } from "@/components/ui/ContactForm";
 
 const CHANNELS = [
   { k: "Email", v: profile.email, href: links.email, out: false },
@@ -25,23 +26,22 @@ export function Contact() {
       <div className="shell">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-7">
-            <R>
-              <p className="tag">05 — Contact</p>
-            </R>
-            <R d={1}>
-              <h2 className="mega mt-4 !text-[clamp(3rem,10vw,8rem)]">Let&rsquo;s talk</h2>
-            </R>
-            <R d={2}>
-              <p className="lede mt-6">{profile.status}</p>
-            </R>
+            <div className="sec-head !mb-0">
+              <R>
+                <p className="tag">05 — Contact</p>
+              </R>
+              <R d={1}>
+                <h2 className="mega !text-[clamp(2.5rem,6.5vw,5rem)]">
+                  Let&rsquo;s talk
+                </h2>
+              </R>
+              <R d={2}>
+                <p className="lede">{profile.status}</p>
+              </R>
+            </div>
             <R d={3}>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <a href={links.email} className="btn">
-                  Email me
-                </a>
-                <a href={links.resume} target="_blank" rel="noreferrer noopener" className="btn btn--ghost">
-                  Résumé
-                </a>
+              <div className="mt-8">
+                <ContactForm />
               </div>
             </R>
           </div>
@@ -67,6 +67,14 @@ export function Contact() {
                 </li>
               ))}
             </ul>
+            <a
+              href={links.resume}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="btn btn--ghost mt-6"
+            >
+              Résumé
+            </a>
             <p className="num mt-8 text-[0.7rem] uppercase tracking-[0.14em] text-aqua">
               © 2026 · {profile.location}
             </p>

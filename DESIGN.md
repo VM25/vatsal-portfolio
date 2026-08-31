@@ -15,6 +15,9 @@ carry the site, so they come first.
 
 hero → **projects** → **research** → background → experience → contact
 
+Contact carries a Web3Forms form. The access key is a public per-form identifier
+designed to sit in client-side code — it cannot read anything back.
+
 ## The projects section
 
 The centre of the site, and built on the structure that worked before: a rail of
@@ -69,13 +72,29 @@ B612 and B612 Mono for reading and figures, drawn for cockpit displays.
 
 ## Colour
 
-The page is dark but not black. Every section carries its own accent, and the
-header of each sits in a soft radial wash of it; the hero has two colour fields
-of its own. In the projects section the wash follows whichever project is
-selected. Garnet is muddy at full strength and appears only as a 26% hint in one
-accent.
+**One field for the whole document**, not one per section. Sections used to each
+paint their own radial wash, which drew a hard rectangle around every one of them
+and made the page read as a stack of separate cages. There is now a single
+`.field` behind everything: a slow vertical gradient through deep, desaturated
+tones with a few very large, very weak radial accents.
+
+It is deliberately restrained — mixes in the 5–22% range. At that strength colour
+registers as depth rather than as decoration, which is the difference between
+looking considered and looking like a theme. Saturated glows read as a game.
+
+Accent colour is reserved for things that *mean* something: the selected project,
+a card under the pointer, a button, a finding. Garnet appears only as a 26% hint
+in one accent.
+
+No background grid, no pattern, no texture overlay.
 
 The portrait is the photograph as taken — no duotone, no screen, no filter.
+
+## Scale
+
+Sized so every section fits a real 1440×900 window at 100% zoom. The earlier
+scale had been tuned by eye at a zoomed-out viewport and was roughly 20% too
+large everywhere. Measured section heights now run 725–896px.
 
 ## Traps worth remembering
 

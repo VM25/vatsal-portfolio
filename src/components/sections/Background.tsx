@@ -61,7 +61,7 @@ export function Background() {
             <p className="tag">03 — Background</p>
           </R>
           <R d={1}>
-            <h2 className="h1">The short version</h2>
+            <h2 className="h1">Computer science, then markets</h2>
           </R>
         </div>
 
@@ -77,7 +77,7 @@ export function Background() {
                   "linear-gradient(to right, var(--aqua), var(--saffron))",
               }}
             />
-            <ol className="grid gap-8 sm:grid-cols-3 sm:gap-0">
+            <ol className="grid gap-6 sm:grid-cols-3 sm:gap-0">
               {profile.route.map((r, i) => (
                 <li key={r.place} className="relative sm:pr-8">
                   <span
@@ -89,7 +89,7 @@ export function Background() {
                           : "var(--aqua)",
                     }}
                   />
-                  <div className="pt-5">
+                  <div className="pt-4">
                     <p className="num text-[0.62rem] uppercase tracking-[0.18em] text-aqua">
                       0{i + 1}
                     </p>
@@ -104,7 +104,7 @@ export function Background() {
           </div>
         </R>
 
-        <div className="mt-14 grid gap-10 lg:grid-cols-12">
+        <div className="mt-10 grid gap-8 lg:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-5 lg:col-span-6">
             {profile.about.map((para, i) => (
               <R key={i} d={i}>
@@ -116,14 +116,14 @@ export function Background() {
           <div className="flex min-w-0 flex-col gap-4 lg:col-span-5 lg:col-start-8">
             {study.map((s, i) => (
               <R key={s.id} d={i + 1}>
-                <div className="card card--lit p-5">
+                <div className="card card--lit p-4">
                   <div className="flex items-baseline justify-between gap-4">
                     <h3 className="h3 text-[1rem]">{s.school}</h3>
                     <span className="num shrink-0 text-[0.68rem] text-aqua">{s.period}</span>
                   </div>
                   <p className="mt-2 text-[0.9375rem] text-praxeti">{s.degree}</p>
                   <p className="num mt-1 text-[0.75rem] text-aqua">{s.detail}</p>
-                  <ul className="mt-4 flex flex-wrap gap-1.5">
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
                     {s.courses.map((c) => (
                       <li key={c} className="chip">
                         {c}

@@ -36,9 +36,9 @@
   --accent: var(--saffron);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --gutter: clamp(1.25rem, 4.5vw, 4.5rem);
-  --shell: 88rem;
-  --bar: 3.5rem;
+  --gutter: clamp(1.15rem, 3.6vw, 3.25rem);
+  --shell: 78rem;
+  --bar: 3.25rem;
 
   color-scheme: dark;
 }
@@ -115,48 +115,6 @@
   }
 }
 
-/*
-  Engineering paper. A fine grid plus a wider one, both very low contrast —
-  it reads as drafting stock rather than as a visible pattern, and it is what
-  keeps large dark areas from going dead.
-*/
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(
-      to right,
-      color-mix(in srgb, var(--nocturnal) 26%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--nocturnal) 26%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to right,
-      color-mix(in srgb, var(--nocturnal) 12%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--nocturnal) 12%, transparent) 1px,
-      transparent 1px
-    );
-  background-size:
-    120px 120px,
-    120px 120px,
-    24px 24px,
-    24px 24px;
-  mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
-  opacity: 0.55;
-}
-
 ::selection {
   background: var(--saffron);
   color: var(--onyx);
@@ -172,7 +130,7 @@ body::before {
 .mega {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(4rem, 15vw, 15rem);
+  font-size: clamp(2.9rem, 9.4vw, 8.5rem);
   /* Big Shoulders has unusually tall caps — anything under ~0.9 makes stacked
      lines collide. */
   line-height: 0.95;
@@ -185,8 +143,8 @@ body::before {
 .h1 {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(2.5rem, 6vw, 4.75rem);
-  line-height: 0.98;
+  font-size: clamp(1.9rem, 3.9vw, 3rem);
+  line-height: 1;
   letter-spacing: 0.008em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -196,8 +154,8 @@ body::before {
 .h2 {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
-  line-height: 1.02;
+  font-size: clamp(1.2rem, 1.9vw, 1.55rem);
+  line-height: 1.06;
   letter-spacing: 0.015em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -207,8 +165,8 @@ body::before {
 .h3 {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
-  line-height: 1.1;
+  font-size: clamp(0.98rem, 1.3vw, 1.15rem);
+  line-height: 1.12;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -217,21 +175,21 @@ body::before {
 
 .tag {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.18em;
+  font-size: 0.66rem;
+  letter-spacing: 0.17em;
   text-transform: uppercase;
   color: var(--aqua);
 }
 
 .prose {
-  font-size: 1rem;
-  line-height: 1.72;
+  font-size: 0.9375rem;
+  line-height: 1.68;
   color: var(--snow);
-  max-width: 62ch;
+  max-width: 60ch;
 }
 
 .lede {
-  font-size: clamp(1.0625rem, 1.5vw, 1.3rem);
+  font-size: clamp(0.98rem, 1.15vw, 1.1rem);
   line-height: 1.55;
   color: var(--praxeti);
   max-width: 48ch;
@@ -245,6 +203,50 @@ body::before {
 
 /* ----------------------------------------------------------------- shell -- */
 
+/*
+  A single field behind the entire document — not one per section. Sections were
+  each painting their own radial wash, which drew a hard rectangle around every
+  one of them and made the page read as a stack of separate cages.
+
+  This is one very slow vertical gradient through deep, desaturated tones. It is
+  deliberately weak: at these mixes it registers as depth rather than as colour,
+  which is the difference between looking expensive and looking like a theme.
+*/
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120rem 60rem at 78% 4%,
+      color-mix(in srgb, var(--nocturnal) 22%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      90rem 50rem at 4% 34%,
+      color-mix(in srgb, var(--saffron) 5%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      100rem 55rem at 92% 62%,
+      color-mix(in srgb, var(--midnight) 40%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      90rem 50rem at 10% 88%,
+      color-mix(in srgb, var(--oceanic) 46%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--onyx) 0%,
+      color-mix(in srgb, var(--oceanic) 16%, var(--onyx)) 30%,
+      color-mix(in srgb, var(--midnight) 14%, var(--onyx)) 62%,
+      var(--onyx) 100%
+    );
+}
+
 .shell {
   position: relative;
   z-index: 1;
@@ -256,7 +258,7 @@ body::before {
 
 .section {
   position: relative;
-  padding-block: clamp(5rem, 11vw, 9rem);
+  padding-block: clamp(3.25rem, 5.6vw, 5rem);
 }
 
 /*
@@ -265,33 +267,8 @@ body::before {
 */
 .sec-head {
   display: grid;
-  gap: 1rem;
-  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
-}
-
-/*
-  A wash of the section's accent behind the header. This is most of what stops
-  the page reading as flat black.
-*/
-.section::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 32rem;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(
-      64rem 28rem at 10% 2%,
-      color-mix(in srgb, var(--accent) 20%, transparent),
-      transparent 66%
-    ),
-    radial-gradient(
-      44rem 24rem at 92% 14%,
-      color-mix(in srgb, var(--nocturnal) 55%, transparent),
-      transparent 70%
-    );
+  gap: 0.7rem;
+  margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
 }
 
 .section > * {
@@ -370,7 +347,7 @@ body::before {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.95rem 1rem 0.95rem 1.2rem;
+  padding: 0.72rem 0.85rem 0.72rem 1rem;
   border: 1px solid transparent;
   border-bottom-color: color-mix(in srgb, var(--nocturnal) 45%, transparent);
   transition:
@@ -418,7 +395,7 @@ body::before {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
   line-height: 1;
   color: var(--accent);
 }
@@ -449,10 +426,11 @@ body::before {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  /* 44px stays, whatever the type scale does around it. */
   min-height: 44px;
-  padding: 0.7rem 1.2rem;
+  padding: 0.6rem 1.05rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -480,6 +458,39 @@ body::before {
 .btn--ghost:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   filter: none;
+}
+
+/* ---------------------------------------------------------------- input -- */
+
+.input {
+  display: block;
+  width: 100%;
+  /* 16px exactly: anything smaller and iOS zooms the page on focus. */
+  font-size: 16px;
+  font-family: var(--font-body);
+  color: var(--praxeti);
+  background: color-mix(in srgb, var(--onyx) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nocturnal) 55%, transparent);
+  padding: 0.65rem 0.8rem;
+  min-height: 44px;
+  transition:
+    border-color 0.25s var(--ease),
+    background 0.25s var(--ease);
+}
+
+.input::placeholder {
+  color: color-mix(in srgb, var(--aqua) 62%, var(--onyx));
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--onyx) 30%, transparent);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* ----------------------------------------------------------------- link -- */

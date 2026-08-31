@@ -88,7 +88,7 @@ export function Projects() {
             className="min-w-0 lg:col-span-8"
             style={{ ["--accent"]: accent } as React.CSSProperties}
           >
-            <div className="card card--lit card--ticked min-h-[38rem] p-5 sm:p-7">
+            <div className="card card--lit card--ticked min-h-[30rem] p-4 sm:p-6">
               {/*
                 Keyed on the project, with no exit animation. `mode="wait"` would
                 hold the old panel until its exit finished — and if that stall
@@ -107,7 +107,7 @@ export function Projects() {
                       <p className="num text-[0.66rem] uppercase tracking-[0.18em] text-accent">
                         {p.field} · {p.year}
                       </p>
-                      <h3 className="h2 mt-2">{p.title}</h3>
+                      <h3 className="h2 mt-1.5">{p.title}</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {p.live ? (
@@ -123,7 +123,7 @@ export function Projects() {
                     </div>
                   </div>
 
-                  <div className="mt-7 grid gap-7 lg:grid-cols-2">
+                  <div className="mt-5 grid gap-6 lg:grid-cols-2">
                     <div className="panel min-w-0 p-3">
                       <Panel />
                     </div>
@@ -131,7 +131,7 @@ export function Projects() {
                     <div className="min-w-0">
                       <p className="prose text-[0.95rem]">{p.detail}</p>
 
-                      <div className="mt-6 grid grid-cols-3 gap-4">
+                      <div className="mt-5 grid grid-cols-3 gap-4">
                         {p.figures.map((f) => (
                           <div key={f.label} className="stat">
                             <div className="stat__v">
@@ -145,7 +145,7 @@ export function Projects() {
                   </div>
 
                   <div
-                    className="mt-7 border-l-2 pl-5"
+                    className="mt-5 border-l-2 pl-5"
                     style={{ borderColor: "var(--accent)" }}
                   >
                     <p className="num text-[0.62rem] uppercase tracking-[0.2em] text-accent">

@@ -13,6 +13,7 @@ import { Contact } from "@/components/sections/Contact";
 export default function Page() {
   return (
     <>
+      <div className="field" aria-hidden />
       <Nav />
       <a
         href="#projects"
