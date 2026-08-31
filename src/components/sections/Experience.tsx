@@ -16,16 +16,22 @@ export function Experience() {
   const reduce = useReducedMotion();
 
   return (
-    <section id="experience" className="section">
+    <section
+      id="experience"
+      className="section"
+      style={{ ["--accent"]: "color-mix(in srgb, var(--nocturnal) 45%, var(--arctic))" } as React.CSSProperties}
+    >
       <div className="shell">
-        <R>
-          <p className="tag">03 — Record</p>
-        </R>
-        <R d={1}>
-          <h2 className="h1 mt-4">Where I&rsquo;ve worked</h2>
-        </R>
+        <div className="sec-head">
+          <R>
+            <p className="tag">04 — Experience</p>
+          </R>
+          <R d={1}>
+            <h2 className="h1">Previously</h2>
+          </R>
+        </div>
 
-        <R d={2} className="mt-11">
+        <R d={2}>
           <div className="border-t border-nocturnal/50">
             {posts.map((p, i) => {
               const on = open === p.id;

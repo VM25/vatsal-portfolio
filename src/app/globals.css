@@ -27,6 +27,8 @@
   /* oranges */
   --saffron: #ff9932;
   --toxic: #ff6037;
+  /* Garnet reads muddy at full strength, so it only ever appears mixed —
+     currently as a 26% hint in one project accent. */
   --garnet: #733635;
   --kite: #351e1c;
 
@@ -169,9 +171,11 @@ body::before {
 
 .mega {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(4rem, 15vw, 15rem);
-  line-height: 0.8;
+  /* Big Shoulders has unusually tall caps — anything under ~0.9 makes stacked
+     lines collide. */
+  line-height: 0.95;
   letter-spacing: 0.004em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -180,9 +184,9 @@ body::before {
 
 .h1 {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(2.75rem, 7.5vw, 6rem);
-  line-height: 0.85;
+  font-weight: 600;
+  font-size: clamp(2.5rem, 6vw, 4.75rem);
+  line-height: 0.98;
   letter-spacing: 0.008em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -191,9 +195,9 @@ body::before {
 
 .h2 {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  line-height: 0.92;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+  line-height: 1.02;
   letter-spacing: 0.015em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -202,9 +206,9 @@ body::before {
 
 .h3 {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.15rem, 1.8vw, 1.5rem);
-  line-height: 1;
+  font-weight: 500;
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  line-height: 1.1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--praxeti);
@@ -253,6 +257,46 @@ body::before {
 .section {
   position: relative;
   padding-block: clamp(5rem, 11vw, 9rem);
+}
+
+/*
+  Header block. Parallax is applied to this wrapper, not to the heading itself —
+  drifting the heading alone slid it up underneath its own eyebrow label.
+*/
+.sec-head {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+/*
+  A wash of the section's accent behind the header. This is most of what stops
+  the page reading as flat black.
+*/
+.section::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 32rem;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      64rem 28rem at 10% 2%,
+      color-mix(in srgb, var(--accent) 20%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      44rem 24rem at 92% 14%,
+      color-mix(in srgb, var(--nocturnal) 55%, transparent),
+      transparent 70%
+    );
+}
+
+.section > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hr {

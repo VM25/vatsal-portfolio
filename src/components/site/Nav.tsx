@@ -7,10 +7,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useReveal, useLit } from "@/hooks/useReveal";
 
 const ITEMS = [
-  { id: "origin", label: "Route" },
-  { id: "work", label: "Work" },
-  { id: "experience", label: "Record" },
-  { id: "research", label: "Writing" },
+  { id: "projects", label: "Projects" },
+  { id: "research", label: "Research" },
+  { id: "background", label: "Background" },
+  { id: "experience", label: "Experience" },
   { id: "contact", label: "Contact" },
 ];
 
@@ -46,12 +46,12 @@ export function Nav() {
     const ctx = gsap.context(() => {
       // Headings drift slightly slower than the page. Small enough that it
       // reads as depth rather than as an effect.
-      gsap.utils.toArray<HTMLElement>(".h1").forEach((el) => {
+      gsap.utils.toArray<HTMLElement>(".sec-head").forEach((el) => {
         gsap.fromTo(
           el,
-          { y: 26 },
+          { y: 14 },
           {
-            y: -26,
+            y: -14,
             ease: "none",
             scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 0.7 },
           },
@@ -87,7 +87,7 @@ export function Nav() {
               href={`#${it.id}`}
               aria-current={here === it.id ? "true" : undefined}
               className={`num inline-flex min-h-[44px] items-center text-[0.7rem] uppercase tracking-[0.14em] transition-colors duration-300 ${
-                here === it.id ? "text-saffron" : "text-aqua/60 hover:text-praxeti"
+                here === it.id ? "text-saffron" : "text-aqua hover:text-praxeti"
               }`}
             >
               {it.label}

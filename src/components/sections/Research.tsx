@@ -16,14 +16,16 @@ export function Research() {
       style={{ ["--accent"]: "var(--toxic)" } as React.CSSProperties}
     >
       <div className="shell">
-        <R>
-          <p className="tag">04 — Writing</p>
-        </R>
-        <R d={1}>
-          <h2 className="h1 mt-4">The hedge that stopped working</h2>
-        </R>
+        <div className="sec-head">
+          <R>
+            <p className="tag">02 — Research</p>
+          </R>
+          <R d={1}>
+            <h2 className="h1">The hedge that stopped working</h2>
+          </R>
+        </div>
 
-        <div className="mt-11 grid gap-8 lg:grid-cols-12">
+        <div className="grid gap-8 lg:grid-cols-12">
           <R d={2} className="min-w-0 lg:col-span-7">
             <div className="card card--lit card--ticked h-full p-6 sm:p-8">
               <p className="lede !max-w-[34ch] !text-creamy">{paper.premise}</p>

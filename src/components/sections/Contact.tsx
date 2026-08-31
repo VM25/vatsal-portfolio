@@ -17,7 +17,11 @@ const CHANNELS = [
 
 export function Contact() {
   return (
-    <section id="contact" className="section pb-[clamp(4rem,8vw,7rem)]">
+    <section
+      id="contact"
+      className="section pb-[clamp(4rem,8vw,7rem)]"
+      style={{ ["--accent"]: "var(--saffron)" } as React.CSSProperties}
+    >
       <div className="shell">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-7">

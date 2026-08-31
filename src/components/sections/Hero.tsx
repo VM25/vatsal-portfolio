@@ -26,7 +26,23 @@ const TICKER = [
  */
 export function Hero() {
   return (
-    <header id="top" className="relative pt-[calc(var(--bar)+clamp(3rem,8vw,6rem))]">
+    <header
+      id="top"
+      className="relative overflow-hidden pt-[calc(var(--bar)+clamp(3rem,8vw,6rem))]"
+    >
+      {/*
+        Two soft fields of colour behind the masthead — saffron low and left,
+        a cool one high and right. They are what keep the opening from reading
+        as a flat black rectangle.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          background:
+            "radial-gradient(48rem 32rem at 6% 86%, color-mix(in srgb, var(--saffron) 22%, transparent), transparent 66%), radial-gradient(42rem 30rem at 88% 4%, color-mix(in srgb, var(--nocturnal) 78%, transparent), transparent 68%), radial-gradient(30rem 24rem at 62% 60%, color-mix(in srgb, var(--midnight) 85%, transparent), transparent 72%)",
+        }}
+      />
       <div className="shell">
         <R>
           <p className="tag">{profile.location}</p>
@@ -46,8 +62,8 @@ export function Hero() {
             </R>
             <R d={4}>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <a href="#work" className="btn">
-                  See the work
+                <a href="#projects" className="btn">
+                  See the projects
                 </a>
                 <a href={links.resume} target="_blank" rel="noreferrer noopener" className="btn btn--ghost">
                   Résumé
@@ -61,35 +77,16 @@ export function Hero() {
 
           <R d={2} className="min-w-0 lg:col-span-4">
             <div className="card card--lit card--ticked relative overflow-hidden">
-              <div className="relative">
-                <Image
-                  src="/images/vatsal-maniar.jpg"
-                  alt={profile.name}
-                  width={1200}
-                  height={1601}
-                  priority
-                  sizes="(min-width: 1024px) 28vw, 80vw"
-                  className="block w-full"
-                  style={{ filter: "grayscale(1) contrast(1.18) brightness(0.9)" }}
-                />
-                {/* Duotone: the ground pushes into the shadows, saffron grazes
-                    the highlights. Cheaper and sharper than shipping two files. */}
-                <span
-                  className="pointer-events-none absolute inset-0"
-                  style={{ background: "var(--midnight)", mixBlendMode: "color", opacity: 0.85 }}
-                />
-                <span
-                  className="pointer-events-none absolute inset-0"
-                  style={{ background: "var(--saffron)", mixBlendMode: "overlay", opacity: 0.22 }}
-                />
-                <span
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      "repeating-linear-gradient(0deg, transparent 0 2px, color-mix(in srgb, var(--onyx) 55%, transparent) 2px 3px)",
-                  }}
-                />
-              </div>
+              {/* The photograph, as taken. No duotone, no screen, no filter. */}
+              <Image
+                src="/images/vatsal-maniar.jpg"
+                alt={profile.name}
+                width={1200}
+                height={1601}
+                priority
+                sizes="(min-width: 1024px) 28vw, 80vw"
+                className="block w-full"
+              />
               <div className="flex items-baseline justify-between gap-3 border-t border-nocturnal/50 px-3 py-2.5">
                 <span className="num text-[0.62rem] uppercase tracking-[0.16em] text-aqua">
                   M.S. Financial Engineering

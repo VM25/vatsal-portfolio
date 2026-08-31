@@ -15,7 +15,7 @@ import { R, Count } from "@/components/ui/Bits";
  * the figures, the buttons and the rail marker all read from a single --accent,
  * so switching feels like changing instrument rather than swapping text.
  */
-export function Work() {
+export function Projects() {
   const [i, setI] = useState(0);
   const reduce = useReducedMotion();
   const p = work[i];
@@ -23,22 +23,28 @@ export function Work() {
   const accent = ACCENT[p.id];
 
   return (
-    <section id="work" className="section">
+    <section
+      id="projects"
+      className="section"
+      style={{ ["--accent"]: accent } as React.CSSProperties}
+    >
       <div className="shell">
-        <R>
-          <p className="tag">02 — Built</p>
-        </R>
-        <R d={1}>
-          <h2 className="h1 mt-4">Seven systems</h2>
-        </R>
-        <R d={2}>
-          <p className="lede mt-5">
-            Each one answers a question, and two of them answer it with a no.
-            Pick one.
-          </p>
-        </R>
+        <div className="sec-head">
+          <R>
+            <p className="tag">01 — Projects</p>
+          </R>
+          <R d={1}>
+            <h2 className="h1">The evidence</h2>
+          </R>
+          <R d={2}>
+            <p className="lede">
+              Each one answers a question, and two of them answer it with a no.
+              Pick one.
+            </p>
+          </R>
+        </div>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-12 lg:gap-8">
+        <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
           {/* the rail */}
           <R d={1} className="lg:col-span-4">
             <div role="tablist" aria-label="Systems" className="border-t border-nocturnal/50">

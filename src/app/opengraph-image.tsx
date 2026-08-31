@@ -66,7 +66,7 @@ export default function OpengraphImage() {
             }}
           >
             <span>Measuring what risk actually costs</span>
-            <span style={{ color: SAFFRON }}>Available Fall 2026</span>
+            <span style={{ color: SAFFRON }}>Graduating December 2026</span>
           </div>
         </div>
       </div>

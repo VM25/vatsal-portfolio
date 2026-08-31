@@ -24,13 +24,11 @@ export const profile = {
     { place: "Mumbai", note: "Where it starts" },
     { place: "Arizona", note: "Computer science" },
     { place: "New Jersey", note: "Financial engineering" },
-    { place: "New York", note: "Where it points" },
   ],
 
-  status: "Looking for a quantitative role — Fall 2026 internship, full-time 2027.",
-  availability: "Available Fall 2026",
+  status: "Graduating December 2026, and looking for full-time quantitative roles from January 2027.",
+  availability: "Graduating December 2026 · open to full-time roles",
   interests: ["Trading", "Research", "Derivatives", "Risk"],
-  certification: "FRM Part I candidate, August 2026",
   email: "vatsalmaniar2003@gmail.com",
   phone: "+1 (571) 396-1185",
 } as const;

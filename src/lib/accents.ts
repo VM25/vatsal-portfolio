@@ -9,7 +9,7 @@ export const ACCENT: Record<string, string> = {
   diffusion: "var(--toxic)",
   fxlab: "var(--creamy)",
   credits: "color-mix(in srgb, var(--nocturnal) 42%, var(--arctic))",
-  pra: "color-mix(in srgb, var(--garnet) 45%, var(--creamy))",
+  pra: "color-mix(in srgb, var(--garnet) 26%, var(--snow))",
   apexgp: "color-mix(in srgb, var(--blue) 40%, var(--aqua))",
 };
 
