@@ -16,48 +16,93 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const W = 380;
 const H = 260;
 
-function useAnim() {
+/*
+  Animation mechanics, written for Safari as well as Chrome.
+
+  Three things here are deliberate, and all three were causing the panels to
+  fail silently in Safari — the elements rendered, then stayed at their initial
+  state, which for a bar at scale 0 means invisible:
+
+  1. No `transform-box: fill-box`. Safari's support for it on SVG is late and
+     unreliable; when it misbehaves the shape scales about the wrong origin and
+     collapses. Every origin here is given in user-space viewBox coordinates
+     against `view-box`, which is the SVG default and broadly supported.
+
+  2. No `whileInView`. These panels mount already inside the viewport — you
+     clicked a project to get here — and Safari can decline to fire an
+     IntersectionObserver for an element that mounts already-intersecting inside
+     a parent that is itself animating. The section decides when to play and
+     passes it down instead.
+
+  3. No framer `pathLength`. The stroke reveal is written out explicitly as
+     dasharray plus dashoffset against a static `pathLength={1}`, so there is no
+     library-specific path measurement involved.
+*/
+function useAnim(play: boolean) {
   const reduce = useReducedMotion();
+  const still = reduce || !play;
+
+  const at = (delay: number, duration: number) => ({
+    duration,
+    delay,
+    ease: EASE,
+  });
+
   return {
+    /** Stroke reveal. `pathLength={1}` must be set on the path itself. */
     draw: (delay: number) =>
-      reduce
-        ? {}
+      still
+        ? { style: { strokeDasharray: 1, strokeDashoffset: 0 } }
         : {
-            initial: { pathLength: 0, opacity: 0 },
-            whileInView: { pathLength: 1, opacity: 1 },
-            viewport: { once: true },
-            transition: { duration: 0.9, delay, ease: EASE },
+            style: { strokeDasharray: 1 },
+            initial: { strokeDashoffset: 1, opacity: 0 },
+            animate: { strokeDashoffset: 0, opacity: 1 },
+            transition: at(delay, 0.9),
           },
-    grow: (delay: number, origin = "bottom") =>
-      reduce
+
+    /** Grows vertically about a given viewBox y. */
+    grow: (delay: number, originY: number, originX = 0) =>
+      still
         ? {}
         : {
+            style: {
+              transformBox: "view-box" as const,
+              transformOrigin: `${originX}px ${originY}px`,
+            },
             initial: { scaleY: 0 },
-            whileInView: { scaleY: 1 },
-            viewport: { once: true },
-            transition: { duration: 0.6, delay, ease: EASE },
-            style: { transformBox: "fill-box" as const, transformOrigin: origin },
+            animate: { scaleY: 1 },
+            transition: at(delay, 0.6),
           },
-    wide: (delay: number) =>
-      reduce
+
+    /** Grows horizontally about a given viewBox x. */
+    wide: (delay: number, originX: number, originY = 0) =>
+      still
         ? {}
         : {
+            style: {
+              transformBox: "view-box" as const,
+              transformOrigin: `${originX}px ${originY}px`,
+            },
             initial: { scaleX: 0 },
-            whileInView: { scaleX: 1 },
-            viewport: { once: true },
-            transition: { duration: 0.6, delay, ease: EASE },
-            style: { transformBox: "fill-box" as const, transformOrigin: "left" },
+            animate: { scaleX: 1 },
+            transition: at(delay, 0.6),
           },
+
     pop: (delay: number) =>
-      reduce
+      still
         ? {}
         : {
             initial: { opacity: 0 },
-            whileInView: { opacity: 1 },
-            viewport: { once: true },
-            transition: { duration: 0.4, delay },
+            animate: { opacity: 1 },
+            transition: at(delay, 0.4),
           },
   };
+}
+
+/** The section tells each panel when to play, so nothing depends on an
+    observer firing inside an already-visible, already-animating parent. */
+export interface PanelProps {
+  play: boolean;
 }
 
 function Frame({ label, children }: { label: string; children: ReactNode }) {
@@ -70,8 +115,8 @@ function Frame({ label, children }: { label: string; children: ReactNode }) {
 
 /* ------------------------------------------------------- 01 YIELDSHOCK --- */
 /* The 2022 loss, split into the channels that caused it. */
-export function YieldShockPanel() {
-  const a = useAnim();
+export function YieldShockPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const steps = [
     { k: "Real", v: -278 },
     { k: "Convex", v: 64 },
@@ -100,12 +145,12 @@ export function YieldShockPanel() {
       {bars.map((b) => (
         <g key={b.k}>
           <motion.rect className={b.loss ? "fl" : "fl-mute"} x={b.x} y={b.top} width={b.w} height={b.h}
-            {...a.grow(b.i * 0.09, b.v < 0 ? "top" : "bottom")} />
+            {...a.grow(b.i * 0.09, b.loss ? b.top : b.top + b.h)} />
           <motion.text className="tx" x={b.x + b.w / 2} y={H - 34} textAnchor="middle" {...a.pop(0.5 + b.i * 0.06)}>{b.k}</motion.text>
         </g>
       ))}
       <motion.rect className="fl" x={left + steps.length * cw + cw * 0.18} y={netTop}
-        width={cw * 0.6} height={Math.max(2, y(Math.min(0, run)) - netTop)} {...a.grow(0.5, "top")} />
+        width={cw * 0.6} height={Math.max(2, y(Math.min(0, run)) - netTop)} {...a.grow(0.5, netTop)} />
       <motion.text className="tx tx-hi" x={left + steps.length * cw + cw * 0.48} y={H - 34} textAnchor="middle" {...a.pop(0.8)}>NET</motion.text>
       <motion.text className="tx tx-hi" x={left} y={H - 12} {...a.pop(0.9)}>−$192K on a $1M book · real rate carries it</motion.text>
     </Frame>
@@ -114,8 +159,8 @@ export function YieldShockPanel() {
 
 /* ---------------------------------------------------- 02 SIGNAL SURVIVAL - */
 /* Five strategies, and what survived the costs. */
-export function SignalPanel() {
-  const a = useAnim();
+export function SignalPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const rows = [
     { k: "Cross-sec momentum", s: 0.62, v: "SURVIVED", ok: true },
     { k: "Ensemble", s: 0.59, v: "SURVIVED", ok: true },
@@ -134,7 +179,7 @@ export function SignalPanel() {
           <g key={r.k}>
             <text className="tx" x={left - 10} y={cy + 12} textAnchor="end">{r.k}</text>
             <motion.rect className={r.ok ? "fl" : "fl-mute"} x={left} y={cy + 2} width={x(r.s)} height={13}
-              opacity={r.v === "CONDITIONAL" ? 0.55 : 1} {...a.wide(i * 0.09)} />
+              opacity={r.v === "CONDITIONAL" ? 0.55 : 1} {...a.wide(i * 0.09, left)} />
             <motion.text className={r.ok ? "tx" : "tx-hi"} x={left + x(r.s) + 8} y={cy + 12} {...a.pop(0.4 + i * 0.07)}>
               {r.s.toFixed(2)}
             </motion.text>
@@ -152,8 +197,8 @@ export function SignalPanel() {
 
 /* ------------------------------------------------------ 03 DIFFUSIONWORKS */
 /* Fifteen experiments; the five that found something are the point. */
-export function DiffusionPanel() {
-  const a = useAnim();
+export function DiffusionPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const flagged = ["Convergence order", "Barrier bias", "Heston variance", "Surface calibration", "Interval coverage"];
   const cell = 30, gap = 7, cols = 5, gx = 18, gy = 40;
   return (
@@ -186,8 +231,8 @@ export function DiffusionPanel() {
 
 /* ----------------------------------------------------- 04 CURRENCY OPTIONS */
 /* What a hedge removes, and what it deliberately leaves. */
-export function FxPanel() {
-  const a = useAnim();
+export function FxPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const left = 44, right = 20, top = 30, plot = 160;
   const px = (t: number) => left + t * (W - left - right);
   const py = (d: number) => top + (1 - d) * plot;
@@ -203,8 +248,8 @@ export function FxPanel() {
       <text className="tx" x={8} y={py(0.5) + 3}>0Δ</text>
       <line className="gr" x1={px(0.5)} x2={px(0.5)} y1={top} y2={top + plot} strokeDasharray="2 4" />
       <text className="tx" x={px(0.5)} y={H - 46} textAnchor="middle">SPOT</text>
-      <motion.path className="ln-mute" d={path((t) => 0.56 + logistic(t) * 0.38)} {...a.draw(0.05)} />
-      <motion.path className="ln" d={path((t) => 0.5 + (logistic(t) - 0.5) * 0.38)} {...a.draw(0.2)} />
+      <motion.path className="ln-mute" pathLength={1} d={path((t) => 0.56 + logistic(t) * 0.38)} {...a.draw(0.05)} />
+      <motion.path className="ln" pathLength={1} d={path((t) => 0.5 + (logistic(t) - 0.5) * 0.38)} {...a.draw(0.2)} />
       <motion.circle cx={px(0.5)} cy={py(0.5)} r={4} className="fl" {...a.pop(0.9)} />
       <motion.text className="tx" x={W - right} y={py(0.96)} textAnchor="end" {...a.pop(0.8)}>UNHEDGED</motion.text>
       <motion.text className="tx tx-hi" x={W - right} y={py(0.24)} textAnchor="end" {...a.pop(0.9)}>HEDGED — FLAT AT SPOT</motion.text>
@@ -215,8 +260,8 @@ export function FxPanel() {
 
 /* ------------------------------------------------------ 05 LENDING ------- */
 /* One of the three models does not clear the bar, and says so. */
-export function CreditPanel() {
-  const a = useAnim();
+export function CreditPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const rows = [
     { k: "Fraud", v: 0.97, verdict: "PASS", flag: false },
     { k: "AML", v: 0.87, verdict: "PASS", flag: false },
@@ -240,7 +285,7 @@ export function CreditPanel() {
         return (
           <g key={r.k}>
             <text className="tx" x={left - 12} y={cy + 12} textAnchor="end">{r.k}</text>
-            <motion.rect className={r.flag ? "fl" : "fl-mute"} x={left} y={cy + 1} width={Math.max(2, x(r.v))} height={14} {...a.wide(i * 0.12)} />
+            <motion.rect className={r.flag ? "fl" : "fl-mute"} x={left} y={cy + 1} width={Math.max(2, x(r.v))} height={14} {...a.wide(i * 0.12, left)} />
             <motion.text className={r.flag ? "tx tx-hi" : "tx"} x={left + x(r.v) + 9} y={cy + 12} {...a.pop(0.5 + i * 0.1)}>
               {r.verdict}
             </motion.text>
@@ -254,8 +299,8 @@ export function CreditPanel() {
 
 /* ------------------------------------------------------ 06 ALLOCATION ---- */
 /* The negative result, drawn plainly. */
-export function AllocationPanel() {
-  const a = useAnim();
+export function AllocationPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const rows = [
     { k: "Return", a: 6.0, b: 8.4, fa: "6.0%", fb: "8.4%" },
     { k: "Volatility", a: 10.5, b: 11.1, fa: "10.5%", fb: "11.1%" },
@@ -272,9 +317,9 @@ export function AllocationPanel() {
         return (
           <g key={r.k}>
             <text className={r.key ? "tx tx-hi" : "tx"} x={left - 10} y={cy + 14} textAnchor="end">{r.k}</text>
-            <motion.rect className="fl-mute" x={left} y={cy} width={(r.a / max) * plot} height={9} {...a.wide(i * 0.1)} />
+            <motion.rect className="fl-mute" x={left} y={cy} width={(r.a / max) * plot} height={9} {...a.wide(i * 0.1, left)} />
             <motion.rect className={r.key ? "fl" : "fl-mute"} x={left} y={cy + 13} width={(r.b / max) * plot} height={9}
-              opacity={r.key ? 1 : 0.75} {...a.wide(0.05 + i * 0.1)} />
+              opacity={r.key ? 1 : 0.75} {...a.wide(0.05 + i * 0.1, left)} />
             <motion.text className="tx" x={W - right + 8} y={cy + 8} {...a.pop(0.5 + i * 0.08)}>{r.fa}</motion.text>
             <motion.text className={r.key ? "tx tx-hi" : "tx"} x={W - right + 8} y={cy + 21} {...a.pop(0.55 + i * 0.08)}>{r.fb}</motion.text>
           </g>
@@ -287,8 +332,8 @@ export function AllocationPanel() {
 
 /* ------------------------------------------------------ 07 APEXGP -------- */
 /* An implied-probability book, resolving toward settlement. */
-export function ApexPanel() {
-  const a = useAnim();
+export function ApexPanel({ play }: PanelProps) {
+  const a = useAnim(play);
   const rows = [
     { p: "0.71", side: "ask", w: 0.42 },
     { p: "0.68", side: "ask", w: 0.6 },
@@ -310,18 +355,18 @@ export function ApexPanel() {
           <g key={r.p}>
             <text className="tx" x={spine - 10} y={y + 11} textAnchor="end">{r.p}</text>
             <motion.rect className={ask ? "fl-mute" : "fl"} x={spine} y={y + 2} width={r.w * maxW} height={13}
-              opacity={ask ? 0.45 : 0.9} {...a.wide(i * 0.05)} />
+              opacity={ask ? 0.45 : 0.9} {...a.wide(i * 0.05, spine)} />
           </g>
         );
       })}
       <line className="ax" x1={spine} x2={spine} y1={top - 4} y2={top + rows.length * rh} />
-      <motion.line className="ln" x1={spine - 6} x2={spine + maxW} y1={top + 4 * rh} y2={top + 4 * rh} {...a.draw(0.6)} />
+      <motion.line className="ln" pathLength={1} x1={spine - 6} x2={spine + maxW} y1={top + 4 * rh} y2={top + 4 * rh} {...a.draw(0.6)} />
       <motion.text className="tx tx-hi" x={16} y={H - 12} {...a.pop(0.9)}>500+ contracts · capped at 30% book, 15% market</motion.text>
     </Frame>
   );
 }
 
-export const PANELS: Record<string, () => ReactNode> = {
+export const PANELS: Record<string, (p: PanelProps) => ReactNode> = {
   yieldshock: YieldShockPanel,
   alpha: SignalPanel,
   diffusion: DiffusionPanel,

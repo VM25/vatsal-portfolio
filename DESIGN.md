@@ -105,6 +105,31 @@ Sized so every section fits a real 1440×900 window at 100% zoom. The earlier
 scale had been tuned by eye at a zoomed-out viewport and was roughly 20% too
 large everywhere. Measured section heights now run 725–896px.
 
+## Safari
+
+The instrument animations are written to a stricter standard than Chrome needs,
+because all three of these fail *silently* in Safari — the element renders, then
+stays at its initial state, which for a bar at scale zero means invisible.
+
+- **No `transform-box: fill-box`.** Safari's support on SVG is late and
+  unreliable. Every scale origin is given in user-space viewBox coordinates
+  against `view-box`, which is the SVG default.
+- **No `whileInView` in the panels.** A panel mounts already inside the viewport
+  the moment you pick a project, and Safari can decline to fire an
+  IntersectionObserver for an element that mounts already-intersecting inside an
+  animating parent. One observer on the section decides when to play, and every
+  panel reads it.
+- **No framer `pathLength`.** The stroke reveal is written out as dasharray plus
+  dashoffset against a static `pathLength={1}`.
+
+**Every `color-mix()` on a visible surface carries a plain fallback first.**
+`color-mix` needs Safari 16.2; where it is unsupported the whole declaration is
+dropped, and for `stroke` the initial value is `none` — so axes and gridlines
+disappear rather than shifting shade. Custom properties are the exception: an
+unsupported `color-mix` in a `--var` parses fine and only fails when substituted,
+so the two-declaration trick does not work there. The blooms therefore use
+palette colours directly and carry their strength on the element's own opacity.
+
 ## Traps worth remembering
 
 **Element resets must live inside `@layer base`.** Unlayered CSS beats anything

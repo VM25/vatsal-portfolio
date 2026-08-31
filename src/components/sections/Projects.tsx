@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { work } from "@/data/work";
 import { ACCENT } from "@/lib/accents";
@@ -17,6 +17,40 @@ import { R, Count } from "@/components/ui/Bits";
  */
 export function Projects() {
   const [i, setI] = useState(0);
+  const [play, setPlay] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  /*
+    The panels used to trigger themselves with framer's `whileInView`. That is
+    unreliable here: a panel mounts already inside the viewport the moment you
+    pick a project, and Safari can decline to fire an IntersectionObserver for
+    an element that mounts already-intersecting inside an animating parent —
+    leaving the instrument stuck at its initial state, which for a bar at scale
+    zero means invisible.
+
+    One observer on the section decides instead, and every panel reads it.
+  */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      // No observer: play anyway rather than leave the instruments blank.
+      // Scheduled, not synchronous, so this is not a cascading render.
+      const t = window.setTimeout(() => setPlay(true), 0);
+      return () => window.clearTimeout(t);
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        setPlay(true);
+        io.disconnect();
+      },
+      { rootMargin: "0px 0px -15% 0px", threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const reduce = useReducedMotion();
   const p = work[i];
   const Panel = PANELS[p.id];
@@ -24,6 +58,7 @@ export function Projects() {
 
   return (
     <section
+      ref={sectionRef}
       id="projects"
       className="section"
       style={{ ["--accent"]: accent } as React.CSSProperties}
@@ -125,7 +160,7 @@ export function Projects() {
 
                   <div className="mt-5 grid gap-6 lg:grid-cols-2">
                     <div className="panel min-w-0 p-3">
-                      <Panel />
+                      <Panel play={play} />
                     </div>
 
                     <div className="min-w-0">
