@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { posts, honour } from "@/data/posts";
+import { posts } from "@/data/posts";
 import { ROLE_ACCENT } from "@/lib/accents";
 import { R } from "@/components/ui/Bits";
 
@@ -108,12 +108,6 @@ export function Experience() {
               );
             })}
           </div>
-        </R>
-
-        <R d={3}>
-          <p className="num mt-6 text-[0.72rem] uppercase tracking-[0.14em] text-creamy">
-            {honour}
-          </p>
         </R>
       </div>
     </section>

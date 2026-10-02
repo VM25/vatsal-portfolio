@@ -13,17 +13,11 @@ export const profile = {
   quote:
     "A number you cannot explain is not a measurement. It is a guess with decimal places.",
 
-  /** About section. Written to be read by a person, not scanned by a filter. */
-  about: [
-    "I came to finance through computer science, which is an unusual order to do it in and turns out to be the useful one. Building things taught me that a result you cannot reproduce is not a result, and that habit is the thing I actually brought with me.",
-    "Now I work on the measurement side of markets — what a position is worth, what it could lose, and which part of it is responsible. Seven of those systems are on this page. Two of them concluded that the clever idea did not beat the simple one, and I have left those conclusions where they are.",
-  ],
-
   /** The route actually taken. Drives the second chapter. */
   route: [
     { place: "Mumbai", note: "Where it starts" },
-    { place: "Arizona", note: "Computer science" },
-    { place: "New Jersey", note: "Financial engineering" },
+    { place: "Arizona", note: "Computer science", study: "asu" },
+    { place: "New Jersey", note: "Financial engineering", study: "stevens" },
   ],
 
   status: "Graduating December 2026, and looking for full-time quantitative roles from January 2027.",
@@ -35,8 +29,8 @@ export const profile = {
 
 export const links = {
   resume: "/resume/Maniar_Vatsal.pdf",
-  memo: "/research/Maniar-Research-Memo.pdf",
   prospectus: "/research/Maniar-Research-Prospectus.pdf",
+  ssrn: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7469079",
   linkedin: "https://www.linkedin.com/in/vatsal-maniar/",
   github: "https://github.com/VM25",
   email: `mailto:${profile.email}`,

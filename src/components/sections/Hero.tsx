@@ -3,32 +3,17 @@
 import Image from "next/image";
 import { profile, links } from "@/data/profile";
 import { R } from "@/components/ui/Bits";
-
-const TICKER = [
-  "Rates risk",
-  "Derivatives pricing",
-  "Monte Carlo",
-  "Portfolio construction",
-  "Credit decisioning",
-  "Stochastic calculus",
-  "C++",
-  "Python",
-  "Signal validation",
-  "Curve attribution",
-  "Expected shortfall",
-  "Market microstructure",
-];
+import { Decode } from "@/components/ui/Decode";
 
 /**
- * The name at full width, the portrait as a printed plate beside it, and a
- * running band of what the work is made of — the band is the one piece of
- * ambient motion on the page and it stops when you point at it.
+ * The name at full width, decoded once on load, and the portrait as a printed
+ * plate beside it.
  */
 export function Hero() {
   return (
     <header
       id="top"
-      className="relative pt-[calc(var(--bar)+clamp(2rem,5vw,3.75rem))]"
+      className="relative pb-[clamp(1rem,3vw,2rem)] pt-[calc(var(--bar)+clamp(2rem,5vw,3.75rem))]"
     >
       <div className="shell">
         <R>
@@ -37,13 +22,10 @@ export function Hero() {
 
         <div className="mt-5 grid items-end gap-8 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-8">
-            <R d={1}>
-              <h1 className="mega">
-                Vatsal
-                <br />
-                Maniar
-              </h1>
-            </R>
+            {/* not wrapped in a reveal: the name is on screen from the first paint */}
+            <h1 className="mega">
+              <Decode lines={["Vatsal", "Maniar"]} />
+            </h1>
             <R d={3}>
               <p className="lede mt-6">{profile.standfirst}</p>
             </R>
@@ -85,21 +67,6 @@ export function Hero() {
         </div>
       </div>
 
-      <R d={5} className="mt-10">
-        <div className="ticker">
-          <div className="ticker__track">
-            {[0, 1].map((copy) => (
-              <div key={copy} className="flex" aria-hidden={copy === 1}>
-                {TICKER.map((t) => (
-                  <span key={t} className="ticker__item">
-                    <i /> {t}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </R>
     </header>
   );
 }

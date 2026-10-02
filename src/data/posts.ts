@@ -89,4 +89,3 @@ export const posts: Post[] = [
   },
 ];
 
-export const honour = "Magna Cum Laude, Arizona State University";

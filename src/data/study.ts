@@ -13,7 +13,7 @@ export const study: Study[] = [
       "Pricing & Hedging",
       "Advanced Derivatives",
       "Computational Finance",
-      "Market Microstructure",
+      "Portfolio Theory",
       "Risk Management",
     ],
   },
@@ -34,3 +34,11 @@ export const study: Study[] = [
     ],
   },
 ];
+
+/** The one place the FRM appears on the site. */
+export const credential = {
+  body: "GARP",
+  title: "FRM Part 1 Candidate",
+  full: "Financial Risk Manager",
+  sitting: "November 2026",
+} as const;

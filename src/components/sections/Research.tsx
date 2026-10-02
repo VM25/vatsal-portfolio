@@ -35,8 +35,8 @@ export function Research() {
               </p>
               <p className="prose mt-5 text-[0.95rem]">{paper.detail}</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <a href={links.memo} target="_blank" rel="noreferrer noopener" className="btn">
-                  Read it ↗
+                <a href={links.ssrn} target="_blank" rel="noreferrer noopener" className="btn">
+                  Read on SSRN ↗
                 </a>
                 <a href={links.prospectus} target="_blank" rel="noreferrer noopener" className="btn btn--ghost">
                   Prospectus

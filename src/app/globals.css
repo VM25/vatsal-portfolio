@@ -636,50 +636,48 @@
   font-weight: 700;
 }
 
-/* --------------------------------------------------------------- ticker -- */
+/* --------------------------------------------------------------- decode -- */
 
-.ticker {
-  overflow: hidden;
-  border-block: 1px solid var(--oceanic);
-  border-block-color: color-mix(in srgb, var(--nocturnal) 50%, transparent);
-  background: var(--onyx);
-  background: color-mix(in srgb, var(--onyx) 70%, transparent);
+/*
+  The hero name. Each letter holds its real width from the first paint; while
+  it is scrambled the letter is transparent and a glyph sits centred over it.
+*/
+.decode .dc {
+  position: relative;
+  color: transparent;
 }
 
-.ticker__track {
+.decode .dc::after {
+  content: attr(data-g);
+  position: absolute;
+  inset: 0;
   display: flex;
-  width: max-content;
-  animation: slide 42s linear infinite;
-}
-
-.ticker:hover .ticker__track {
-  animation-play-state: paused;
-}
-
-@keyframes slide {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.ticker__item {
-  display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.6rem 1.5rem;
+  justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 0.6em;
+  font-weight: 400;
+  letter-spacing: 0;
   color: var(--aqua);
-  white-space: nowrap;
 }
 
-.ticker__item i {
-  width: 4px;
-  height: 4px;
-  background: var(--saffron);
-  font-style: normal;
+.decode .dc.on {
+  color: var(--praxeti);
+  animation: dc-land 0.45s var(--ease) both;
+}
+
+.decode .dc.on::after {
+  content: none;
+}
+
+/* Lands warm, then settles to the name's colour. */
+@keyframes dc-land {
+  from {
+    color: var(--saffron);
+  }
+  to {
+    color: var(--praxeti);
+  }
 }
 
 /* --------------------------------------------------------------- reveal -- */
@@ -715,7 +713,10 @@
     opacity: 1;
     transform: none;
   }
-  .ticker__track {
-    animation: none;
+  .decode .dc {
+    color: inherit;
+  }
+  .decode .dc::after {
+    content: none;
   }
 }
