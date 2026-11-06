@@ -113,6 +113,66 @@ function Frame({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/* ------------------------------------------------- 00 LIQUIDITY PARADOX - */
+/* Every rule that trades sits on one line through the origin: losses scale
+   with volume, so the forecast-led rule loses less only by trading less.
+   Discovery means at the attainable fee, from the paper's policy table. */
+export function LiquidityPanel({ play }: PanelProps) {
+  const a = useAnim(play);
+  const left = 46, right = 22, top = 40, plot = 160;
+  const XMAX = 180000, YMIN = -210;
+  const px = (t: number) => left + (t / XMAX) * (W - left - right);
+  const py = (n: number) => top + (n / YMIN) * plot;
+  const pts = [
+    { k: "Fixed", t: 171157, n: -197.4 },
+    { k: "Skewed", t: 148486, n: -171.0 },
+    { k: "Reversed forecast", t: 158228, n: -183.6 },
+    { k: "Forecast-gated", t: 35749, n: -42.2, hi: true },
+  ];
+  const bp = -0.001153; // net per unit traded, fixed quoting
+  const end = { x: px(XMAX), y: py(XMAX * bp) };
+  const slope = (end.y - py(0)) / (end.x - px(0));
+  const angle = (Math.atan(slope) * 180) / Math.PI;
+  const lx = 124, ly = py(0) + slope * (lx - left) + 13;
+  const cluster = px(158228);
+  return (
+    <Frame label="Loss per hour against volume traded: every trading rule sits on one line, so the forecast-gated rule loses less only by trading less">
+      <motion.text className="tx" x={16} y={18} {...a.pop(0)}>LOSS PER HOUR vs VOLUME TRADED</motion.text>
+      {[0, -100, -200].map((v) => (
+        <g key={v}>
+          <line className="gr" x1={left} x2={W - right} y1={py(v)} y2={py(v)} strokeDasharray={v ? "2 4" : "0"} />
+          <text className="tx" x={8} y={py(v) + 3}>{v ? `−${-v}` : "0"}</text>
+        </g>
+      ))}
+      <line className="ax" x1={left} x2={left} y1={top} y2={top + plot} />
+      <text className="tx" x={left} y={top + plot + 16}>VOLUME TRADED / HOUR →</text>
+      <text className="tx" x={W - right} y={top + plot + 16} textAnchor="end">180K</text>
+
+      <motion.path className="ln-mute" pathLength={1} d={`M${px(0)},${py(0)} L${end.x.toFixed(1)},${end.y.toFixed(1)}`} {...a.draw(0.05)} />
+      <motion.text className="tx" x={lx} y={ly} transform={`rotate(${angle.toFixed(1)} ${lx} ${ly.toFixed(1)})`} {...a.pop(0.7)}>
+        ≈ −11.5 bp ON EVERY DOLLAR
+      </motion.text>
+
+      <motion.circle cx={px(0)} cy={py(0)} r={3} className="fl-mute" {...a.pop(0.3)} />
+      <motion.text className="tx" x={px(0) + 8} y={py(0) - 6} {...a.pop(0.35)}>NO TRADE · 0</motion.text>
+
+      {pts.map((p, i) => (
+        <motion.circle key={p.k} cx={px(p.t)} cy={py(p.n)} r={p.hi ? 4.5 : 3.5}
+          className={p.hi ? "fl" : "fl-mute"} {...a.pop(0.45 + i * 0.08)} />
+      ))}
+      <motion.text className="tx tx-hi" x={px(35749) + 9} y={py(-42.2) - 8} {...a.pop(0.85)}>FORECAST-GATED −42/h</motion.text>
+
+      <motion.g {...a.pop(0.8)}>
+        <text className="tx" x={W - right} y={112} textAnchor="end">FIXED −197/h</text>
+        <text className="tx" x={W - right} y={124} textAnchor="end">SKEWED · REVERSED</text>
+        <line className="gr" x1={cluster} x2={cluster} y1={130} y2={py(-171) - 2} />
+      </motion.g>
+
+      <motion.text className="tx tx-hi" x={16} y={H - 12} {...a.pop(0.95)}>Loses 79% less an hour by trading 79% less</motion.text>
+    </Frame>
+  );
+}
+
 /* ------------------------------------------------------- 01 YIELDSHOCK --- */
 /* The 2022 loss, split into the channels that caused it. */
 export function YieldShockPanel({ play }: PanelProps) {
@@ -367,6 +427,7 @@ export function ApexPanel({ play }: PanelProps) {
 }
 
 export const PANELS: Record<string, (p: PanelProps) => ReactNode> = {
+  liquidity: LiquidityPanel,
   yieldshock: YieldShockPanel,
   alpha: SignalPanel,
   diffusion: DiffusionPanel,

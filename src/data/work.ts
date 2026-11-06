@@ -1,10 +1,27 @@
 import type { Work } from "@/types";
 
 /**
- * Seven things I built. Closed, each is a name and a field — the detail only
+ * Eight things I built. Closed, each is a name and a field — the detail only
  * appears if someone wants it. Every number below comes from the work itself.
  */
 export const work: Work[] = [
+  {
+    id: "liquidity",
+    title: "The Liquidity Paradox",
+    field: "Market making",
+    year: "2026",
+    detail:
+      "A market maker earns the gap between buying and selling, and loses whenever the person trading with it knows more. This asks whether forecasting the next five seconds of price is enough to make that pay, across twenty sampled days of one crypto market. The write-up is a 26-page paper.",
+    result:
+      "The forecast works, modestly, and every quoting rule that traded still lost 11 to 12 basis points on each dollar, at the fee a real participant would pay. The forecast-led rule lost less per hour only because it traded far less.",
+    figures: [
+      { value: "20", label: "Sampled trading days" },
+      { value: "4.2%", label: "Forecast skill, held out" },
+      { value: "−11.5 bp", label: "Lost per dollar traded" },
+    ],
+    live: "https://liquidityparadox.netlify.app",
+    code: "https://github.com/VM25/liquidity-lab",
+  },
   {
     id: "yieldshock",
     title: "YieldShock",

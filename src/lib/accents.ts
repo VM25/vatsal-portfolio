@@ -4,6 +4,7 @@
  * brand blues are lifted toward the whites rather than used raw.
  */
 export const ACCENT: Record<string, string> = {
+  liquidity: "color-mix(in srgb, var(--toxic) 40%, var(--praxeti))",
   yieldshock: "var(--saffron)",
   alpha: "var(--aqua)",
   diffusion: "var(--toxic)",

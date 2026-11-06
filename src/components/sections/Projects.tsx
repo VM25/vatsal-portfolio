@@ -10,7 +10,7 @@ import { R, Count } from "@/components/ui/Bits";
 /**
  * The centre of the site.
  *
- * A rail of seven on the left, one stage on the right. Choosing a project
+ * A rail of eight on the left, one stage on the right. Choosing a project
  * repaints the whole stage in that project's identity colour — the instrument,
  * the figures, the buttons and the rail marker all read from a single --accent,
  * so switching feels like changing instrument rather than swapping text.
@@ -73,7 +73,7 @@ export function Projects() {
           </R>
           <R d={2}>
             <p className="lede">
-              Each one answers a question, and two of them answer it with a no.
+              Each one answers a question, and three of them answer it with a no.
               Pick one.
             </p>
           </R>
