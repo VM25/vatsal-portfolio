@@ -1,6 +1,6 @@
 # Clearing (Portfolio V2): sign-off
 
-Branch `v2-clearing` (worktree `.claude/worktrees/v2-clearing`). Nothing here is deployed to production. The preview deploy and the real-device pass are still to do (sections 3 and 4), and a few content items need Vatsal's confirmation (section 6).
+**Status: RELEASED. Clearing V2 is the final released version, live at https://maniar-portfolio.netlify.app since 2026-11-07 20:20:44 UTC (merge commit `803c826` on `main`, Netlify deploy `6aef87f4a19b0e91b27144cd`).** Vatsal approved production in writing on 2026-11-07 after completing the real-device checks. The release record is in section 8. Sections below are kept as written during the build.
 
 - Spec: `docs/superpowers/specs/2026-11-06-clearing-design.md` (§8 is mapped below)
 - Plan: `docs/superpowers/plans/2026-11-06-clearing.md`
@@ -301,3 +301,42 @@ Each item is either published as below, or changed after your answer. The source
 **V1 preserved:**
 - Git tag `v1-final` at `c99b13a`, pushed to GitHub.
 - Netlify production deploy `6aee4adcdba4fc908b4d3ee0`, published 2026-11-06 21:47:49 UTC, stays in the deploy history as a rollback point.
+
+## 8. Release record
+
+**Release:**
+- Merge commit `803c826c785232397bea42890b672e187a916713` on `main`. Its parents are V1 `c99b13a` and the approved branch tip `f27649e`. The merged tree is identical to the approved branch.
+- `main` and `v2-clearing` were pushed to GitHub (`VM25/vatsal-portfolio`) with no force push.
+- V1 is preserved as tag `v1-final` at `c99b13a`.
+
+**Production deploy:**
+- Project `maniar-portfolio` (site `29f2bbb5-b290-41a6-9dd3-e848321f757c`), built by Netlify CI from `main`.
+- Deploy `6aef87f4a19b0e91b27144cd`: state ready, published 2026-11-07T20:20:44.496Z.
+- The Next.js server handler is deployed with its `/*` route.
+- The first CI build of `803c826` (deploy `6aef870cac43d707a68955ba`) failed. Netlify restored the V1 `.next` cache, and Turbopack's `next/font/google` failed on it with "queries have exactly one entry".
+  - The production site stayed on V1 throughout.
+  - Fix: the same commit was rebuilt with the build cache cleared (`createSiteBuild` with `clear_cache: true`). No code changed.
+
+**V1 rollback point:**
+- Netlify deploy `6aee4adcdba4fc908b4d3ee0` (commit `c99b13a`, published 2026-11-06 21:47:49 UTC) remains in the deploy history and can be republished from the Netlify UI.
+- Git tag `v1-final` holds its code.
+
+**Production verification, 2026-11-07, on the live URL:**
+- **HTTP:** `/` returns 200 with V2. `meta robots` is `index, follow`. Canonical and `og:url` are https://maniar-portfolio.netlify.app. `og:image` and `twitter:image` serve `/opengraph-image` (200, image/png) from production.
+- **robots.txt and sitemap:** robots.txt allows crawling and points to the production sitemap, and the sitemap lists the production URL.
+- **Assets:** the stills, résumé, photo and favicon return 200. The prospectus returns 404, unpublished as instructed. Unknown paths return 404.
+- **Browser checks:** Playwright ran Chromium and WebKit at 1440×900 and 390×844, 105 of 110 checks. They covered:
+  - all five sections
+  - the V2 copy
+  - Research figures 0.66, 0.48, ≈ −19% and the breakeven definition
+  - DiffusionWorks ArrowRight to N = 13, giving 10.0665
+  - the Liquidity run ending at `+420 − 476 − 40 = −96`
+  - the mailto link and Copy writing the email (Chromium)
+  - the footer reading "© 2026 Vatsal Maniar"
+  - no failed same-origin requests
+  - every project, GitHub and résumé link returning 200; LinkedIn returns its 999 bot wall
+  - screenshots matching the approved preview, with the deck and footer continuous at the page end
+- **Exceptions:**
+  1. **React hydration error #418 on every production load.** Netlify injects an HTML comment into `<head>` on published production deploys ("This site is hosted on Netlify … utm_source=ai-legible"), on every site in the account. React finds a node it did not render, logs #418 and re-renders the page on the client. The preview alias and local builds don't get the comment and show no error. The page renders and every functional check passes. There is no code cause, and Netlify documents no setting to disable it. Raising it with Netlify support is the clean fix.
+  2. **SSRN link:** SSRN answers automated browsers with 403 "Content Blocked", so this link can't be verified automatically. It is the same URL V1 used.
+  3. **Firefox** was not run in the build sandbox. Vatsal's real-device checks cover the rest.
