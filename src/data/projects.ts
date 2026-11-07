@@ -79,6 +79,12 @@ const liquidity = {
   caption:
     "Illustration only: a simulated market maker quoting one tick either side of a price that moves two ticks at a time. In this toy, 55% of trades come from traders who know the next move (amber dots), so each of them costs more than the spread earns. On the other 45%, the next move is as likely to help as to hurt, so that line drifts around zero. Net = spread earned − informed loss + random moves. Not the study's data.",
   replay: "Run it again",
+  /** Drawn on the canvas beside the quote rails. */
+  rails: { ask: "ask", bid: "bid" },
+  /** Follows the equation line: "+420 − 476 − 40 = −96 ticks". */
+  unit: "ticks",
+  /** Said once, politely, when a run finishes. "{net}" signed with a true minus, "{trades}" with separators. */
+  finished: "Run finished: net {net} ticks over {trades} trades.",
   result: {
     big: "4.2% skill",
     forecast:

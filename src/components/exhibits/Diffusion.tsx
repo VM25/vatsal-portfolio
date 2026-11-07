@@ -13,6 +13,7 @@ import {
 import { blackScholesCall, crrTree } from "@/lib/pricing";
 import { fixed } from "@/lib/format";
 import { useSceneActions } from "@/components/world/ScrollState";
+import { fill, readFonts, sizeCanvas } from "@/components/exhibits/canvas";
 
 /*
   DiffusionWorks: a Cox–Ross–Rubinstein tree closing in on Black–Scholes. The drawing
@@ -70,11 +71,6 @@ export type DiffusionCopy = {
   say: string;
 };
 
-/** Fill "{name}" slots in a copy template. */
-function fill(template: string, vars: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
-}
-
 function plural(p: Plural, n: number, vars: Record<string, string | number>): string {
   return fill(n === 1 ? p.one : p.other, vars);
 }
@@ -119,27 +115,6 @@ function treeCaption(N: number, shown: number, copy: DiffusionCopy): string {
   return N <= shown
     ? plural(copy.treeCaptionAll, N, { total: N })
     : fill(copy.treeCaption, { shown, total: N });
-}
-
-function sizeCanvas(c: HTMLCanvasElement, h: number) {
-  const w = c.clientWidth || 600;
-  const pr = Math.min(2, window.devicePixelRatio || 1);
-  const bw = Math.round(w * pr);
-  const bh = Math.round(h * pr);
-  if (c.width !== bw) c.width = bw;
-  if (c.height !== bh) c.height = bh;
-  const g = c.getContext("2d")!;
-  g.setTransform(pr, 0, 0, pr, 0, 0);
-  return { g, w, h };
-}
-
-/** The page's font stacks (next/font sets hashed family names behind the CSS variables). */
-function readFonts(el: Element) {
-  const cs = getComputedStyle(el);
-  return {
-    mono: cs.getPropertyValue("--font-num").trim() || "monospace",
-    sans: cs.getPropertyValue("--font-world").trim() || "sans-serif",
-  };
 }
 
 function readInputs(n: HTMLInputElement | null, s: HTMLInputElement | null, k: HTMLInputElement | null): Inputs {
