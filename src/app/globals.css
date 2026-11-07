@@ -150,6 +150,9 @@ main:focus, .sec:focus { outline: none; }
 .tlink { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px; min-height: 44px; display: inline-flex; align-items: center; }
 .refl { margin-top: 36px; max-width: 34ch; font-size: 15px; line-height: 1.45; color: #B5BEB9; }
 .refl b { font-weight: 500; color: var(--sodium); font-family: var(--font-num); font-size: 14px; }
+.refl .n-still { display: none; }
+html:not(.js) .refl .n-live { display: none; }
+html:not(.js) .refl .n-still { display: inline; }
 /*
   Night halo (controller ruling, Task 13): on phones the lamp and its reflection sit
   behind the opening screen's smaller text. A soft night-deep (#060A0B) halo under those

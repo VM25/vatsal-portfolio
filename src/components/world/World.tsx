@@ -27,7 +27,10 @@ import { useSceneBus } from "./ScrollState";
 
   Tests may set window.__CLEARING_TEST__ = { watchdog: false } to switch off
   the watchdog only, or { watchdogMs: n } to change its threshold (-1 always
-  trips it once enough samples exist).
+  trips it once enough samples exist). { preserve: true } keeps the drawing
+  buffer after compositing so tests can read the canvas back (toDataURL);
+  production doesn't pay for that. When the hook object exists, World also counts
+  its drawn frames in it (hook.frames), so tests can see the scene stop and start.
 */
 
 type Reason = "no-webgl" | "shader" | "context-lost" | "slow";
@@ -38,7 +41,7 @@ type Renderer = {
   /** Give the context back to the browser. */
   release(): void;
 };
-type TestHook = { watchdog?: boolean; watchdogMs?: number };
+type TestHook = { watchdog?: boolean; watchdogMs?: number; preserve?: boolean; frames?: number };
 
 const FRAME_MS = 1000 / 30;
 // Accept a frame a little early so a 60 Hz display holds 30 fps rather than
@@ -53,11 +56,11 @@ const STILL_TIME = 11;
 const STILL_COUNT = 5;
 type Orientation = "land" | "port";
 
-function makeGL(canvas: HTMLCanvasElement): Renderer | Reason {
+function makeGL(canvas: HTMLCanvasElement, preserve: boolean): Renderer | Reason {
   let gl: WebGLRenderingContext | null = null;
   try {
     gl =
-      canvas.getContext("webgl", { preserveDrawingBuffer: true, antialias: false }) ??
+      canvas.getContext("webgl", { preserveDrawingBuffer: preserve, antialias: false }) ??
       (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
   } catch {
     gl = null;
@@ -130,7 +133,8 @@ export function World() {
     const canvas = canvasRef.current;
     if (!bg || !canvas) return;
 
-    const hook: TestHook = (window as unknown as { __CLEARING_TEST__?: TestHook }).__CLEARING_TEST__ ?? {};
+    const testHook = (window as unknown as { __CLEARING_TEST__?: TestHook }).__CLEARING_TEST__;
+    const hook: TestHook = testHook ?? {};
     const watchdogOn = hook.watchdog !== false;
     const watchdogMs = typeof hook.watchdogMs === "number" ? hook.watchdogMs : WATCHDOG_MS;
 
@@ -186,6 +190,7 @@ export function World() {
       st.uPar += still ? 0 : mx * 0.03;
       r.draw(st);
       bus.frameDone();
+      if (testHook) testHook.frames = (testHook.frames ?? 0) + 1;
     };
 
     const resize = () => {
@@ -219,7 +224,7 @@ export function World() {
     };
     window.addEventListener("pointermove", onPointer, { passive: true });
 
-    const made = makeGL(canvas);
+    const made = makeGL(canvas, hook.preserve === true);
     if (typeof made === "string") {
       fallback(made);
       return () => {

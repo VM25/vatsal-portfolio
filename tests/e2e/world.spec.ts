@@ -5,11 +5,12 @@ import { measuredKeys } from "./helpers";
 /*
   Headless browsers render WebGL in software, so the frame-time watchdog would
   trip on a perfectly healthy page. Tests switch off only the watchdog; one test
-  below switches it back on with a zero threshold to prove it fires.
+  below switches it back on with a zero threshold to prove it fires. They also set
+  preserve, so the scene canvas can be read back with toDataURL.
 */
 async function noWatchdog(page: Page) {
   await page.addInitScript(() => {
-    (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdog: false };
+    (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdog: false, preserve: true };
   });
 }
 
@@ -206,7 +207,7 @@ test.describe("page shell and world", () => {
     const page = await ctx.newPage();
     // -1 ms: any measured draw time is "too slow", so the watchdog must trip.
     await page.addInitScript(() => {
-      (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdogMs: -1 };
+      (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdogMs: -1, preserve: true };
     });
     await page.goto("/");
     if (!(await hasWebGL(page))) {
@@ -236,6 +237,26 @@ test.describe("page shell and world", () => {
     await expect(still).toHaveCSS("opacity", "1");
     await expect.poll(() => still.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth)).toBe(1440);
     await ctx.close();
+  });
+
+  test("a hidden tab stops the scene drawing; a visible one starts it again", async ({ page }) => {
+    await page.goto("/");
+    expect(await sceneMode(page)).toBe("gl");
+    const frames = () =>
+      page.evaluate(() => (window as unknown as { __CLEARING_TEST__: { frames?: number } }).__CLEARING_TEST__.frames ?? 0);
+    const setHidden = (hidden: boolean) =>
+      page.evaluate((hidden) => {
+        Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
+        Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (hidden ? "hidden" : "visible") });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }, hidden);
+    await expect.poll(frames).toBeGreaterThan(5);
+    await setHidden(true);
+    const atHide = await frames();
+    await page.waitForTimeout(600);
+    expect(await frames(), "no frames drawn while hidden").toBe(atHide);
+    await setHidden(false);
+    await expect.poll(frames).toBeGreaterThan(atHide + 3);
   });
 
   test("the scene canvas is capped at one device pixel per CSS pixel", async ({ browser }) => {

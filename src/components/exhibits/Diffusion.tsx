@@ -91,6 +91,13 @@ function price({ N, sig, K }: Inputs, keep: number) {
   return { tree, ref, gap: tree.price - ref };
 }
 
+/** Binomial prices for N = 1 to 200 at this σ (percent) and K: the convergence chart's dots. */
+function convergence(sig: number, K: number): number[] {
+  const v: number[] = [];
+  for (let n = 1; n <= 200; n++) v.push(crrTree({ S: S0, K, r: R0, sigma: sig / 100, T: TT, N: n, keep: -1 }).price);
+  return v;
+}
+
 function sayText(i: Inputs, copy: DiffusionCopy): string {
   const { tree, ref, gap } = price(i, -1);
   return fill(copy.say, { N: i.N, sig: i.sig, K: i.K, bin: fixed(tree.price, 4), bs: fixed(ref, 4), gap: diff(gap) });
@@ -165,6 +172,10 @@ export function Diffusion({
   const model = useRef<Model | null>(null);
   const fonts = useRef({ mono: "monospace", sans: "sans-serif" });
   const curve = useRef<{ key: string; v: number[] }>({ key: "", v: [] });
+  // The pending curve recompute: at most one per animation frame (0 when none).
+  const curveRaf = useRef(0);
+  // How many times the curve has been computed (data-curves, for tests).
+  const curves = useRef(0);
   // pending counts rAF callbacks requested and not yet run or cancelled.
   const sweep = useRef({ t: 1, raf: 0, start: 0, frames: 0, sweeps: 0, pending: 0, pendingMax: 0 });
   const draws = useRef(0);
@@ -232,17 +243,39 @@ export function Diffusion({
     c.dataset.draws = String(draws.current);
   }, []);
 
-  const drawChart = useCallback(() => {
+  /*
+    The convergence curve is 200 binomial trees, the costliest thing on the exhibit. The
+    first draw computes it at once. After that, a σ or K input draws straight away against
+    the cached curve (the marker, the Black–Scholes line and the axes move at once) and asks
+    for the new curve in the next animation frame; however many inputs land before that
+    frame, the curve is recomputed once, for the latest σ and K, and the chart redrawn.
+  */
+  const drawChart = useCallback(function draw() {
     const c = cc.current;
     const L = model.current;
     if (!c || !L) return;
     const { sig: sg, K: k, N: n0 } = L.inputs;
     const key = `${sg}|${k}`;
     if (curve.current.key !== key) {
-      const v: number[] = [];
-      for (let n = 1; n <= 200; n++) v.push(crrTree({ S: S0, K: k, r: R0, sigma: sg / 100, T: TT, N: n, keep: -1 }).price);
-      curve.current = { key, v };
+      if (!curve.current.v.length) {
+        curve.current = { key, v: convergence(sg, k) };
+        curves.current += 1;
+      }
+      else if (!curveRaf.current) {
+        curveRaf.current = requestAnimationFrame(() => {
+          curveRaf.current = 0;
+          const M = model.current;
+          if (!M) return;
+          const next = `${M.inputs.sig}|${M.inputs.K}`;
+          if (curve.current.key !== next) {
+            curve.current = { key: next, v: convergence(M.inputs.sig, M.inputs.K) };
+            curves.current += 1;
+          }
+          draw();
+        });
+      }
     }
+    const drawnKey = curve.current.key;
     const cv = curve.current.v;
     const { g, w: W, h: H } = sizeCanvas(c, CHART_H);
     const { mono } = fonts.current;
@@ -301,7 +334,8 @@ export function Diffusion({
     g.shadowBlur = 0;
     // What the chart shows, for tests: the marker's N and the curve's σ|K.
     c.dataset.markerN = String(n0);
-    c.dataset.curve = key;
+    c.dataset.curve = drawnKey;
+    c.dataset.curves = String(curves.current);
   }, []);
 
   const markSweep = useCallback(() => {
@@ -414,6 +448,8 @@ export function Diffusion({
     return () => {
       live = false;
       ro.disconnect();
+      cancelAnimationFrame(curveRaf.current);
+      curveRaf.current = 0;
     };
   }, [drawChart, drawTree, markSweep]);
 

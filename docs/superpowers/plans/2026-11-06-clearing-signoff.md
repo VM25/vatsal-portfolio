@@ -1,6 +1,6 @@
 # Clearing (Portfolio V2): sign-off
 
-Branch `v2-clearing` (worktree `.claude/worktrees/v2-clearing`). Nothing here is deployed to production. The preview deploy and the real-device pass are still to do (sections 3 and 4).
+Branch `v2-clearing` (worktree `.claude/worktrees/v2-clearing`). Nothing here is deployed to production. The preview deploy and the real-device pass are still to do (sections 3 and 4), and a few content items need Vatsal's confirmation (section 6).
 
 - Spec: `docs/superpowers/specs/2026-11-06-clearing-design.md` (§8 is mapped below)
 - Plan: `docs/superpowers/plans/2026-11-06-clearing.md`
@@ -13,8 +13,8 @@ Branch `v2-clearing` (worktree `.claude/worktrees/v2-clearing`). Nothing here is
 | vitest | 42/42 |
 | `tsc --noEmit`, eslint | clean |
 | `next build` (clean `.next`) | passes. See "Build flakiness" in section 5. |
-| e2e, Chromium + WebKit (full suite) | 278 passed, 0 failed, 4 skipped (the two Chromium-only clipboard tests on WebKit, the Chromium-only `--disable-webgl` launch on WebKit, and the Chromium-only layout-shift (CLS) deep-link test on WebKit). Firefox not run. |
-| `acceptance.spec.ts --repeat-each=2`, Chromium + WebKit | 72/72 passed |
+| e2e, Chromium + WebKit (full suite) | 286 passed, 0 failed, 4 skipped (the two Chromium-only clipboard tests on WebKit, the Chromium-only `--disable-webgl` launch on WebKit, and the Chromium-only layout-shift (CLS) deep-link test on WebKit). Firefox not run. |
+| `acceptance.spec.ts --repeat-each=2`, Chromium + WebKit | 72/72 passed (at 9370bee; the acceptance spec has passed in every full run since) |
 | Firefox | **Pending.** Firefox can't launch in this sandbox. Run `npx playwright test --project=firefox` on a normal machine, or cover it in the device pass. |
 | Unused dependencies | `npm ls gsap framer-motion scrollama`: none present (removed in Task 6). The remaining dependencies are all in use: `next`, `react`, `react-dom`; dev: tailwind, eslint, typescript, vitest, playwright, `@axe-core/playwright`. |
 
@@ -38,21 +38,21 @@ Test names are given as `file › test`. "Unit" means `tests/unit/*.test.ts` (vi
 
 | Criterion | Evidence |
 |---|---|
-| Every claim is in the claims register with a source | Unit: `content.test › keeps the three claims at the locked register wording`, `› states the premise exactly`. Task 5 report has a claim-by-claim source table. |
-| Signal Survival, Currency Options Desk, Lending Decisions and ApexGP checked against their READMEs | Task 5 report, "Per-claim verification": unsupported lines were corrected or removed (for example, "100% directional risk hedged" became "~99% worst-case loss cut"; "500+ positions" was removed). The controller confirmed all 16 project URLs return 200. |
-| Breakevens are never called pure inflation expectations | Unit: `content.test › mentions inflation expectations only inside the breakeven definition`. e2e: `research › without JavaScript every claim shows its evidence…` (asserts "not a pure measure of expected inflation"). |
+| Every claim is in the claims register with a source | Research claims: unit `content.test › keeps the three claims at the locked register wording` and `› states the premise exactly` (these cover the research claims only). Project, exhibit and profile claims: the per-claim source tables in `docs/superpowers/specs/clearing-sources.md` (moved into git from the Task 5 report). Open confirmations for Vatsal: section 6. |
+| Signal Survival, Currency Options Desk, Lending Decisions and ApexGP checked against their READMEs | `docs/superpowers/specs/clearing-sources.md`: unsupported lines were corrected or removed (for example, "100% directional risk hedged" became "~99% worst-case loss cut"; "500+ positions" was removed). All 16 project URLs return HTTP 200, but four live URLs come only from the old site's data (section 6). |
+| Breakevens are never called pure inflation expectations | e2e: `research › without JavaScript every claim shows its evidence and every link is visible` asserts the rendered evidence contains "not a pure measure of expected inflation". Unit: `content.test › calls breakevens not a pure measure of expected inflation` asserts the same sentence in the breakeven body (the earlier unit test was vacuous). |
 
 ### 8.3 Accessibility (WCAG 2.2 AA)
 
 | Criterion | Evidence |
 |---|---|
-| Text contrast ≥ 4.5:1 (≥ 3:1 at 24px and up) against the scene at night, research fog and morning | e2e: `acceptance › (f) contrast: …` at 1440, 1280, 768, 414, 390, 375, 360 and 320, and `(g)` without JavaScript. The method is halo-aware (section 5, "Contrast method"): with the scene held still, the glyphs are compared with the pixels under and within 2px of their strokes, taken from a screenshot with the glyphs transparent but their text shadows kept. A run passes when 95% of those pixels meet the ratio; the worst pixel is logged too. **All pass.** Lowest values at 95%, over two runs on each browser: night 5.06 (360) to 6.78; research 6.11 to 7.19; morning 5.01 to 5.69. On phones the opening screen meets this through the night halo (controller ruling, section 5). axe also passes at the same positions (see below). |
+| Text contrast ≥ 4.5:1 (≥ 3:1 at 24px and up) against the scene at night, research fog and morning | e2e: `acceptance › (f) contrast: …` at 1440, 1280, 768, 414, 390, 375, 360 and 320, and `(g)` without JavaScript. **This is the project's own measure, not a WCAG-defined pixel rule:** a 95th-percentile, halo-aware check (section 5, "Contrast method"). With the scene held still, each glyph's colour is compared with the pixels under and within 2px of its strokes, taken from a screenshot in which the glyphs are transparent but their text shadows are kept. A run passes when 95% of those pixels meet the ratio. **All pass.** Lowest values at 95% (two runs on each browser): night 5.06 (360) to 6.78; research 6.11 to 7.19; morning 5.01 to 5.69. **Worst single pixel, for the record:** below 4.5:1 only at night, where a lit window, the lamp's core or a one-pixel reflection highlight sits next to a stroke. Examples: "Read the research" 1.2:1 at 360 (the lamp's core); the opening line "Financial engineer…" 2.1–2.6:1 at 320–414 (lit windows; 95% figure 8+); the availability line 3.7:1 at 768; the reflection caption 4.1:1 at 1440. Elsewhere the worst pixel is 4.9–7.1 (research) and 4.9–5.6 (morning). On phones the opening screen meets the measure through the night halo (controller ruling, section 5). axe also passes at the same positions (see below). |
 | Visible focus on every control (sodium outline); logical tab order; skip link | e2e: `acceptance › focus: Tab walks every control in document order, each with a visible ring` (1280 and 375); `nav › the first Tab press shows a Skip to content link…`; `nav › the skip link stays at the top of the viewport…` |
 | Mobile menu is a modal dialog: focus in, trapped, back to Menu; Escape; scroll locked | e2e: `nav › the dialog fills the viewport after scrolling, traps focus and closes with Escape`, `› tapping Path closes the menu and lands on Path`. iOS touch-scroll lock: device pass. |
 | Rail uses the tabs pattern; claims use `aria-expanded`/`aria-controls` | e2e: `rail › wide: tabs ›` (4 tests) and `research › claims are buttons inside level-3 headings`. **Deviation (ruling, Task 12):** below the rail's breakpoint the rail is a set of disclosures (`aria-expanded` buttons with their panels), not tabs. A tabpanel inside a tablist is invalid ARIA (axe `aria-required-children`, critical). Tests: `rail › narrow: disclosures ›` (5 tests); axe is clean at both widths. |
 | Canvases and charts have text equivalents | The DiffusionWorks tree's node values are in a visually hidden table (`<caption>` plus one row per step), rendered from the same rows as the canvas so they change together. e2e: `diffusion › the tree's node values are in a visually hidden table that follows the canvas`. The convergence chart's key values (the binomial price at your N, Black–Scholes and their difference) are the readouts and the live-region sentence; only its axis tick labels are canvas-only. The market-making canvas's counters and equation are DOM text (`liquidity` tests). The research charts are SVGs with `role=img` labels and HTML captions. |
 | Touch targets ≥ 44×44px | e2e: `acceptance › (d) every interactive element is at least 44x44px` at 1440, 1280, 375 and 320, with the menu open on phones and the skip link focused. No inline-link exemptions were needed (the log lists none). Fix in this task: "Path" in the top bar was 31×44. Its hit area now spans the gap (`padding-inline: 8px; margin-inline: -8px`), and no label moves. |
-| Secondary text ≥ 14px | e2e: `acceptance › (c) text: …` at 320, 375, 768, 1280 and 1440: every visible DOM text (excluding `sup`/`sub`), rendered SVG text (scaled by the viewBox), and canvas text (font size times the context scale) is ≥ 14px. Axis ticks (SVG `.ticks`, the convergence chart canvas) are ≥ 12px. Also `research › chart text renders at 14px or more…` (7 widths) and the diffusion and liquidity canvas tests. |
+| Secondary text ≥ 14px | e2e: `acceptance › (c) text: …` at 320, 375, 768, 1280 and 1440. Every visible DOM text (excluding `sup`/`sub`), rendered SVG text (scaled by the viewBox) and canvas text (font size times the context scale) is ≥ 14px, except the axis tick labels, which are ≥ 12px. **Known deviation:** axis ticks (SVG `.ticks` and the convergence chart's canvas ticks) are allowed at 12px, by the Task 10 ruling (canvas node text 14px, axis ticks 12px); see section 5. Also `research › chart text renders at 14px or more…` (7 widths) and the diffusion and liquidity canvas tests. |
 | No horizontal scroll at 320px | e2e: `acceptance › (b) …` (8 widths, portrait and landscape); `world › no horizontal scroll at 320 px` |
 | Reduced motion honoured from the OS setting | See 8.6. |
 | axe-core | e2e: `acceptance › (e) axe: no serious or critical violations at night, research and morning` at 1280 and 375. The whole page is scanned at each position, plus with the menu open at 375. Zero serious or critical issues. |
@@ -106,9 +106,9 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 |---|---|
 | Page JS ≤ 120 KB gzipped (excluding fonts) | **Target not achievable on Next 16 + React 19. Site code is 23.1 KB. Flagged to Vatsal.** (Controller ruling: accepted as a spec miss; no framework surgery.) Measured 164.9 KB. Method: fetch the page HTML, take every `/_next/static/chunks/*.js` it references, and gzip each file from `.next` at level 9. The `noModule` polyfill chunk (38.5 KB) is excluded because modern browsers don't load it. Lighthouse's transfer total for scripts agrees: 168.2 KB. The site's own code is one 23.1 KB chunk (ScrollState, World, both exhibits, rail, claims, menu). The other ~142 KB is the Next 16 and React 19 client runtime (react-dom 69 KB, the Next router and RSC client 48 KB, the rest about 25 KB). Next 16's build output no longer prints per-route sizes. |
 | Fonts subset and preloaded | `next/font/google`, latin subset; 4 of 6 files preloaded (`*.p.*.woff2`). |
-| One fragment shader; DPR caps 1 (scene) and 2 (UI canvases); paused when hidden; ≤ 30 fps | e2e: `world › the scene canvas is capped at one device pixel per CSS pixel`; `diffusion › canvases are labelled images sized by CSS width with a backing store at DPR capped at 2`; `liquidity › the canvas is sized by CSS width at DPR capped at 2…`; `liquidity › a hidden tab pauses the run…`. The 30 fps cap is in `World.tsx` (`FRAME_MS`). |
+| One fragment shader; DPR caps 1 (scene) and 2 (UI canvases); paused when hidden; ≤ 30 fps | DPR caps: e2e `world › the scene canvas is capped at one device pixel per CSS pixel`; `diffusion › canvases are labelled images sized by CSS width with a backing store at DPR capped at 2`; `liquidity › the canvas is sized by CSS width at DPR capped at 2…`. Hidden tab: e2e `world › a hidden tab stops the scene drawing; a visible one starts it again` (sets `document.hidden`, as the liquidity test does, and reads the scene's frame counter on the test hook); `liquidity › a hidden tab pauses the run…`. **30 fps cap: code-backed only, no test** (`World.tsx`, `FRAME_MS`, in both modes). |
 | Steady ≥ 30 fps on a 2020 MacBook Air and an iPhone 12; drops to stills if not | Watchdog: `world › the GPU watchdog drops to the stills…`, `› throttled requestAnimationFrame keeps the live scene`, `› one long main-thread stall keeps the live scene`. Frame rate on those devices: **device pass**. |
-| Market-making and convergence ≤ 8 ms per update on mid-tier mobile | Task 10 review measured about 5–12 ms worst case per input on desktop, with the convergence curve cached by σ and K. Mid-tier mobile: **device pass** (Chrome DevTools performance panel on Android). |
+| Market-making and convergence ≤ 8 ms per update on mid-tier mobile | **At risk.** Task 10's offline review measured about 5–12 ms per σ or K input on desktop. The cost is the 200-tree convergence curve, recomputed on every input. **Mitigation (pre-preview):** a σ or K input now draws the chart at once against the cached curve (marker, Black–Scholes line and axes move straight away). The new curve is computed in the next animation frame, at most once per frame however many inputs arrive (e2e: `diffusion › a σ drag draws against the cached curve and recomputes it once per frame`). **Measured** in Chromium with 4× CPU throttling (CDP `Emulation.setCPUThrottlingRate`), one input per frame, 40 inputs per slider, two runs. "Input" means dispatching the input event through React's render, commit and effects; "frame" means the deferred recompute in the next frame. **Before:** σ input median 5.4 ms (max 9.9–11.9); K input 4.6–5.2 ms (max 5.7–5.8); no frame work. **After:** σ input 1.4–1.6 ms (max 4.6–5.2), plus one curve recompute of 3.9 ms (max 5.8–7.6) per frame; K input 1.2–1.6 ms (max 1.6–2.4), plus 3.7–3.8 ms (max 4.1–4.4) per frame. One input per frame costs the same in total (about 5 ms), but the input itself is 3–4× cheaper, and a fast drag (several inputs per frame) pays the curve once per frame instead of once per input. 4× throttling on this machine is not a mid-tier phone. **Device pass** (Android DevTools) still needed. |
 
 ### 8.8 Cross-browser
 
@@ -177,6 +177,9 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
 
 **Recorded rulings and deviations**
 
+- **Axis tick labels at 12px** (Task 10 ruling). Secondary text is ≥ 14px everywhere, including the canvas node values. Axis tick labels (the research charts' SVG `.ticks` and the convergence chart's canvas ticks) are allowed at 12px.
+- **`useScrollState` removed** (pre-preview, M1). The plan's `useScrollState()` re-rendered the provider on every scroll and had no consumers. Progress and keys now live only in the scene bus. Consumers use `useChapter`, `useSceneActions` and `useSceneBus`.
+
 - **Pacing counts graphics** (ruling A, Task 12). Text-only pacing at 375×812 is 48%: the DiffusionWorks tree canvas carries its numbers.
 - **Rail on narrow screens is disclosures, not tabs** (Task 12 fix-up). The spec says "tabs pattern"; a tabpanel inside the tablist is invalid ARIA. Wide screens keep the tabs.
 - **Chapter keys at the anchor landing** (Task 12 fix-up 2). Keys are measured where each anchor lands (section top minus the computed `scroll-padding-top`), so every nav or menu jump reads its chapter's own label time within 1 minute.
@@ -209,6 +212,23 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
 - **Night halo** on the opening screen at phone widths: see the controller rulings above.
 - `measurePacing` gained a `step` option (60px here) and ignores `.sr-only` text. The phone-number check in `chapters.spec.ts` now skips tables, so it doesn't read the node-value table as a phone number.
 
+**Known minors (deferred, no action before preview)**
+
+- **M4, stills rAF polling.** In stills mode a requestAnimationFrame loop polls the scene bus for scroll and key changes; it does nothing when nothing changed. It could listen for scroll instead.
+- **M5, stills decode flash.** When the page falls back to stills, the five images decode asynchronously, so the gradient behind them can show for a moment before the first still appears.
+
+**Fixed before preview (final whole-branch review)**
+
+- **I1:** the convergence curve is coalesced to one recompute per frame (see 8.7).
+- **M1:** no per-scroll React render (see above).
+- **M3:** `preserveDrawingBuffer` is on only when the test hook sets `__CLEARING_TEST__.preserve` (world.spec does).
+- **M6:** unreferenced `public/images/vatsal-maniar-2.png` deleted.
+- **M7:** dead data removed: `profile.links.prospectus` and `profile.links.ssrn` (Research uses its own links), `study.school`, `study.degree` and `frm.text`. The FRM unit test now checks the pieces Path renders.
+- **M8:** the breakeven unit test asserts the sentence (see 8.2).
+- **M11:** without JavaScript the reflection caption reads n = 512, the converged count, matching the still behind it (`html:not(.js)` swaps in a server-rendered 512). Tests: `chapters › without JavaScript the reflection caption shows the converged count, 512` and `› with JavaScript the caption shows only the live count`.
+- **M12:** `.netlify` added to `.gitignore`.
+- **Hidden-tab test** for the scene (see 8.7).
+
 **Environment notes**
 
 - **Build flakiness.** In this worktree, `next build` (Turbopack) sometimes fails inside `next/font/google`:
@@ -218,3 +238,16 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
   - Always `rm -rf .next` before building. Font loading was not changed.
 - Firefox can't launch in this sandbox (see 8.8).
 - Lighthouse runs on the developer machine against `localhost`, so network timing is simulated or throttled rather than real.
+
+## 6. Content for Vatsal to confirm
+
+Each item is either published as below, or changed after your answer. The sources are in `docs/superpowers/specs/clearing-sources.md`.
+
+| # | Item | What the site does now | Confirm |
+|---|---|---|---|
+| a | Old experience details: "$1.5B book", "98%", "60 people", "10,000+ records" | Dropped. There was no source to check, and the prototype doesn't show them. | Keep dropped, or give a source (for example, the résumé) to bring any back |
+| b | Live URLs found only in the old site's data, not in a README: Signal Survival (alpha-research.netlify.app), Currency Options Desk (fxrisklab.netlify.app), Allocation Study (pra-analytics.netlify.app), ApexGP (apexgp-markets.netlify.app, repo `VM25/apexgp-markets`) | Linked. All return HTTP 200. | That each URL is the right one. ApexGP's README says it is deployed on **Vercel**, so confirm the Netlify URL and the repo name. |
+| c | ApexGP "24 races replayed" | Shown. The 24 comes from counting the 24 round files in `public/data/official`, not from a README line. | That 24 is right |
+| d | DiffusionWorks: "resolved as wrong at 23 of 24 up-barrier cells" | "Wrong", the source's word (BARRIER-MONITORING-METHODOLOGY.md line 397). Spec §6.1 says "off (over-predicting)". | Wording: "wrong" or "off" |
+| e | Lending Decisions: "models marked Monitor" | "Marked Monitor", the README's verdict label. The prototype said "marked for monitoring". | Wording |
+| f | Spec §13 author calls | No phone number shown; metadata, Open Graph image and description rewritten to the copy rules; old sections, instruments and data deleted on this branch; fallback stills checked into `public/scene/`; the prototype's controls panel is not part of the site. | Each call |

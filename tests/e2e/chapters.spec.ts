@@ -36,6 +36,23 @@ test.describe("Home, Path and Contact", () => {
     await ctx.close();
   });
 
+  test("without JavaScript the reflection caption shows the converged count, 512", async ({ browser }) => {
+    const ctx = await browser.newContext({ javaScriptEnabled: false });
+    const page = await ctx.newPage();
+    await page.goto("/");
+    await expect(page.locator(".refl .n-still")).toBeVisible();
+    await expect(page.locator(".refl .n-still")).toHaveText("512");
+    await expect(page.locator(".refl [data-n]")).toBeHidden();
+    expect(await page.locator(".refl").innerText()).toContain("= 512 ripples");
+    await ctx.close();
+  });
+
+  test("with JavaScript the caption shows only the live count", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(".refl [data-n]")).toBeVisible();
+    await expect(page.locator(".refl .n-still")).toBeHidden();
+  });
+
   test("Path has the unfiltered photo", async ({ page }) => {
     await page.goto("/");
     const img = page.locator("#path img");

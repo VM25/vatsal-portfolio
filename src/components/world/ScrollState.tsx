@@ -16,7 +16,9 @@ import { CHAPTERS, KEYS, clockAt, isMorning, keysFromLayout, type Chapter } from
 /*
   Scroll state for the whole page: progress p (0 at the top, 1 at the bottom),
   the active chapter, the chapter key positions measured from the live layout,
-  and the OS reduced-motion setting.
+  and the OS reduced-motion setting. Progress and keys live only in the scene bus
+  (read every frame by World), so scrolling never re-renders React; only a change
+  of chapter does (useChapter, for aria-current).
 
   Static labels rendered by server components are kept current imperatively, as
   the prototype does: every [data-clock] shows clockAt(p), every [data-clocktime]
@@ -25,11 +27,8 @@ import { CHAPTERS, KEYS, clockAt, isMorning, keysFromLayout, type Chapter } from
   .morning, .rm and data-beats (the count of requestBeat calls).
 */
 
-export type ScrollState = {
-  p: number;
-  chapter: Chapter;
-  keys: number[];
-  reducedMotion: boolean;
+/** The two scene actions exhibits can take. */
+export type SceneActions = {
   requestBeat(): void;
   setRush(v: number): void;
 };
@@ -53,11 +52,7 @@ export type SceneBusApi = {
   frameDone(): void;
 };
 
-type StateValue = Pick<ScrollState, "p" | "chapter" | "keys" | "reducedMotion">;
-type Actions = Pick<ScrollState, "requestBeat" | "setRush">;
-
-const StateCtx = createContext<StateValue | null>(null);
-const ActionsCtx = createContext<Actions | null>(null);
+const ActionsCtx = createContext<SceneActions | null>(null);
 const BusCtx = createContext<SceneBusApi | null>(null);
 const ChapterCtx = createContext<Chapter | null>(null);
 
@@ -128,9 +123,7 @@ function relabel(keys: number[]) {
 }
 
 export function ScrollStateProvider({ children }: { children: ReactNode }) {
-  const [p, setP] = useState(0);
   const [chapter, setChapter] = useState<Chapter>("home");
-  const [keys, setKeys] = useState<number[]>(KEYS);
   const reducedMotion = useSyncExternalStore(subscribeRM, getRM, getRMServer);
 
   const bus = useRef<SceneBus>({
@@ -174,7 +167,6 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
         });
       }
       root.classList.toggle("morning", isMorning(np));
-      setP(np);
     };
 
     const measure = () => {
@@ -182,7 +174,6 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
       if (!sameKeys(ks, bus.current.keys)) {
         bus.current.keys = ks;
         bus.current.dirty = true;
-        setKeys(ks);
       }
       relabel(bus.current.keys);
     };
@@ -298,7 +289,6 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
     bus.current.dirty = true;
   }, []);
 
-  const state = useMemo(() => ({ p, chapter, keys, reducedMotion }), [p, chapter, keys, reducedMotion]);
   const actions = useMemo(() => ({ requestBeat, setRush }), [requestBeat, setRush]);
   const api = useMemo<SceneBusApi>(
     () => ({
@@ -320,18 +310,11 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
     <BusCtx.Provider value={api}>
       <ActionsCtx.Provider value={actions}>
         <ChapterCtx.Provider value={chapter}>
-          <StateCtx.Provider value={state}>{children}</StateCtx.Provider>
+          {children}
         </ChapterCtx.Provider>
       </ActionsCtx.Provider>
     </BusCtx.Provider>
   );
-}
-
-export function useScrollState(): ScrollState {
-  const state = useContext(StateCtx);
-  const actions = useContext(ActionsCtx);
-  if (!state || !actions) throw new Error("useScrollState must be used inside <ScrollStateProvider>");
-  return { ...state, ...actions };
 }
 
 /**
@@ -348,7 +331,7 @@ export function useChapter(): Chapter {
  * Only the actions. Stable for the page's lifetime, so exhibits that need to
  * fire a beat or set the rush don't re-render on every scroll.
  */
-export function useSceneActions(): Pick<ScrollState, "requestBeat" | "setRush"> {
+export function useSceneActions(): SceneActions {
   const actions = useContext(ActionsCtx);
   if (!actions) throw new Error("useSceneActions must be used inside <ScrollStateProvider>");
   return actions;

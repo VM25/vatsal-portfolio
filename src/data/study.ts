@@ -14,21 +14,16 @@ export const route = [
 export const study: Study[] = [
   {
     id: "asu",
-    school: "Arizona State University",
-    degree: "B.S. Computer Science",
     detail: "Aug 2021 – May 2025 · GPA 3.74 · Magna Cum Laude",
   },
   {
     id: "stevens",
-    school: "Stevens Institute of Technology",
-    degree: "M.S. Financial Engineering",
     detail: "Sep 2025 – Dec 2026 · GPA 3.67 · Graduate Certificate in Financial Risk Engineering",
   },
 ];
 
-/** The only place the FRM appears on the site. */
+/** The only place the FRM appears on the site; Path renders it as "GARP FRM Part 1 Candidate" and "… sitting November 2026". */
 export const frm = {
-  text: "GARP FRM Part 1 Candidate · November 2026",
   body: "GARP",
   title: "FRM Part 1 Candidate",
   full: "Financial Risk Manager",

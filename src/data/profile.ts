@@ -8,8 +8,6 @@ export const profile = {
   email: "vatsalmaniar2003@gmail.com",
   links: {
     resume: "/resume/Maniar_Vatsal.pdf",
-    prospectus: "/research/Maniar-Research-Prospectus.pdf",
-    ssrn: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7469079",
     linkedin: "https://www.linkedin.com/in/vatsal-maniar/",
     github: "https://github.com/VM25",
   },

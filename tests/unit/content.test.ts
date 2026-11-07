@@ -25,7 +25,6 @@ const all = Object.entries(modules).flatMap(([name, m]) =>
   strings(m).map((s) => ({ name, s })),
 );
 
-const FRM = "GARP FRM Part 1 Candidate · November 2026";
 
 describe("content", () => {
   it("has data to check", () => {
@@ -63,9 +62,11 @@ describe("content", () => {
     for (const c of claims) expect(spec).toContain(c.text);
   });
 
-  it("mentions inflation expectations only inside the breakeven definition", () => {
+  it("calls breakevens not a pure measure of expected inflation", () => {
+    expect(researchMod.research.evidence.identity.body).toContain("not a pure measure of expected inflation");
+    // Nowhere else are breakevens or inflation expectations described.
     for (const { s } of all) {
-      if (/inflation expectations/i.test(s)) expect(s).toContain("not pure expected inflation");
+      if (/inflation expectations?/i.test(s)) expect(s).toContain("not a pure measure of expected inflation");
     }
   });
 
@@ -75,9 +76,12 @@ describe("content", () => {
     expect(studyMod.route.map((r) => r.place)).toEqual(["Mumbai", "Arizona", "New Jersey"]);
   });
 
-  it("shows the FRM string only in Path data", () => {
-    const hits = all.filter(({ s }) => s.includes(FRM)).map(({ name }) => name);
-    expect(hits).toEqual(["study"]);
+  it("keeps the FRM in Path data only, as the pieces Path renders", () => {
+    const { frm } = studyMod;
+    expect(`${frm.body} ${frm.title}`).toBe("GARP FRM Part 1 Candidate");
+    expect(frm.sitting).toBe("sitting November 2026");
+    const hits = all.filter(({ s }) => /\bFRM\b|GARP/.test(s)).map(({ name }) => name);
+    expect(new Set(hits)).toEqual(new Set(["study"]));
   });
 
   it("carries no phone number", () => {

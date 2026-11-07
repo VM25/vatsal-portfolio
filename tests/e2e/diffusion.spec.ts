@@ -357,6 +357,27 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(chart).toHaveAttribute("data-curve", "20|90");
   });
 
+  test("a σ drag draws against the cached curve and recomputes it once per frame", async ({ page }) => {
+    await open(page);
+    const chart = page.locator("#dwChart");
+    await expect(chart).toHaveAttribute("data-curve", "20|100");
+    const before = Number(await chart.getAttribute("data-curves"));
+    // Five drag inputs inside one frame: each draws at once against the cached curve.
+    const atOnce = await page.evaluate(() => {
+      const el = document.getElementById("dwS") as HTMLInputElement;
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      for (const v of [21, 22, 23, 24, 25]) {
+        set.call(el, String(v));
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      return (document.getElementById("dwChart") as HTMLCanvasElement).dataset.curve;
+    });
+    expect(atOnce).toBe("20|100");
+    await expect(page.locator("#dwS")).toHaveValue("25");
+    await expect(chart).toHaveAttribute("data-curve", "25|100");
+    expect(Number(await chart.getAttribute("data-curves"))).toBe(before + 1);
+  });
+
   test("tree text is drawn at 14px or larger", async ({ browser }) => {
     for (const width of [375, 1280]) {
       const ctx = await browser.newContext({ viewport: { width, height: 812 } });

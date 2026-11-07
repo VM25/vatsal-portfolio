@@ -19,9 +19,8 @@ export interface Post {
   period: string;
 }
 
+/** The school and degree are in the route note; this is the line under it. */
 export interface Study {
   id: string;
-  school: string;
-  degree: string;
   detail: string;
 }
