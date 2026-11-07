@@ -17,21 +17,27 @@ import { fill, readFonts, sizeCanvas } from "@/components/exhibits/canvas";
 
 /*
   DiffusionWorks: a Cox–Ross–Rubinstein tree closing in on Black–Scholes. The drawing
-  is ported from the prototype; the numbers come from src/lib/pricing.ts. The values
-  that matter (the binomial and Black–Scholes prices, the difference, u, d, p and how
-  many steps the tree shows) are also in the DOM. The per-node values drawn on the tree
-  are repeated in a visually hidden table, one row per step, rendered from the same
-  rows, so it changes with the canvas. The chart's key values (the binomial price at
-  your N and Black–Scholes) are the readouts; only its axis tick labels are canvas-only.
+  is ported from the prototype; the numbers come from src/lib/pricing.ts.
 
-  The intro, result and formula copy are rendered by the server component and passed
-  in as slots; every other string comes from `copy` (src/data/projects.ts). Default
-  readouts are computed during render, so the server HTML (and a page with no
-  JavaScript) carries the real values and hydration matches.
+  The default view carries the finding (refinement R3): the tree at N = 12 with its
+  node values, and the convergence chart with its key values set as annotations on
+  the chart itself: "Black–Scholes 9.9251" on the dashed line, "N = 12 · 9.7612" and
+  the difference beside the marker, whose stroke to the dashed line is that
+  difference. The model inputs come after the visuals and the result, as a quiet
+  group. The per-node values drawn on the tree are repeated in a visually hidden
+  table, one row per step, rendered from the same rows, so it changes with the
+  canvas; only the chart's axis tick labels are canvas-only.
 
-  The readouts' visible numbers update on every input. The polite live region gets
-  its sentence 250 ms after the last input of a drag, or 120 ms after the last
-  `change` (keyboard repeats fire one `change` per step), which also starts the sweep.
+  The annotations are DOM text placed over the canvas. Their heights come from the
+  same scale the canvas uses (scale(), from the cached curve's range and the
+  Black–Scholes price), so label and line agree; their horizontal place is a CSS calc
+  of the chart's width. The default curve is computed during render, so the server
+  HTML (and a page with no JavaScript) carries the real values and positions, and
+  hydration matches.
+
+  The visible numbers update on every input. The polite live region gets its
+  sentence 250 ms after the last input of a drag, or 120 ms after the last `change`
+  (keyboard repeats fire one `change` per step), which also starts the sweep.
 */
 
 const S0 = 100;
@@ -45,6 +51,12 @@ const CHART_H = 230;
 /** Canvas text: node values and notes at 14px (secondary text minimum); axis ticks at 12px. */
 const TREE_FS = 14;
 const AXIS_FS = 12;
+/** The convergence chart's plot box, in CSS px: left and right insets, top, and the band under the axis. */
+const PLOT = { l: 56, r: 10, t: 14, b: 30 };
+/** Annotation sizes for placing them (CSS px): the marker label's width and height, and the gap from what it labels. */
+const MK_W = 150;
+const MK_H = 44;
+const AN_GAP = 10;
 
 type Inputs = { N: number; sig: number; K: number };
 
@@ -55,7 +67,12 @@ type Plural = { one: string; other: string };
 
 export type DiffusionCopy = {
   controls: { steps: string; volatility: string; strike: string };
-  readouts: { binomial: string; blackScholes: string; difference: string };
+  /** The group label over the sliders. */
+  inputsLabel: string;
+  /** Words in the chart's annotations: the dashed line's label and the difference beside the marker. */
+  annotations: { blackScholes: string; difference: string };
+  /** The contract, on the chart caption: "{sig}" percent; `other` also takes "{K}". */
+  terms: { atMoney: string; other: string };
   treeLabel: string;
   /** "{shown}" of "{total}" steps. */
   treeCaption: string;
@@ -67,8 +84,6 @@ export type DiffusionCopy = {
   treeMore: Plural;
   chartLabel: string;
   chartCaption: string;
-  formulaLabel: string;
-  assumptions: string;
   /** "{v}" percent. */
   percentText: string;
   /** "{N}", "{sig}", "{K}", "{bin}", "{bs}", "{gap}". */
@@ -98,15 +113,66 @@ function convergence(sig: number, K: number): number[] {
   return v;
 }
 
+type Tail = { lo: number; hi: number };
+
+/** The curve's range from N = 3 on (N = 1 and 2 swing too far to scale by). */
+function tailRange(v: number[]): Tail {
+  const tail = v.slice(2);
+  return { lo: Math.min(...tail), hi: Math.max(...tail) };
+}
+
+/**
+ * The chart's vertical scale: the curve's range and the Black–Scholes price, padded by a
+ * quarter. The canvas and the DOM annotations both place values with it.
+ */
+function scale(tail: Tail, ref: number) {
+  const lo0 = Math.min(tail.lo, ref);
+  const hi0 = Math.max(tail.hi, ref);
+  const pad = (hi0 - lo0) * 0.25 + 0.02;
+  const lo = lo0 - pad;
+  const hi = hi0 + pad;
+  const B = CHART_H - PLOT.b;
+  const Y = (v: number) => B - ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * (B - PLOT.t);
+  return { lo0, hi0, Y };
+}
+
+/** Where the annotations sit, from the scale, the selected N and the chart's width (0 before it is measured). */
+function placeLabels(Y: (v: number) => number, ref: number, bin: number, N: number, width: number) {
+  const W = width || 600;
+  const f = (N - 1) / 199;
+  const x = `calc(${PLOT.l}px + (100% - ${PLOT.l + PLOT.r}px) * ${f.toFixed(5)})`;
+  const yRef = Y(ref);
+  const yBin = Y(bin);
+  const above = yBin <= yRef;
+  // The marker label sits on the marker's side of the line, away from it; beside the
+  // marker when that side has no room. Black–Scholes is labelled on the other side.
+  let v: "up" | "down" | "mid" = above ? "up" : "down";
+  if (above && yBin - AN_GAP - MK_H < 0) v = "mid";
+  if (!above && yBin + AN_GAP + MK_H > CHART_H) v = "mid";
+  const mx = PLOT.l + f * (W - PLOT.l - PLOT.r);
+  const toRight = mx + AN_GAP + MK_W <= W - 4;
+  const tx = toRight ? `${AN_GAP}px` : `calc(-100% - ${AN_GAP}px)`;
+  const ty = v === "up" ? `calc(-100% - ${AN_GAP}px)` : v === "down" ? `${AN_GAP}px` : "-50%";
+  const top = v === "mid" ? Math.max(MK_H / 2, Math.min(CHART_H - MK_H / 2, yBin)) : yBin;
+  return {
+    marker: { left: x, top: `${top.toFixed(1)}px`, transform: `translate(${tx}, ${ty})` },
+    ref: {
+      right: `${PLOT.r}px`,
+      top: `${yRef.toFixed(1)}px`,
+      transform: above ? "translateY(6px)" : "translateY(calc(-100% - 6px))",
+    },
+  };
+}
+
 function sayText(i: Inputs, copy: DiffusionCopy): string {
   const { tree, ref, gap } = price(i, -1);
   return fill(copy.say, { N: i.N, sig: i.sig, K: i.K, bin: fixed(tree.price, 4), bs: fixed(ref, 4), gap: diff(gap) });
 }
 
-/** Set the single-letter symbols N, σ and K in STIX italic, as the prototype does. */
+/** Set the single-letter symbols (N, σ, K, S, r, T) in STIX italic, as the prototype does. */
 function symbols(text: string): ReactNode {
   const out: ReactNode[] = [];
-  const re = /(^|\s)([NσK])(?=[\s.,)]|$)/g;
+  const re = /(^|\s)([NσKSrT])(?=[\s.,;)]|$)/g;
   let at = 0;
   for (let m = re.exec(text); m; m = re.exec(text)) {
     const start = m.index + m[1].length;
@@ -141,12 +207,10 @@ type Model = { inputs: Inputs; keep: number; rows: number[][]; ref: number; more
 export function Diffusion({
   copy,
   intro,
-  formulas,
   result,
 }: {
   copy: DiffusionCopy;
   intro: ReactNode;
-  formulas: ReactNode;
   result: ReactNode;
 }) {
   const { requestBeat } = useSceneActions();
@@ -154,13 +218,19 @@ export function Diffusion({
   const [sig, setSig] = useState(DEFAULTS.sig);
   const [K, setK] = useState(DEFAULTS.K);
   const [maxShow, setMaxShow] = useState(6);
+  const [chartW, setChartW] = useState(0);
   const [said, setSaid] = useState<Inputs>(DEFAULTS);
+  // The default curve, computed once during render so the server places the annotations.
+  const [first] = useState(() => ({ key: `${DEFAULTS.sig}|${DEFAULTS.K}`, v: convergence(DEFAULTS.sig, DEFAULTS.K) }));
+  // The range of the curve the canvas is drawing (it follows the cached curve, not the inputs).
+  const [tail, setTail] = useState<Tail>(() => tailRange(first.v));
 
   const inputs: Inputs = { N, sig, K };
   const keep = Math.min(N, maxShow);
   const { tree, ref, gap } = price(inputs, keep);
-  const { u, d, p } = tree.params;
   const more = N > keep ? plural(copy.treeMore, N - keep, { n: N - keep }) : "";
+  const at = placeLabels(scale(tail, ref).Y, ref, tree.price, N, chartW);
+  const terms = K === S0 ? fill(copy.terms.atMoney, { sig }) : fill(copy.terms.other, { sig, K });
 
   const nIn = useRef<HTMLInputElement>(null);
   const sIn = useRef<HTMLInputElement>(null);
@@ -171,11 +241,11 @@ export function Diffusion({
 
   const model = useRef<Model | null>(null);
   const fonts = useRef({ mono: "monospace", sans: "sans-serif" });
-  const curve = useRef<{ key: string; v: number[] }>({ key: "", v: [] });
+  const curve = useRef<{ key: string; v: number[] }>(first);
   // The pending curve recompute: at most one per animation frame (0 when none).
   const curveRaf = useRef(0);
-  // How many times the curve has been computed (data-curves, for tests).
-  const curves = useRef(0);
+  // How many times the curve has been computed (data-curves, for tests); the default once.
+  const curves = useRef(1);
   // pending counts rAF callbacks requested and not yet run or cancelled.
   const sweep = useRef({ t: 1, raf: 0, start: 0, frames: 0, sweeps: 0, pending: 0, pendingMax: 0 });
   const draws = useRef(0);
@@ -245,53 +315,42 @@ export function Diffusion({
 
   /*
     The convergence curve is 200 binomial trees, the costliest thing on the exhibit. The
-    first draw computes it at once. After that, a σ or K input draws straight away against
-    the cached curve (the marker, the Black–Scholes line and the axes move at once) and asks
-    for the new curve in the next animation frame; however many inputs land before that
-    frame, the curve is recomputed once, for the latest σ and K, and the chart redrawn.
+    default curve is computed during the first render. After that, a σ or K input draws
+    straight away against the cached curve (the marker, the Black–Scholes line, the axes
+    and the annotations move at once) and asks for the new curve in the next animation
+    frame; however many inputs land before that frame, the curve is recomputed once, for
+    the latest σ and K, the chart redrawn and the annotations re-placed on its range.
   */
   const drawChart = useCallback(function draw() {
     const c = cc.current;
     const L = model.current;
     if (!c || !L) return;
     const { sig: sg, K: k, N: n0 } = L.inputs;
-    const key = `${sg}|${k}`;
-    if (curve.current.key !== key) {
-      if (!curve.current.v.length) {
-        curve.current = { key, v: convergence(sg, k) };
-        curves.current += 1;
-      }
-      else if (!curveRaf.current) {
-        curveRaf.current = requestAnimationFrame(() => {
-          curveRaf.current = 0;
-          const M = model.current;
-          if (!M) return;
-          const next = `${M.inputs.sig}|${M.inputs.K}`;
-          if (curve.current.key !== next) {
-            curve.current = { key: next, v: convergence(M.inputs.sig, M.inputs.K) };
-            curves.current += 1;
-          }
-          draw();
-        });
-      }
+    if (curve.current.key !== `${sg}|${k}` && !curveRaf.current) {
+      curveRaf.current = requestAnimationFrame(() => {
+        curveRaf.current = 0;
+        const M = model.current;
+        if (!M) return;
+        const next = `${M.inputs.sig}|${M.inputs.K}`;
+        if (curve.current.key !== next) {
+          curve.current = { key: next, v: convergence(M.inputs.sig, M.inputs.K) };
+          curves.current += 1;
+          setTail(tailRange(curve.current.v));
+        }
+        draw();
+      });
     }
     const drawnKey = curve.current.key;
     const cv = curve.current.v;
     const { g, w: W, h: H } = sizeCanvas(c, CHART_H);
     const { mono } = fonts.current;
     g.clearRect(0, 0, W, H);
-    const tail = cv.slice(2);
-    let lo = Math.min(Math.min(...tail), L.ref);
-    let hi = Math.max(Math.max(...tail), L.ref);
-    const pad = (hi - lo) * 0.25 + 0.02;
-    lo -= pad;
-    hi += pad;
-    const Lx = 56;
-    const Rx = W - 10;
-    const T = 14;
-    const B = H - 30;
+    const { lo0, hi0, Y } = scale(tailRange(cv), L.ref);
+    const Lx = PLOT.l;
+    const Rx = W - PLOT.r;
+    const T = PLOT.t;
+    const B = H - PLOT.b;
     const X = (n: number) => Lx + ((n - 1) / 199) * (Rx - Lx);
-    const Y = (v: number) => B - ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * (B - T);
     g.lineWidth = 1;
     g.strokeStyle = "rgba(195,203,198,0.25)";
     g.beginPath();
@@ -302,9 +361,13 @@ export function Diffusion({
     g.fillStyle = "#9AA39E";
     g.font = `${AXIS_FS}px ${mono}`;
     g.textAlign = "right";
-    for (const v of [lo + pad, L.ref, hi - pad]) g.fillText(v.toFixed(2), Lx - 6, Y(v) + 4);
+    // The curve's extremes; Black–Scholes is labelled on its line, in the DOM.
+    for (const v of [lo0, hi0]) g.fillText(v.toFixed(2), Lx - 6, Y(v) + 4);
     g.textAlign = "center";
-    for (const n of [1, 50, 100, 150, 200]) g.fillText(String(n), X(n), B + 17);
+    for (const n of [1, 50, 100, 150]) g.fillText(String(n), X(n), B + 17);
+    // The last tick ends at the canvas edge rather than running past it.
+    g.textAlign = "right";
+    g.fillText("200", W - 1, B + 17);
     g.setLineDash([5, 5]);
     g.strokeStyle = "#FFA62B";
     g.beginPath();
@@ -318,13 +381,16 @@ export function Diffusion({
       g.arc(X(n), Y(cv[n - 1]), 1.5, 0, 6.283);
       g.fill();
     }
+    // The marker, and its stroke to the Black–Scholes line: the difference, drawn.
     const mx = X(n0);
     const my = Y(cv[n0 - 1]);
-    g.strokeStyle = "rgba(255,166,43,0.5)";
+    g.strokeStyle = "rgba(255,166,43,0.85)";
+    g.lineWidth = 1.5;
     g.beginPath();
-    g.moveTo(mx, T);
-    g.lineTo(mx, B);
+    g.moveTo(mx, my);
+    g.lineTo(mx, Y(L.ref));
     g.stroke();
+    g.lineWidth = 1;
     g.fillStyle = "#FFA62B";
     g.shadowColor = "#FFA62B";
     g.shadowBlur = 10;
@@ -433,6 +499,7 @@ export function Diffusion({
     let live = true;
     const fit = () => {
       setMaxShow((c.clientWidth || 600) < 420 ? 5 : 6);
+      setChartW(ch.clientWidth);
       drawTree();
       drawChart();
     };
@@ -488,39 +555,6 @@ export function Diffusion({
   return (
     <article className="ex ex-math" id="diffusion" aria-labelledby="dw-h">
       <div className="intro">{intro}</div>
-      <div className="ctrls">
-        <div className="ctrl">
-          <label htmlFor="dwN">{symbols(copy.controls.steps)}</label>
-          <output id="dwNo" htmlFor="dwN" className="num" aria-live="off">
-            {N}
-          </output>
-          <input ref={nIn} id="dwN" type="range" min={1} max={200} step={1} value={N} onChange={onInput} />
-        </div>
-        <div className="ctrl">
-          <label htmlFor="dwS">{symbols(copy.controls.volatility)}</label>
-          <output id="dwSo" htmlFor="dwS" className="num" aria-live="off">
-            {sig}%
-          </output>
-          <input
-            ref={sIn}
-            id="dwS"
-            type="range"
-            min={5}
-            max={80}
-            step={1}
-            value={sig}
-            aria-valuetext={fill(copy.percentText, { v: sig })}
-            onChange={onInput}
-          />
-        </div>
-        <div className="ctrl">
-          <label htmlFor="dwK">{symbols(copy.controls.strike)}</label>
-          <output id="dwKo" htmlFor="dwK" className="num" aria-live="off">
-            {K}
-          </output>
-          <input ref={kIn} id="dwK" type="range" min={60} max={140} step={1} value={K} onChange={onInput} />
-        </div>
-      </div>
       <div className="viz">
         <canvas ref={tc} id="dwTree" height={TREE_H} role="img" aria-label={copy.treeLabel} />
         <div className="sr-only">
@@ -542,37 +576,74 @@ export function Diffusion({
         <p className="cap" id="dwTreeCap">
           {treeCaption(N, maxShow, copy)}
         </p>
-        <canvas ref={cc} id="dwChart" height={CHART_H} role="img" aria-label={copy.chartLabel} />
-        <p className="cap">{symbols(copy.chartCaption)}</p>
-      </div>
-      <div className="read" aria-live="polite">
-        <div aria-hidden="true">
-          <b id="dwBin">{fixed(tree.price, 4)}</b>
-          <span>{copy.readouts.binomial}</span>
+        <div className="dw-chart">
+          <canvas ref={cc} id="dwChart" height={CHART_H} role="img" aria-label={copy.chartLabel} />
+          {/* The chart's key values, set on the chart: the dashed line's label, then the marker's. */}
+          <p className="an an-bs" id="dwBSLabel" style={at.ref}>
+            {copy.annotations.blackScholes} <b id="dwBS">{fixed(ref, 4)}</b>
+          </p>
+          <p className="an an-mk" id="dwMarker" style={at.marker}>
+            <span className="an-v">
+              <span className="stix">
+                <i>N</i>
+              </span>{" "}
+              = <b>{N}</b> · <b id="dwBin">{fixed(tree.price, 4)}</b>
+            </span>
+            <span className="an-d">
+              {copy.annotations.difference} <b id="dwGap">{diff(gap)}</b>
+            </span>
+          </p>
         </div>
-        <div aria-hidden="true">
-          <b id="dwBS" className="s">
-            {fixed(ref, 4)}
-          </b>
-          <span>{copy.readouts.blackScholes}</span>
-        </div>
-        <div aria-hidden="true">
-          <b id="dwGap">{diff(gap)}</b>
-          <span>{copy.readouts.difference}</span>
-        </div>
-        <p className="sr-only" data-say aria-atomic="true">
-          {sayText(said, copy)}
+        <p className="cap" id="dwChartCap">
+          <span className="terms" id="dwTerms">
+            {symbols(terms)}
+          </span>{" "}
+          {symbols(copy.chartCaption)}
         </p>
-      </div>
-      <div className="formula" role="group" aria-label={copy.formulaLabel}>
-        {formulas}
-        <span className="lp" id="dwLive">
-          N = {N} · u = {u.toFixed(5)} · d = {d.toFixed(5)} · p = {p.toFixed(5)}
-        </span>
-        <span className="lp">{copy.assumptions}</span>
       </div>
       <div className="result" ref={resultRef}>
         {result}
+      </div>
+      <div className="inputs" role="group" aria-labelledby="dwInputs">
+        <p className="lbl" id="dwInputs">
+          {copy.inputsLabel}
+        </p>
+        <div className="ctrls">
+          <div className="ctrl">
+            <label htmlFor="dwN">{symbols(copy.controls.steps)}</label>
+            <output id="dwNo" htmlFor="dwN" className="num" aria-live="off">
+              {N}
+            </output>
+            <input ref={nIn} id="dwN" type="range" min={1} max={200} step={1} value={N} onChange={onInput} />
+          </div>
+          <div className="ctrl">
+            <label htmlFor="dwS">{symbols(copy.controls.volatility)}</label>
+            <output id="dwSo" htmlFor="dwS" className="num" aria-live="off">
+              {sig}%
+            </output>
+            <input
+              ref={sIn}
+              id="dwS"
+              type="range"
+              min={5}
+              max={80}
+              step={1}
+              value={sig}
+              aria-valuetext={fill(copy.percentText, { v: sig })}
+              onChange={onInput}
+            />
+          </div>
+          <div className="ctrl">
+            <label htmlFor="dwK">{symbols(copy.controls.strike)}</label>
+            <output id="dwKo" htmlFor="dwK" className="num" aria-live="off">
+              {K}
+            </output>
+            <input ref={kIn} id="dwK" type="range" min={60} max={140} step={1} value={K} onChange={onInput} />
+          </div>
+        </div>
+        <p className="sr-only" id="dwSay" data-say aria-live="polite" aria-atomic="true">
+          {sayText(said, copy)}
+        </p>
       </div>
     </article>
   );

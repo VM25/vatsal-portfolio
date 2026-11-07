@@ -166,7 +166,7 @@ test.describe("Home, Path and Contact", () => {
       await page.goto("/");
       // Text only, for the record: at 390 the tallest band without DOM text is the
       // DiffusionWorks tree canvas (300px, its node labels drawn on the canvas) under the
-      // strike slider.
+      // exhibit's question.
       const t = await measurePacing(page, "top", "contact");
       console.log(`pacing ${vp.width}x${vp.height} text only: largest gap ${t.largestGap}px of ${t.viewport}px at scrollY ${t.gapAt}`);
       // The rule, with content as Task 13(a) defines it: text plus canvases and SVG images.

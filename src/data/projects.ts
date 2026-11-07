@@ -17,10 +17,17 @@ const diffusion = {
     volatility: "Volatility, σ",
     strike: "Strike, K (spot 100)",
   },
-  readouts: {
-    binomial: "Binomial price",
+  /** Over the sliders, which follow the visuals and the result (refinement R3). */
+  inputsLabel: "Model inputs",
+  /** On the convergence chart: the dashed line's label, and the word before the difference at the marker. */
+  annotations: {
     blackScholes: "Black–Scholes",
-    difference: "Difference",
+    difference: "difference",
+  },
+  /** The contract, at the head of the chart caption. "{sig}" is σ in percent; `other` also takes "{K}". */
+  terms: {
+    atMoney: "European call · S = K = 100, σ = {sig}%, r = 4%, T = 1.",
+    other: "European call · S = 100, K = {K}, σ = {sig}%, r = 4%, T = 1.",
   },
   result: {
     big: "10 of 15",
@@ -58,9 +65,7 @@ const diffusion = {
   say: "N = {N}, σ = {sig}%, K = {K}. Binomial price {bin}. Black–Scholes {bs}. Difference {gap}.",
   chartLabel: "Binomial price for 1 to 200 steps against the Black–Scholes price",
   chartCaption:
-    "Binomial price for every N from 1 to 200 (dots) against Black–Scholes (dashed). The marker shows the selected N.",
-  formulaLabel: "Formulas",
-  assumptions: "S = 100, r = 4%, T = 1 year, European call",
+    "Binomial price for every N from 1 to 200 (dots) against Black–Scholes (dashed). The marker is the selected N; its stroke to the dashed line is the difference.",
   live: "https://diffusionworks.netlify.app",
   code: "https://github.com/VM25/stochastic-lab",
   openLabel: "Open the study",

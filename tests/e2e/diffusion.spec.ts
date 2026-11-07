@@ -44,21 +44,24 @@ async function ticks(page: Page, n: number) {
 }
 
 const ex = (page: Page) => page.locator("#diffusion");
-const say = (page: Page) => page.locator("#diffusion .read [data-say]");
+const say = (page: Page) => page.locator("#dwSay");
 
 test.describe("DiffusionWorks exhibit", () => {
   test.beforeEach(async ({ page }) => {
     await noWatchdog(page);
   });
 
-  test("defaults show the binomial and Black–Scholes prices, the difference and p", async ({ page }) => {
+  test("by default the chart's annotations carry the binomial and Black–Scholes prices, the difference and the contract", async ({ page }) => {
     await open(page);
     await expect(page.locator("#dwBin")).toHaveText("9.7612");
     await expect(page.locator("#dwBS")).toHaveText("9.9251");
     await expect(page.locator("#dwGap")).toHaveText("−0.1639");
-    await expect(page.locator("#dwLive")).toContainText("p = 0.51447");
-    await expect(page.locator("#dwLive")).toContainText("u = 1.05943");
-    await expect(page.locator("#dwLive")).toContainText("d = 0.94390");
+    // On the chart: the dashed line's label, and the marker's.
+    await expect(page.locator("#diffusion .dw-chart #dwBSLabel")).toHaveText("Black–Scholes 9.9251");
+    await expect(page.locator("#diffusion .dw-chart #dwMarker")).toContainText("N = 12 · 9.7612");
+    await expect(page.locator("#diffusion .dw-chart #dwMarker")).toContainText("difference −0.1639");
+    // One quiet line for the contract, at the head of the chart caption.
+    await expect(page.locator("#dwChartCap #dwTerms")).toHaveText("European call · S = K = 100, σ = 20%, r = 4%, T = 1.");
     await expect(page.locator("#dwNo")).toHaveText("12");
     await expect(page.locator("#dwSo")).toHaveText("20%");
     await expect(page.locator("#dwKo")).toHaveText("100");
@@ -71,15 +74,16 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(page.locator("#dwBin")).toHaveText("9.7612");
     await expect(page.locator("#dwBS")).toHaveText("9.9251");
     await expect(page.locator("#dwGap")).toHaveText("−0.1639");
-    await expect(page.locator("#dwLive")).toContainText("p = 0.51447");
+    await expect(page.locator("#dwBSLabel")).toHaveText("Black–Scholes 9.9251");
+    await expect(page.locator("#dwMarker")).toContainText("N = 12 · 9.7612");
+    await expect(page.locator("#dwTerms")).toHaveText("European call · S = K = 100, σ = 20%, r = 4%, T = 1.");
     await expect(page.locator("#diffusion")).not.toContainText("—");
     await ctx.close();
   });
 
-  test("Review Focus 5: ArrowRight on the focused N slider updates the readouts and the live region", async ({ page }) => {
+  test("Review Focus 5: ArrowRight on the focused N slider updates the annotations and the live region", async ({ page }) => {
     await open(page);
-    const read = page.locator("#diffusion .read");
-    await expect(read).toHaveAttribute("aria-live", "polite");
+    await expect(say(page)).toHaveAttribute("aria-live", "polite");
     await expect(say(page)).toHaveAttribute("aria-atomic", "true");
     await expect(say(page)).toContainText("9.7612");
     await page.locator("#dwN").focus();
@@ -88,6 +92,7 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(page.locator("#dwNo")).toHaveText("13");
     await expect(page.locator("#dwBin")).toHaveText("10.0665");
     await expect(page.locator("#dwGap")).toHaveText("+0.1414");
+    await expect(page.locator("#dwMarker")).toContainText("N = 13 · 10.0665");
     await expect(say(page)).toContainText("10.0665");
     await expect(say(page)).toContainText("+0.1414");
   });
@@ -107,7 +112,7 @@ test.describe("DiffusionWorks exhibit", () => {
       await new Promise((r) => setTimeout(r, 20));
       return {
         n: document.getElementById("dwNo")!.textContent,
-        say: document.querySelector("#diffusion .read [data-say]")!.textContent,
+        say: document.getElementById("dwSay")!.textContent,
       };
     });
     expect(mid.n).toBe("80");
@@ -122,6 +127,7 @@ test.describe("DiffusionWorks exhibit", () => {
     await setRange(page, "dwN", 200);
     await expect(page.locator("#dwNo")).toHaveText("200");
     await expect(page.locator("#dwBin")).toHaveText("9.9151");
+    await expect(page.locator("#dwMarker")).toContainText("N = 200 · 9.9151");
     await expect(say(page)).toContainText("9.9151");
   });
 
@@ -135,6 +141,7 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(page.locator("#dwBin")).toHaveText("28.4465");
     await expect(page.locator("#dwBS")).toHaveText("28.4556");
     await expect(page.locator("#dwGap")).toHaveText("−0.0091");
+    await expect(page.locator("#dwTerms")).toHaveText("European call · S = 100, K = 80, σ = 40%, r = 4%, T = 1.");
   });
 
   test("sliders are labelled native ranges with outputs and 44px targets", async ({ page }) => {
@@ -232,10 +239,10 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(page.locator("#dwTreeCap")).toContainText("First 5 of 12 steps.");
   });
 
-  test("at 375px the blocks run intro, controls, visual, readouts, formulas, result", async ({ page }) => {
+  test("at 375px the blocks run intro, visual (tree, then chart), result, model inputs", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await open(page);
-    const order = ["intro", "ctrls", "viz", "read", "formula", "result"];
+    const order = ["intro", "viz", "result", "inputs"];
     const blocks = await ex(page).evaluate((el) =>
       Array.from(el.children)
         .filter((c) => getComputedStyle(c).display !== "none" && c.getBoundingClientRect().height > 0)
@@ -243,37 +250,108 @@ test.describe("DiffusionWorks exhibit", () => {
     );
     expect(blocks.map((b) => b.cls.split(" ")[0])).toEqual(order);
     for (let i = 1; i < blocks.length; i++) expect(blocks[i].top).toBeGreaterThan(blocks[i - 1].top);
+    const tree = (await page.locator("#dwTree").boundingBox())!;
+    const chart = (await page.locator("#dwChart").boundingBox())!;
+    expect(chart.y).toBeGreaterThan(tree.y + tree.height);
     // No horizontal scroll from the exhibit.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   });
 
-  test("on wide screens the visual sits beside the controls", async ({ page }) => {
+  test("on wide screens intro and result sit left of the visual, with the model inputs under the visual", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await open(page);
-    const ctrls = await page.locator("#diffusion .ctrls").boundingBox();
-    const viz = await page.locator("#diffusion .viz").boundingBox();
-    const result = await page.locator("#diffusion .result").boundingBox();
-    expect(viz!.x).toBeGreaterThan(ctrls!.x + ctrls!.width);
-    expect(result!.x).toBeLessThan(viz!.x);
+    const box = async (s: string) => (await page.locator(`#diffusion ${s}`).boundingBox())!;
+    const [intro, result, viz, inputs] = [await box(".intro"), await box(".result"), await box(".viz"), await box(".inputs")];
+    expect(viz.x).toBeGreaterThan(intro.x + intro.width);
+    expect(result.x + result.width).toBeLessThan(viz.x);
+    expect(result.y).toBeGreaterThan(intro.y + intro.height);
+    expect(Math.abs(inputs.x - viz.x)).toBeLessThanOrEqual(1);
+    expect(inputs.y).toBeGreaterThanOrEqual(viz.y + viz.height);
+    // Straight under the visual: no more than the row gap between them.
+    expect(inputs.y - (viz.y + viz.height)).toBeLessThanOrEqual(40);
   });
 
-  test("formulas are STIX, one per line, with true minus and no em dash", async ({ page }) => {
+  test("the model inputs are a quiet, labelled group after the visuals and the result", async ({ page }) => {
     await open(page);
-    const lines = page.locator("#diffusion .formula .fl");
-    await expect(lines).toHaveCount(4);
-    for (let i = 0; i < 4; i++) {
-      const box = await lines.nth(i).evaluate((e) => ({ ff: getComputedStyle(e).fontFamily, d: getComputedStyle(e).display }));
-      expect(box.ff.toLowerCase()).toContain("stix");
-      expect(box.d).toBe("block");
+    const group = ex(page).getByRole("group", { name: projects.diffusion.inputsLabel });
+    await expect(group).toHaveCount(1);
+    await expect(group.getByRole("slider")).toHaveCount(3);
+    // After the visual and the result in reading order.
+    const after = await page.evaluate(() => {
+      const g = document.querySelector("#diffusion .inputs")!;
+      const follows = (s: string) => !!(document.querySelector(s)!.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return follows("#diffusion .viz") && follows("#diffusion .result");
+    });
+    expect(after).toBe(true);
+    // Small type: labels, values and the group label at 14px, not larger.
+    const sizes = await group.locator("label, output, .lbl").evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    expect(sizes.length).toBe(7);
+    for (const s of sizes) expect(s).toBe(14);
+    // No instructions in or around the group: its text is the label, three input labels and their values.
+    const text = ((await group.textContent()) ?? "").replace((await say(page).textContent()) ?? "", "");
+    expect(text).not.toMatch(/\b(drag|move|try|slide|adjust|change)\b/i);
+  });
+
+  test("no formula block, no parameter readouts and no u, d or p in the exhibit", async ({ page }) => {
+    await open(page);
+    await expect(ex(page).locator(".formula, .lp, .read, #dwLive")).toHaveCount(0);
+    const all = (await ex(page).textContent()) ?? "";
+    for (const v of ["u =", "d =", "p ="]) expect(all).not.toContain(v);
+    expect(all).not.toMatch(/\b[udp]\s*=/);
+    // Nor once the inputs change.
+    await setRange(page, "dwN", 40);
+    await expect(page.locator("#dwNo")).toHaveText("40");
+    expect((await ex(page).textContent()) ?? "").not.toMatch(/\b[udp]\s*=/);
+  });
+
+  test("notation is STIX in the annotations and the caption, with true minus and no em dash", async ({ page }) => {
+    await open(page);
+    // N on the marker and the contract's symbols are STIX italic.
+    const stix = page.locator("#dwMarker .stix i, #dwTerms .stix i");
+    expect(await stix.allTextContents()).toEqual(["N", "S", "K", "σ", "r", "T"]);
+    for (const ff of await stix.evaluateAll((els) => els.map((e) => getComputedStyle(e).fontFamily.toLowerCase())))
+      expect(ff).toContain("stix");
+    // The prices are in the numeric face.
+    for (const id of ["#dwBin", "#dwBS", "#dwGap"]) {
+      const ff = await page.locator(id).evaluate((e) => getComputedStyle(e).fontFamily.toLowerCase());
+      expect(ff).toContain("mono");
     }
-    const formula = (await page.locator("#diffusion .formula").textContent()) ?? "";
-    expect(formula).toContain("−");
-    expect(formula).not.toMatch(/-/);
+    // A true minus in the difference, never a hyphen.
+    expect(await page.locator("#dwGap").textContent()).toBe("−0.1639");
+    const notes = (await page.locator("#diffusion .dw-chart").textContent()) ?? "";
+    expect(notes).not.toMatch(/-/);
     const all = (await ex(page).textContent()) ?? "";
     expect(all).not.toContain("—");
     expect(all).not.toContain("--");
     expect(all).toContain("Black–Scholes");
   });
+
+  for (const width of [1440, 375, 320]) {
+    test(`the annotations stay on the chart and clear of each other at ${width}px, for every N`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await open(page);
+      await page.locator("#dwChart").scrollIntoViewIfNeeded();
+      const bad: string[] = [];
+      for (const n of [1, 2, 3, 4, 5, 8, 12, 13, 25, 50, 80, 100, 120, 150, 180, 199, 200]) {
+        await setRange(page, "dwN", n, false);
+        await expect(page.locator("#dwNo")).toHaveText(String(n));
+        const r = await page.evaluate(() => {
+          const box = (id: string) => document.getElementById(id)!.getBoundingClientRect();
+          const c = box("dwChart");
+          const m = box("dwMarker");
+          const b = box("dwBSLabel");
+          const inside = (x: DOMRect) => x.left >= c.left - 1 && x.right <= c.right + 1 && x.top >= c.top - 1 && x.bottom <= c.bottom + 1;
+          const overlap = !(m.right <= b.left || b.right <= m.left || m.bottom <= b.top || b.bottom <= m.top);
+          return { m: inside(m), b: inside(b), overlap };
+        });
+        if (!r.m) bad.push(`N = ${n}: marker label leaves the chart`);
+        if (!r.b) bad.push(`N = ${n}: Black–Scholes label leaves the chart`);
+        if (r.overlap) bad.push(`N = ${n}: labels overlap`);
+      }
+      expect(bad).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    });
+  }
 
   test("a release runs one backward sweep of about 650 ms", async ({ page }) => {
     await open(page);
@@ -425,19 +503,6 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(page.locator("#dwTree[data-draws]")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.locator("#dwNo")).toHaveText("40");
     await expect(page.locator("#dwBin")).toHaveText("9.8755");
-  });
-
-  test("formulas fit a 320px screen without scrolling sideways", async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 640 });
-    await open(page);
-    const f = page.locator("#diffusion .formula");
-    const m = await f.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
-    expect(m.sw).toBeLessThanOrEqual(m.cw);
-    const lines = await page.locator("#diffusion .formula .fl").evaluateAll((els) =>
-      els.map((e) => ({ sw: e.scrollWidth, cw: e.clientWidth })),
-    );
-    for (const l of lines) expect(l.sw).toBeLessThanOrEqual(l.cw);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   });
 
   test("the 10 of 15 stamp beats once, the first time it is seen", async ({ page }) => {

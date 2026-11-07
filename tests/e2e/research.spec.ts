@@ -456,7 +456,11 @@ test.describe("deep links", () => {
     await page.waitForLoadState("load");
     await page.evaluate(() => document.fonts.ready);
     await ticks(page, 4);
-    await page.evaluate(() => window.scrollTo({ top: 3000, behavior: "instant" }));
+    // Well past the hash's landing (a fixed 3000 sat too close once Projects got shorter, refinement R3).
+    await page.evaluate(() => {
+      const top = document.getElementById("research")!.getBoundingClientRect().top + window.scrollY + 1000;
+      window.scrollTo({ top, behavior: "instant" });
+    });
     await ticks(page, 10);
     // Where the reader is now (scroll anchoring may have nudged it while content above settled).
     const y = await page.evaluate(() => window.scrollY);

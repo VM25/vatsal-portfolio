@@ -183,26 +183,51 @@ main:focus, .sec:focus { outline: none; }
 #dwTree { height: 300px; }
 #dwChart { height: 230px; }
 .cap { font-size: 14px; color: var(--fog-mid); }
-.ctrls { display: grid; gap: 14px; }
-.ctrl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; }
-.ctrl label { font-size: 15px; color: #CDD4D0; }
-.ctrl output { font-family: var(--font-num); font-size: 15px; color: var(--fog-hi); }
-.ctrl input { grid-column: 1 / -1; width: 100%; height: 44px; accent-color: var(--sodium); margin: 0; }
-.read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid rgba(195,203,198,0.14); }
-.read div { min-width: 0; }
-.read b { display: block; font-family: var(--font-num); font-weight: 500; font-size: clamp(1.05rem, 3cqi, 1.5rem); color: var(--fog-hi); font-variant-numeric: tabular-nums; }
-.read b.s { color: var(--sodium); }
-.read span { font-size: 14px; color: var(--fog-mid); }
-.formula { font-family: var(--font-argue); font-size: 16px; line-height: 1.8; color: #CDD4D0; overflow-x: auto; }
-.formula i { font-style: italic; }
-.formula .lp { font-family: var(--font-num); font-size: 14px; color: var(--fog-mid); }
-.formula .fl, .formula .lp { display: block; }
-/* A formula that wraps on a narrow screen breaks only between its groups, with the rest indented. */
-.formula .fl { padding-left: 1.25em; text-indent: -1.25em; }
-.formula .fg { white-space: nowrap; }
-.formula .lp { margin-top: 4px; }
+/*
+  DiffusionWorks' chart annotations (refinement R3): the key values set on the chart, as
+  direct labels, instead of a readout row. They sit over the canvas at heights the
+  exhibit computes from the chart's own scale; a halo in the veil's colour keeps them
+  clear of the dots underneath. They never move on their own: they follow an input at
+  once, as the marker does.
+*/
+.dw-chart { position: relative; }
+.dw-chart .an { position: absolute; top: 0; left: 0; margin: 0; white-space: nowrap; font-size: 14px; line-height: 1.4; color: var(--fog-mid); pointer-events: none;
+  text-shadow: 0 0 2px rgba(11,18,20,0.95), 0 0 6px rgba(11,18,20,0.9), 0 0 12px rgba(11,18,20,0.7); }
+.dw-chart .an b { font-family: var(--font-num); font-weight: 500; font-variant-numeric: tabular-nums; }
+.dw-chart .an-bs, .dw-chart .an-bs b { color: var(--sodium); }
+.dw-chart .an-bs { left: auto; }
+.an-mk { display: grid; }
+.an-mk .an-v { font-size: 15px; color: var(--fog-hi); }
+.an-mk .an-v b { color: var(--fog-hi); }
+.an-mk .an-d b { color: var(--fog); font-weight: 400; }
+#dwChartCap .terms { display: block; color: var(--fog); }
+/*
+  Model inputs: secondary by design. Small labels and values, a thin 2px track and a 12px
+  thumb, inside a native range input whose box stays 44px tall, so the hit area is the
+  whole row. No transitions: a drag is a high-frequency interaction and the thumb tracks
+  the pointer directly.
+*/
+.inputs { display: grid; gap: 2px; padding-top: 14px; border-top: 1px solid rgba(195,203,198,0.12); }
+.inputs .lbl { font-size: 14px; color: var(--fog-mid); }
+.ctrls { display: grid; column-gap: 28px; }
+@container site (min-width: 560px) { .ctrls { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ctrl { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; padding-top: 10px; }
+.ctrl label { font-size: 14px; color: var(--fog-mid); }
+.ctrl output { font-family: var(--font-num); font-size: 14px; color: var(--fog); font-variant-numeric: tabular-nums; }
+.ctrl input { grid-column: 1 / -1; width: 100%; height: 44px; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.ctrl input::-webkit-slider-runnable-track { height: 2px; border-radius: 1px; background: var(--fog-lo); }
+.ctrl input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; margin-top: -5px; border: 0; border-radius: 50%; background: var(--sodium); }
+.ctrl input::-moz-range-track { height: 2px; border-radius: 1px; background: var(--fog-lo); }
+.ctrl input::-moz-range-progress { height: 2px; border-radius: 1px; background: var(--sodium-deep); }
+.ctrl input::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--sodium); }
+@media (hover: hover) and (pointer: fine) {
+  .ctrl input:hover::-webkit-slider-thumb { box-shadow: 0 0 0 5px rgba(255,166,43,0.18); }
+  .ctrl input:hover::-moz-range-thumb { box-shadow: 0 0 0 5px rgba(255,166,43,0.18); }
+}
+.ctrl input:focus-visible { outline-offset: 0; }
 .result { display: grid; gap: 10px; }
-.result .big, .cut .big { font-weight: 200; font-size: clamp(2.6rem, 9cqi, 4.4rem); letter-spacing: -0.04em; line-height: 1; color: var(--fog-hi); display: inline-block; transform-origin: 0 70%; }
+/* The stamp is a grid item: justify-self keeps its box to its text, so its beat (a 1.07 scale) never runs past the page edge. */
+.result .big, .cut .big { font-weight: 200; font-size: clamp(2.6rem, 9cqi, 4.4rem); letter-spacing: -0.04em; line-height: 1; color: var(--fog-hi); display: inline-block; justify-self: start; transform-origin: 0 70%; }
 .result .big em, .cut .big em { font-style: normal; color: var(--sodium); }
 .result p, .cut p { max-width: 52ch; color: #CDD4D0; font-weight: 300; }
 .result p b, .cut p b { font-weight: 500; color: var(--sodium); font-family: var(--font-num); font-size: 0.95em; }
@@ -212,20 +237,18 @@ main:focus, .sec:focus { outline: none; }
 .ex-links { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 6px; }
 .ex-links a { color: var(--sodium); min-height: 44px; display: inline-flex; align-items: center; text-decoration: underline; text-underline-offset: 0.15em; }
 /*
-  DiffusionWorks: the blocks are in phone order in the source (intro, controls, visual,
-  readouts, formulas, result). Wide screens place them in two columns by grid area, as
-  the prototype's two stacks: intro, controls, readouts and result on the left; the
-  visual with the formulas straight under it on the right. The 1fr row absorbs the
-  difference in height between the visual and the left column, so neither stack gaps.
+  DiffusionWorks: the blocks are in phone order in the source (intro, visual, result,
+  model inputs; refinement R3). Wide screens place them in two columns by grid area:
+  intro and result on the left; the visual on the right with the model inputs quietly
+  under it. The 1fr row absorbs the difference in height between the two stacks, so
+  the inputs sit straight under the visual.
 */
 @container site (min-width: 980px) {
-  .ex-math { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "intro viz" "ctrls viz" "read viz" "read formula" "result formula"; column-gap: 56px; row-gap: 28px; align-items: start; }
+  .ex-math { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto 1fr auto; grid-template-areas: "intro viz" "result viz" "result inputs"; column-gap: 56px; row-gap: 28px; align-items: start; }
   .ex-math .intro { grid-area: intro; }
-  .ex-math .ctrls { grid-area: ctrls; }
-  .ex-math .read { grid-area: read; }
   .ex-math .result { grid-area: result; }
   .ex-math .viz { grid-area: viz; }
-  .ex-math .formula { grid-area: formula; }
+  .ex-math .inputs { grid-area: inputs; }
 }
 
 /* the fast moment: market making */
