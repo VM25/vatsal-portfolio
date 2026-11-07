@@ -70,9 +70,11 @@ export const viewport: Viewport = {
   .rm under reduced motion, so the Sharpe bars never start at zero for those
   readers. Without JavaScript neither class is set and everything is expanded.
   ScrollState keeps .rm in sync afterwards; suppressHydrationWarning lets React
-  accept the classes it did not render.
+  accept the classes it did not render. If the app has not hydrated (ScrollState
+  sets data-hydrated) within five seconds, the bundle is taken to have failed and
+  .js comes off, so the page falls back to its fully expanded form.
 */
-const BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("rm")}catch(e){}})()`;
+const BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("rm")}catch(e){}setTimeout(function(){if(!d.hasAttribute("data-hydrated"))d.classList.remove("js")},5000)})()`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -251,10 +251,12 @@ function ClaimRow({
   const region = `ev-${c.evidenceKind}`;
   return (
     <>
-      <button type="button" className="claim" id={btn} aria-expanded={on} aria-controls={region} onClick={onChoose}>
-        <small>{c.context}</small>
-        <span className="ct">{highlight(c.text)}</span>
-      </button>
+      <h3 className="claim-h">
+        <button type="button" className="claim" id={btn} aria-expanded={on} aria-controls={region} onClick={onChoose}>
+          <small>{c.context}</small>
+          <span className="ct">{highlight(c.text)}</span>
+        </button>
+      </h3>
       <div className={on ? "ev on" : "ev"} id={region} role="region" aria-labelledby={btn} data-drawn={String(drawn)}>
         {children}
       </div>
@@ -294,7 +296,12 @@ export function ResearchBeat({
   useEffect(() => {
     const el = premiseRef.current;
     if (!el || fired.current) return;
-    const claims = () => el.parentElement?.querySelector<HTMLElement>(".claims .ev.on .chart") ?? null;
+    /** Any bar of the open evidence on screen (a bar at zero length still has its place). */
+    const barsOnScreen = () =>
+      [...(el.parentElement?.querySelectorAll<SVGElement>(".claims .ev.on .bar") ?? [])].some((b) => {
+        const r = b.getBoundingClientRect();
+        return r.bottom >= 0 && r.top <= window.innerHeight;
+      });
     let barTimer: number | undefined;
     const timers: number[] = [];
     let io: IntersectionObserver | undefined;
@@ -329,8 +336,7 @@ export function ResearchBeat({
       }
       // Bars on screen with the premise out of view (coming up from below): draw them
       // after a moment rather than leave them at zero. The beat still waits for the premise.
-      const chart = claims();
-      const onScreen = !!chart && shown(chart) > 0.25;
+      const onScreen = barsOnScreen();
       if (onScreen && barTimer === undefined) {
         barTimer = window.setTimeout(() => setPlay(true), BAR_FALLBACK_MS);
       } else if (!onScreen && barTimer !== undefined) {

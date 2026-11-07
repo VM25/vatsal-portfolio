@@ -3,7 +3,10 @@ import { profile } from "@/data/profile";
 
 const handle = (url: string) => url.replace(/\/$/, "").split("/").pop() ?? url;
 
-/** Contact (#contact). Its key is always the end of the page, so the label reads 6:12 a.m. */
+/**
+ * Contact (#contact). Its key is where its anchor lands, which on most layouts is the
+ * end of the page (6:12 a.m.); ScrollState rewrites the time in [data-clocktime].
+ */
 export function Contact() {
   const { links } = profile;
   return (

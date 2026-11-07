@@ -1,16 +1,6 @@
 import { research } from "@/data/research";
 import { ResearchBeat, type ClaimsCopy } from "@/components/exhibits/Claims";
-
-function NewTab({ href, children }: { href: string; children: string }) {
-  return (
-    <a href={href} target="_blank" rel="noopener">
-      <span>
-        {children} <span aria-hidden="true">↗</span>
-      </span>
-      <span className="sr-only">, opens in a new tab</span>
-    </a>
-  );
-}
+import { NewTab } from "@/components/site/NewTab";
 
 const copy: ClaimsCopy = { claims: research.claims, evidence: research.evidence };
 
@@ -55,7 +45,9 @@ export function Research() {
         <p className="lim">{research.limit}</p>
         <div className="ex-links">
           <NewTab href={research.links.ssrn.href}>{research.links.ssrn.label}</NewTab>
-          <NewTab href={research.links.prospectus.href}>{research.links.prospectus.label}</NewTab>
+          <NewTab href={research.links.prospectus.href} pdf>
+            {research.links.prospectus.label}
+          </NewTab>
         </div>
       </div>
     </section>

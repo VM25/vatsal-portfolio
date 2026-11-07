@@ -2,6 +2,7 @@ import { projects } from "@/data/projects";
 import { Diffusion, type DiffusionCopy } from "@/components/exhibits/Diffusion";
 import { Liquidity, type LiquidityCopy } from "@/components/exhibits/Liquidity";
 import { ProjectRail, StageBody, type RailCopy } from "@/components/exhibits/ProjectRail";
+import { NewTab } from "@/components/site/NewTab";
 
 const dw = projects.diffusion;
 const lp = projects.liquidity;
@@ -42,16 +43,6 @@ function counts(text: string) {
   return text.split(/(\d+ of \d+)/).map((part, i) => (i % 2 === 1 ? <b key={i}>{part}</b> : part));
 }
 
-function NewTab({ href, children }: { href: string; children: string }) {
-  return (
-    <a href={href} target="_blank" rel="noopener">
-      <span>
-        {children} <span aria-hidden="true">↗</span>
-      </span>
-      <span className="sr-only">, opens in a new tab</span>
-    </a>
-  );
-}
 
 const copy: DiffusionCopy = {
   controls: dw.controls,
@@ -212,14 +203,17 @@ export function Projects() {
         <div className="more" id="more">
           <h3>{projects.moreLabel}</h3>
           <ProjectRail items={projects.rail} copy={railCopy} />
-          {/* Without JavaScript: all six, each with its stage content under its title. */}
-          <noscript>
+          {/*
+            Without JavaScript, or when the bundle never arrives (html.js removed): all six,
+            each with its stage content under its title. Hidden under html.js.
+          */}
+          <div className="rail-all">
             {projects.rail.map((p) => (
               <div className="stage" key={p.title}>
                 <StageBody p={p} copy={railCopy} />
               </div>
             ))}
-          </noscript>
+          </div>
         </div>
       </div>
     </section>

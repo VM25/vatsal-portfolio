@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { CHAPTERS, KEYS, clockAt, isMorning, type Chapter } from "@/lib/scene";
+import { CHAPTERS, KEYS, clockAt, isMorning, keysFromLayout, type Chapter } from "@/lib/scene";
 
 /*
   Scroll state for the whole page: progress p (0 at the top, 1 at the bottom),
@@ -76,37 +76,30 @@ function progress(): number {
   return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
 }
 
-/** Keeps neighbouring keys apart, so the smoothstep between them never divides by zero. */
-const KEY_GAP = 0.001;
-
 /**
  * Key positions come from where each chapter actually sits on the page: the scroll
- * progress at which its anchor lands (section top minus the computed
- * scroll-padding-top), so a nav or menu jump reads exactly the chapter's own time.
- * Home is 0; the rest clamp to [0, 1] (Contact usually clamps to 1 at the page end)
- * and stay strictly increasing.
+ * progress at which its anchor lands (keysFromLayout in scene.ts), so a nav or menu
+ * jump reads exactly the chapter's own time.
  */
 function measureKeys(prev: number[]): number[] {
   const max = document.documentElement.scrollHeight - window.innerHeight;
-  if (max <= 0) return prev;
   const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-  const ks = CHAPTERS.map((id, i) => {
-    if (i === 0) return 0;
+  const tops: number[] = [];
+  for (const id of CHAPTERS) {
     const s = document.querySelector<HTMLElement>(`[data-sec="${id}"]`);
-    if (!s) return prev[i];
-    const top = s.getBoundingClientRect().top + window.scrollY;
-    return Math.min(1, Math.max(0, (top - pad) / max));
-  });
-  return monotonic(ks);
+    if (!s) return prev;
+    tops.push(s.getBoundingClientRect().top + window.scrollY);
+  }
+  return keysFromLayout(tops, pad, max) ?? prev;
 }
 
-/** Strictly increasing from 0, never above 1: push up going forward, then down from the end. */
-function monotonic(ks: number[]): number[] {
-  const out = ks.slice();
-  for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i], out[i - 1] + KEY_GAP);
-  out[out.length - 1] = Math.min(1, out[out.length - 1]);
-  for (let i = out.length - 2; i > 0; i--) out[i] = Math.min(out[i], out[i + 1] - KEY_GAP);
-  return out;
+/** The hash's element id, or "" when there is none or it is malformed (/#%). */
+function hashId(): string {
+  try {
+    return decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return "";
+  }
 }
 
 function sameKeys(a: number[], b: number[]) {
@@ -221,14 +214,32 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /*
+    The app has hydrated: mark <html> so the head script's five-second fallback (which
+    drops .js when the bundle never arrives) stands down, and put .js back in case a
+    slow bundle arrived after that fallback had already expanded the page.
+  */
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-hydrated", "");
+    root.classList.add("js");
+  }, []);
+
+  /*
     Deep links (/#research): the browser jumps to the anchor while the page is still
     settling (fonts swapping in, exhibits sizing). Once fonts are ready and the page has
     loaded, put the target back at the top once, unless the reader has already moved.
+    Only on a fresh navigation (a reload or back/forward restores its own position) and
+    only when the browser did jump: the target is within a viewport of its anchor
+    position at mount.
   */
   useEffect(() => {
-    const id = decodeURIComponent(window.location.hash.slice(1));
+    const id = hashId();
     const target = id ? document.getElementById(id) : null;
     if (!target) return;
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type !== "navigate") return;
+    const padAt = () => parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    if (Math.abs(target.getBoundingClientRect().top - padAt()) > window.innerHeight) return;
     let moved = false;
     let live = true;
     const intents = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
@@ -244,8 +255,7 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           if (!live || moved) return;
-          const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-          if (Math.abs(target.getBoundingClientRect().top - pad) > 2) {
+          if (Math.abs(target.getBoundingClientRect().top - padAt()) > 2) {
             target.scrollIntoView({ block: "start", behavior: "instant" });
           }
         }),

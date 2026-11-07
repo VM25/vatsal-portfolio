@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import { research } from "../../src/data/research";
+import { projects } from "../../src/data/projects";
 
 /*
   Research: the premise, three claims as an accordion of buttons with their evidence,
@@ -213,6 +215,8 @@ test.describe("Research chapter", () => {
       await expect(a).toHaveAccessibleName(/, opens in a new tab$/);
       await expect(a).toHaveAttribute("target", "_blank");
     }
+    await expect(pros).toHaveAccessibleName(/^FE800 prospectus ?\(PDF\), opens in a new tab$/);
+    await expect(ssrn).not.toHaveAccessibleName(/PDF/);
     expect((await request.get("/research/Maniar-Research-Prospectus.pdf")).status()).toBe(200);
   });
 
@@ -363,5 +367,138 @@ test.describe("Research chapter", () => {
     await expect(page.locator("#ev-sharpe")).toBeVisible();
     await expect(page.locator("#ev-drawdown")).toBeHidden();
     await expect(page.locator("#ev-identity")).toBeHidden();
+  });
+
+  test("when the bundle never arrives, the page expands after five seconds", async ({ page }) => {
+    await page.route(/\/_next\/static\/chunks\/.*\.js/, (r) => r.abort());
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveClass(/\bjs\b/);
+    // The head script gives the bundle five seconds, then drops .js.
+    await expect(page.locator("html")).not.toHaveClass(/\bjs\b/, { timeout: 7000 });
+    await expect(page.locator("html")).not.toHaveAttribute("data-hydrated", /.*/);
+    for (const id of ["#ev-sharpe", "#ev-drawdown", "#ev-identity"]) await expect(page.locator(id)).toBeVisible();
+    // The bars grow out from zero (their usual transition) to full length.
+    await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
+    await expect
+      .poll(() => page.locator("#ev-drawdown .bar").evaluate((e) => getComputedStyle(e).transform), { timeout: 4000 })
+      .toBe("none");
+    const more = page.locator("#more");
+    for (const p of projects.rail) {
+      await expect(more.getByRole("heading", { level: 4, name: p.title })).toBeVisible();
+      await expect(more.getByText(p.question, { exact: true }).filter({ visible: true })).toHaveCount(1);
+      await expect(more.locator(`a[href="${p.live}"]`).filter({ visible: true })).toHaveCount(1);
+    }
+  });
+
+  test("claims are buttons inside level-3 headings (the accordion pattern)", async ({ page }) => {
+    await open(page);
+    for (let i = 0; i < 3; i++) {
+      const parent = await claim(page, i).evaluate((b) => b.parentElement!.tagName);
+      expect(parent).toBe("H3");
+    }
+    await expect(sec(page).getByRole("heading", { level: 3 })).toHaveCount(3);
+    // The heading adds no styling: the claim keeps its prototype type.
+    await expect(claim(page, 0)).toHaveCSS("font-weight", "400");
+    await expect(claim(page, 0)).toHaveCSS("font-size", "18.4px");
+  });
+
+  for (const vp of [
+    { width: 1280, height: 800 },
+    { width: 375, height: 812 },
+  ]) {
+    test(`axe: no serious or critical violations in Research at ${vp.width}, claim 1 then claim 3 open`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await open(page);
+      await sec(page).locator(".premise").scrollIntoViewIfNeeded();
+      const serious = async () => {
+        const r = await new AxeBuilder({ page }).include("#research").analyze();
+        return r.violations
+          .filter((v) => v.impact === "serious" || v.impact === "critical")
+          .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
+      };
+      await expect(claim(page, 0)).toHaveAttribute("aria-expanded", "true");
+      expect(await serious()).toEqual([]);
+      await claim(page, 2).click();
+      await expect(claim(page, 2)).toHaveAttribute("aria-expanded", "true");
+      expect(await serious()).toEqual([]);
+    });
+  }
+});
+
+test.describe("deep links", () => {
+  test.beforeEach(async ({ page }) => {
+    await noWatchdog(page);
+  });
+
+  for (const hash of ["#%", "#%E0%A4%A"]) {
+    test(`a malformed hash (${hash}) loads without page errors`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(e.message));
+      await page.goto(`/${hash}`);
+      await expect(page.locator("#research .claims[data-ready]")).toHaveCount(1);
+      await page.waitForLoadState("load");
+      await page.evaluate(() => document.fonts.ready);
+      await ticks(page, 4);
+      expect(errors).toEqual([]);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(sec(page).locator(".premise")).toBeVisible();
+    });
+  }
+
+  test("a reload keeps the reader's scroll position instead of jumping back to the hash", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/#research");
+    await expect(page.locator("#research .claims[data-ready]")).toHaveCount(1);
+    await page.waitForLoadState("load");
+    await page.evaluate(() => document.fonts.ready);
+    await ticks(page, 4);
+    await page.evaluate(() => window.scrollTo({ top: 3000, behavior: "instant" }));
+    await ticks(page, 10);
+    // Where the reader is now (scroll anchoring may have nudged it while content above settled).
+    const y = await page.evaluate(() => window.scrollY);
+    const anchor = await sec(page).evaluate((s) => s.getBoundingClientRect().top + window.scrollY - 76);
+    expect(Math.abs(y - anchor)).toBeGreaterThan(200);
+    // WebKit saves the scroll position into the history entry a moment after scrolling.
+    await ticks(page, 30);
+    await page.reload();
+    await expect(page.locator("#research .claims[data-ready]")).toHaveCount(1);
+    await page.waitForLoadState("load");
+    await page.evaluate(() => document.fonts.ready);
+    await ticks(page, 10);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(y - 60);
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThan(y + 60);
+  });
+
+  test("a phone /#research load shifts the layout by at most 0.05 (CLS)", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "layout-shift entries are a Chromium API");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => {
+      const w = window as unknown as { __cls: number; __shifts: string[] };
+      w.__cls = 0;
+      w.__shifts = [];
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries() as unknown as {
+          value: number;
+          hadRecentInput: boolean;
+          sources?: { node?: Node }[];
+        }[]) {
+          if (e.hadRecentInput) continue;
+          w.__cls += e.value;
+          const el = e.sources?.[0]?.node as Element | undefined;
+          w.__shifts.push(`${e.value.toFixed(4)} ${el?.nodeName ?? "?"}#${el?.id ?? ""}.${el?.className ?? ""}`);
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    });
+    await page.goto("/#research");
+    await expect(page.locator("#research .claims[data-ready]")).toHaveCount(1);
+    await page.waitForLoadState("load");
+    await page.evaluate(() => document.fonts.ready);
+    await ticks(page, 30);
+    const r = await page.evaluate(() => {
+      const w = window as unknown as { __cls: number; __shifts: string[] };
+      return { cls: w.__cls, shifts: w.__shifts };
+    });
+    console.log(`CLS on a 390x844 /#research load: ${r.cls.toFixed(4)} ${JSON.stringify(r.shifts)}`);
+    expect(r.cls).toBeLessThanOrEqual(0.05);
   });
 });

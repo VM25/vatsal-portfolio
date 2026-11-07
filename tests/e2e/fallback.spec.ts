@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { measuredKeys } from "./helpers";
 
 /*
   The no-WebGL fallback: pre-rendered stills cross-faded against scroll. The
@@ -66,14 +67,8 @@ test.describe("stills fallback", () => {
   test("between two measured keys the adjacent pair cross-fades and sums to one", async ({ page }) => {
     await page.goto("/");
     await stillsMode(page);
-    // Keys as ScrollState measures them: where each chapter's anchor lands.
-    const keys = await page.evaluate(() => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-      const top = (id: string) =>
-        (document.querySelector(`[data-sec="${id}"]`) as HTMLElement).getBoundingClientRect().top + window.scrollY;
-      return ["projects", "research"].map((id) => Math.min(1, Math.max(0, (top(id) - pad) / max)));
-    });
+    // Keys as ScrollState measures them (the shared keysFromLayout): projects, research.
+    const keys = (await measuredKeys(page)).slice(1, 3);
     // Exactly on the projects key: land1 alone.
     await scrollToP(page, keys[0]);
     await expect.poll(async () => (await opacities(page)).land1).toBeGreaterThan(0.99);

@@ -59,6 +59,17 @@ async function clockGap(page: Page, id: string): Promise<number> {
   );
 }
 
+/**
+ * Load the page and let it settle (hydrated, fonts in, loaded), so a smooth-scrolled
+ * jump is not aimed at a layout that then changes under it.
+ */
+async function settled(page: Page) {
+  await page.goto("/");
+  await expect(page.locator("html[data-hydrated]")).toHaveCount(1);
+  await page.waitForLoadState("load");
+  await page.evaluate(() => document.fonts.ready);
+}
+
 /** True when the focused element lives inside the dialog. */
 async function focusInDialog(page: Page): Promise<boolean> {
   return page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
@@ -214,7 +225,7 @@ test.describe("top bar and menu", () => {
   test.describe("jumps land on the chapter's own time", () => {
     test("each top-bar link at 1280×800: the clock reads the chapter's label time", async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
-      await page.goto("/");
+      await settled(page);
       const bar = page.locator("header.top");
       for (const [id, name] of [
         ["projects", "Projects"],
@@ -231,7 +242,7 @@ test.describe("top bar and menu", () => {
 
     test("each menu item at 390×844: the clock reads the chapter's label time", async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto("/");
+      await settled(page);
       for (const [id, name] of [
         ["projects", "Projects"],
         ["research", "Research"],

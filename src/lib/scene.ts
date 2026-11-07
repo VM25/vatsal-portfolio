@@ -5,6 +5,26 @@ export const CHAPTERS: Chapter[] = ["home", "projects", "research", "path", "con
 /** Scroll progress at which each chapter's shot is fully in place. */
 export const KEYS: number[] = [0, 0.3, 0.55, 0.78, 1];
 
+/** Keeps neighbouring keys apart, so the smoothstep between them never divides by zero. */
+export const KEY_GAP = 0.001;
+
+/**
+ * Chapter keys from the live layout: the scroll progress at which each chapter's anchor
+ * lands, (top − pad) / max, where `tops` are the sections' document tops in CHAPTERS
+ * order, `pad` the computed scroll-padding-top and `max` the scrollable height. Home is
+ * 0; the rest clamp to [0, 1] (Contact usually clamps to 1 at the page end) and are made
+ * strictly increasing, KEY_GAP apart, never above 1. Returns null when the page cannot
+ * scroll (max ≤ 0), so the caller keeps its previous keys.
+ */
+export function keysFromLayout(tops: number[], pad: number, max: number): number[] | null {
+  if (!(max > 0)) return null;
+  const ks = tops.map((top, i) => (i === 0 ? 0 : Math.min(1, Math.max(0, (top - pad) / max))));
+  for (let i = 1; i < ks.length; i++) ks[i] = Math.max(ks[i], ks[i - 1] + KEY_GAP);
+  ks[ks.length - 1] = Math.min(1, ks[ks.length - 1]);
+  for (let i = ks.length - 2; i > 0; i--) ks[i] = Math.min(ks[i], ks[i + 1] - KEY_GAP);
+  return ks;
+}
+
 type Shot = {
   hz: number;
   par: number;

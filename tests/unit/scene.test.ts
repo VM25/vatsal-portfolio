@@ -1,7 +1,51 @@
 import { describe, expect, it } from "vitest";
-import { CHAPTERS, KEYS, SHOTS, clockAt, isMorning, sceneState, stillWeights } from "@/lib/scene";
+import { CHAPTERS, KEYS, KEY_GAP, SHOTS, clockAt, isMorning, keysFromLayout, sceneState, stillWeights } from "@/lib/scene";
 
 const K = KEYS;
+
+describe("keysFromLayout", () => {
+  const strictlyIncreasing = (ks: number[]) => ks.every((v, i) => i === 0 || v > ks[i - 1]);
+
+  it("puts each key where the chapter's anchor lands", () => {
+    // tops of home, projects, research, path, contact; 76px padding; 5000px to scroll.
+    const ks = keysFromLayout([0, 1076, 2576, 3576, 4876], 76, 5000)!;
+    expect(ks[0]).toBe(0);
+    expect(ks[1]).toBeCloseTo(0.2, 10);
+    expect(ks[2]).toBeCloseTo(0.5, 10);
+    expect(ks[3]).toBeCloseTo(0.7, 10);
+    // Contact below 1: its anchor can be reached before the page end.
+    expect(ks[4]).toBeCloseTo(0.96, 10);
+  });
+
+  it("clamps to [0, 1]: Contact past the page end reads 1, Home is always 0", () => {
+    const ks = keysFromLayout([500, 1076, 2576, 3576, 9000], 76, 5000)!;
+    expect(ks[0]).toBe(0);
+    expect(ks[4]).toBe(1);
+    expect(ks.every((v) => v >= 0 && v <= 1)).toBe(true);
+  });
+
+  it("breaks ties so keys are strictly increasing", () => {
+    // Projects and research both above the padding clamp to 0; path ties with research.
+    const ks = keysFromLayout([0, 10, 20, 20, 4000], 76, 5000)!;
+    expect(strictlyIncreasing(ks)).toBe(true);
+    expect(ks[1]).toBeCloseTo(KEY_GAP, 10);
+    expect(ks[2]).toBeCloseTo(2 * KEY_GAP, 10);
+    expect(ks[3]).toBeCloseTo(3 * KEY_GAP, 10);
+  });
+
+  it("on a short page every later key clamps to the end, still increasing and never above 1", () => {
+    const ks = keysFromLayout([0, 700, 800, 900, 1000], 76, 120)!;
+    expect(ks[4]).toBe(1);
+    expect(strictlyIncreasing(ks)).toBe(true);
+    expect(ks.every((v) => v >= 0 && v <= 1)).toBe(true);
+    expect(ks[3]).toBeCloseTo(1 - KEY_GAP, 10);
+  });
+
+  it("returns null when the page cannot scroll", () => {
+    expect(keysFromLayout([0, 10, 20, 30, 40], 76, 0)).toBeNull();
+    expect(keysFromLayout([0, 10, 20, 30, 40], 76, -5)).toBeNull();
+  });
+});
 
 describe("scene", () => {
   it("chapters are in order", () => {

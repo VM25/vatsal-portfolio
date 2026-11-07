@@ -1,4 +1,25 @@
 import type { Page } from "@playwright/test";
+import { CHAPTERS, keysFromLayout } from "../../src/lib/scene";
+
+/**
+ * The chapter keys as ScrollState measures them: the live layout's section tops,
+ * computed scroll-padding-top and scrollable height, through the same keysFromLayout.
+ */
+export async function measuredKeys(page: Page): Promise<number[]> {
+  const { tops, pad, max } = await page.evaluate((order) => {
+    const tops = order.map(
+      (id) => (document.querySelector(`[data-sec="${id}"]`) as HTMLElement).getBoundingClientRect().top + window.scrollY,
+    );
+    return {
+      tops,
+      pad: parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0,
+      max: document.documentElement.scrollHeight - window.innerHeight,
+    };
+  }, CHAPTERS as string[]);
+  const ks = keysFromLayout(tops, pad, max);
+  if (!ks) throw new Error("the page cannot scroll, so it has no measured keys");
+  return ks;
+}
 
 export type PacingResult = {
   /** Tallest vertical band, in px, with no qualifying text, over all scroll steps. */

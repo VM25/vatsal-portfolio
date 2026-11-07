@@ -38,6 +38,21 @@ async function ticks(page: Page, n: number) {
   }, n);
 }
 
+/**
+ * Narrow: close the open first row, then scroll so row i sits just above the bottom
+ * edge, so opening it has to scroll its panel into view.
+ */
+async function closeAndPark(page: Page, i: number) {
+  await railToTop(page);
+  await rows(page).nth(0).dispatchEvent("click");
+  await expectOpen(page, -1);
+  await rows(page).nth(i).evaluate((b) => {
+    const y = b.getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 8;
+    window.scrollTo({ top: y, behavior: "instant" });
+  });
+  await ticks(page, 2);
+}
+
 /** Scroll so the rail's first row sits just under the top bar. */
 async function railToTop(page: Page) {
   await page.locator("#more-tab-0").evaluate((t) => {
@@ -50,7 +65,9 @@ const tablist = (page: Page) => page.getByRole("tablist", { name: projects.moreL
 const tabs = (page: Page) => tablist(page).getByRole("tab");
 const stage = (page: Page) => page.locator("#more-stage");
 const rows = (page: Page) => page.locator("#more .rail > button");
-const panel = (page: Page) => page.locator("#more .rail > [role='region']");
+/** The open narrow panel. All six exist; the closed ones are hidden. */
+const panel = (page: Page) => page.locator("#more .rail > [role='region']:not([hidden])");
+const panels = (page: Page) => page.locator("#more .rail > [role='region']");
 
 async function expectSelected(page: Page, i: number) {
   for (let k = 0; k < RAIL.length; k++) {
@@ -68,6 +85,16 @@ async function expectSelected(page: Page, i: number) {
 async function expectOpen(page: Page, i: number) {
   for (let k = 0; k < RAIL.length; k++) {
     await expect(rows(page).nth(k)).toHaveAttribute("aria-expanded", k === i ? "true" : "false");
+  }
+  // Every row's aria-controls resolves to its own panel, open or hidden.
+  await expect(panels(page)).toHaveCount(RAIL.length);
+  for (let k = 0; k < RAIL.length; k++) {
+    const id = (await rows(page).nth(k).getAttribute("aria-controls"))!;
+    const p = page.locator(`#${id}`);
+    await expect(p).toHaveCount(1);
+    await expect(p).toHaveAttribute("aria-labelledby", `more-tab-${k}`);
+    if (k === i) await expect(p).toBeVisible();
+    else await expect(p).toBeHidden();
   }
   if (i < 0) {
     await expect(panel(page)).toHaveCount(0);
@@ -205,19 +232,18 @@ test.describe("More projects rail", () => {
       await expect(panel(page).locator("h4")).toBeHidden();
     });
 
-    test("opening a lower row moves the panel under it and scrolls it into view; focus stays", async ({ page }) => {
+    test("opening a row near the bottom edge scrolls its panel into view; focus stays", async ({ page }) => {
       await open(page, true);
-      await railToTop(page);
+      await closeAndPark(page, 5);
+      const before = await page.evaluate(() => window.scrollY);
       // Keyboard activation, so focus is meaningful (Safari does not focus buttons on click).
       await rows(page).nth(5).focus();
       await page.keyboard.press("Enter");
       await expectOpen(page, 5);
       await expect(rows(page).nth(5)).toBeFocused();
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before + 50);
       await expect
-        .poll(() => panel(page).evaluate((s) => {
-          const r = s.getBoundingClientRect();
-          return r.top >= 0 && r.top < window.innerHeight;
-        }))
+        .poll(() => panel(page).evaluate((s) => s.getBoundingClientRect().bottom <= window.innerHeight + 1))
         .toBe(true);
       await expect(rows(page).nth(5)).toBeFocused();
     });
@@ -248,13 +274,19 @@ test.describe("More projects rail", () => {
       const page = await ctx.newPage();
       await noWatchdog(page);
       await open(page, true);
-      await railToTop(page);
+      await closeAndPark(page, 5);
+      const before = await page.evaluate(() => window.scrollY);
       await rows(page).nth(5).dispatchEvent("click");
       await expectOpen(page, 5);
       await ticks(page, 2);
-      const top = await panel(page).evaluate((s) => s.getBoundingClientRect().top);
-      expect(top).toBeGreaterThanOrEqual(0);
-      expect(top).toBeLessThan(NARROW.height);
+      // At once: no smooth scroll to wait for.
+      expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(before + 50);
+      const r = await panel(page).evaluate((s) => {
+        const b = s.getBoundingClientRect();
+        return { top: b.top, bottom: b.bottom };
+      });
+      expect(r.bottom).toBeLessThanOrEqual(NARROW.height + 1);
+      expect(r.top).toBeGreaterThanOrEqual(0);
       await ctx.close();
     });
 
@@ -271,20 +303,26 @@ test.describe("More projects rail", () => {
     });
   });
 
-  test("the selection carries across the breakpoint both ways", async ({ page }) => {
+  test("the selection and focus carry across the breakpoint both ways", async ({ page }) => {
     await page.setViewportSize(WIDE);
     await open(page, false);
-    await tabs(page).nth(3).click();
+    await tabs(page).nth(0).focus();
+    for (let k = 0; k < 3; k++) await page.keyboard.press("ArrowDown");
     await expectSelected(page, 3);
+    await expect(tabs(page).nth(3)).toBeFocused();
 
     await page.setViewportSize(NARROW);
     await expect(page.locator("#more .rail")).toHaveAttribute("data-narrow", "true");
+    await expect(rows(page).nth(3)).toBeFocused();
     await expectOpen(page, 3);
 
-    await rows(page).nth(4).click();
+    await rows(page).nth(4).focus();
+    await page.keyboard.press("Enter");
     await expectOpen(page, 4);
+    await expect(rows(page).nth(4)).toBeFocused();
     await page.setViewportSize(WIDE);
     await expect(page.locator("#more .rail")).toHaveAttribute("data-narrow", "false");
+    await expect(tabs(page).nth(4)).toBeFocused();
     await expectSelected(page, 4);
   });
 
@@ -318,6 +356,6 @@ test.describe("More projects rail", () => {
     await expect(tabs(page).nth(0)).toHaveAttribute("aria-selected", "true");
     await expect(stage(page)).toBeVisible();
     await expect(stage(page)).toContainText(RAIL[0].question);
-    await expect(page.locator("#more").getByText(RAIL[1].question, { exact: true })).toHaveCount(0);
+    await expect(page.locator("#more").getByText(RAIL[1].question, { exact: true }).filter({ visible: true })).toHaveCount(0);
   });
 });

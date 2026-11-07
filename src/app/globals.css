@@ -262,13 +262,22 @@ html.rm .landed { animation: none; }
 html.rm .swap { animation: none; }
 @container site (min-width: 900px) { .more { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); column-gap: 56px; } .more h3 { grid-column: 1 / -1; } }
 /*
-  Without JavaScript (no html.js, set by the inline head script) the tabs give way to
-  the <noscript> list: all six projects, each with its stage content under its title.
-  The noscript rule is scoped to html:not(.js) so its raw text never shows with scripting on.
+  Without JavaScript (no html.js, set by the inline head script, or removed by it when
+  the bundle never arrives) the rail gives way to .rail-all: all six projects, each
+  with its stage content under its title. Under html.js that list is hidden.
 */
 html:not(.js) .more > .rail, html:not(.js) .more > .stage { display: none; }
-html:not(.js) .more > noscript { display: grid; gap: 30px; grid-column: 1 / -1; }
-html:not(.js) .more > noscript .stage { padding-top: 22px; border-top: 1px solid rgba(195,203,198,0.12); }
+.more > .rail-all { display: none; }
+html:not(.js) .more > .rail-all { display: grid; gap: 30px; grid-column: 1 / -1; }
+html:not(.js) .more > .rail-all .stage { padding-top: 22px; border-top: 1px solid rgba(195,203,198,0.12); }
+/* Narrow panels closed by the reader keep their place in the tree, hidden. */
+.rail .stage[hidden] { display: none; }
+/*
+  Before the rail is measured: on wide screens the side stage shows and the in-rail
+  copy does not; on narrow ones the reverse, matching the hydrated disclosure exactly.
+*/
+.rail .stage.pre { display: none; }
+@container site (max-width: 899px) { .rail .stage.pre { display: grid; } .more > .stage.side { display: none; } }
 
 /* ---------- research ---------- */
 .research { padding-block: 96px 72px; }
@@ -277,6 +286,8 @@ html:not(.js) .more > noscript .stage { padding-top: 22px; border-top: 1px solid
 .paper .premise { font-family: var(--font-argue); font-size: clamp(1.3rem, 3cqi, 1.65rem); line-height: 1.45; color: var(--fog-hi); max-width: 36ch; }
 .paper .ask { font-family: var(--font-argue); font-size: 1.12rem; line-height: 1.6; color: #CDD4D0; max-width: 58ch; }
 .claims { display: grid; align-items: start; }
+/* Each claim button sits in an h3 (the accordion pattern); the heading adds no styling of its own. */
+.claim-h { margin: 0; font: inherit; letter-spacing: normal; text-wrap: wrap; }
 .claim { text-align: left; display: block; width: 100%; padding: 18px 0; border-top: 1px solid rgba(195,203,198,0.14); font-family: var(--font-argue); font-size: 1.15rem; line-height: 1.5; color: #CDD4D0; min-height: 44px; transition: color 200ms ease; }
 .claim small { display: block; margin-bottom: 4px; font-family: var(--font-world); font-size: 14px; color: var(--fog-mid); }
 .claim b { font-weight: 500; color: var(--sodium); font-variant-numeric: tabular-nums; }
@@ -321,7 +332,7 @@ html.rm .ev .bar { transition: none; }
 /* Evidence beside the claims on wide screens; only with JavaScript, where one is open at a time. */
 @container site (min-width: 980px) {
   html.js .claims { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 64px; }
-  html.js .claim { grid-column: 1; }
+  html.js .claim-h { grid-column: 1; }
   html.js .ev { grid-column: 2; grid-row: 1 / span 8; padding-top: 18px; }
 }
 
