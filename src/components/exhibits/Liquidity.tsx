@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { createToy, runSchedule } from "@/lib/mmToy";
 import { num, signed } from "@/lib/format";
 import { useSceneActions } from "@/components/world/ScrollState";
@@ -129,7 +130,8 @@ export function Liquidity({ copy, intro, cut }: { copy: LiquidityCopy; intro: Re
   const lhsEl = useRef<HTMLSpanElement>(null);
   const rhsEl = useRef<HTMLElement>(null);
 
-  // Survives a remount, so a run, a beat or a count is never repeated.
+  // Survives StrictMode's effect re-run (cleanup, then the effect again on the same
+  // instance), so a run, a beat or a count is never repeated. A real unmount starts over.
   const life = useRef<Life>({
     id: 0,
     done: 0,
@@ -165,6 +167,8 @@ export function Liquidity({ copy, intro, cut }: { copy: LiquidityCopy; intro: Re
     let timer: ReturnType<typeof setTimeout> | undefined;
     /** When the tab went hidden with a tick still to come. */
     let parkedAt: number | null = null;
+    /** The frame that sets the finish sentence after an instant run. */
+    let sayFrame = 0;
     let live = true;
 
     const mark = () => {
@@ -263,6 +267,8 @@ export function Liquidity({ copy, intro, cut }: { copy: LiquidityCopy; intro: Re
         L.pending -= 1;
       }
       parkedAt = null;
+      if (sayFrame) cancelAnimationFrame(sayFrame);
+      sayFrame = 0;
     };
 
     const finish = (instant: boolean) => {
@@ -270,7 +276,7 @@ export function Liquidity({ copy, intro, cut }: { copy: LiquidityCopy; intro: Re
       L.done += 1;
       quiet(false);
       dim = !instant;
-      if (!instant) rushTo(0);
+      rushTo(0);
       // The exhibit's one beat: on the first finished run only.
       if (!L.beaten) {
         L.beaten = true;
@@ -284,7 +290,17 @@ export function Liquidity({ copy, intro, cut }: { copy: LiquidityCopy; intro: Re
         }
       }
       const s = paint();
-      setSaid(fill(copyRef.current.finished, { net: s.net, trades: s.trades }));
+      const text = fill(copyRef.current.finished, { net: s.net, trades: s.trades });
+      if (!instant) {
+        setSaid(text);
+        return;
+      }
+      // An instant run cleared the sentence in this same task; set it again a frame later,
+      // so the live region changes twice and a replay is announced again.
+      sayFrame = requestAnimationFrame(() => {
+        sayFrame = 0;
+        setSaid(text);
+      });
     };
 
     /** Time the next tick (k) against the run's clock; park it while the tab is hidden. */
@@ -323,18 +339,21 @@ export function Liquidity({ copy, intro, cut }: { copy: LiquidityCopy; intro: Re
 
     const start = () => {
       cancel();
+      rushTo(0);
       L.id += 1;
       L.started = true;
       toy = createToy();
       k = 0;
       dim = false;
-      setSaid("");
       if (rm.matches) {
+        // Commit the cleared sentence now; finish() sets it again on the next frame.
+        flushSync(() => setSaid(""));
         for (let i = 0; i < TOTAL; i++) toy.step();
         L.running = false;
         finish(true);
         return;
       }
+      setSaid("");
       L.running = true;
       quiet(true);
       mark();

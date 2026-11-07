@@ -100,6 +100,46 @@ async function expectFinal(page: Page) {
   await expect(page.locator("#mmEq")).toHaveText(FINAL_EQ);
 }
 
+/**
+ * Put a consistent zero state into the counters and the equation (rewriting their text
+ * nodes, as the exhibit does), so the next run's writes are real DOM changes the
+ * observer sees, even when that run lands on the same text the page already showed.
+ */
+async function zeroCounters(page: Page) {
+  await page.evaluate(() => {
+    const set = (el: Element, v: string) => {
+      const n = el.firstChild;
+      if (n && n.nodeType === Node.TEXT_NODE && !n.nextSibling) n.nodeValue = v;
+      else el.textContent = v;
+    };
+    for (const [id, v] of [
+      ["mmT", "0"],
+      ["mmE", "+0"],
+      ["mmL", "+0"],
+      ["mmU", "+0"],
+      ["mmN", "+0"],
+    ]) set(document.getElementById(id)!, v);
+    const eq = document.getElementById("mmEq")!;
+    set(eq.querySelector("span")!, "+0 − 0 + 0 = ");
+    set(eq.querySelector("b")!, "+0");
+  });
+}
+
+/** Record every text the polite finish sentence shows, in order, on window.__say. */
+async function watchSay(page: Page) {
+  await page.evaluate(() => {
+    const el = document.querySelector("#liquidity [data-say]")!;
+    const seen: string[] = [];
+    (window as unknown as { __say: string[] }).__say = seen;
+    new MutationObserver(() => seen.push(el.textContent ?? "")).observe(el, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  });
+}
+const readSay = (page: Page) => page.evaluate(() => (window as unknown as { __say: string[] }).__say);
+
 async function bringIntoView(page: Page) {
   await page.locator("#liquidity .mm-stage").scrollIntoViewIfNeeded();
 }
@@ -161,8 +201,10 @@ test.describe("Liquidity Paradox exhibit", () => {
     const log = await readLog(page);
     expect(log.failures).toEqual([]);
     expect(log.sawRunning).toBe(true);
-    // The schedule has 135 ticks; a loaded machine merges late ones, but a run is still many updates.
-    expect(log.updates).toBeGreaterThan(20);
+    // The schedule has 135 ticks over 4.2 s. A late timer merges every tick that is due
+    // into one update, so with timers 5× late a run still makes about 27 updates (one per
+    // 5 ticks); 10 holds under that load and still proves the counters were stepped.
+    expect(log.updates).toBeGreaterThanOrEqual(10);
     expect(log.backwards).toBe(0);
     expect(log.runs).toEqual(["1"]);
     await expectFinal(page);
@@ -185,29 +227,37 @@ test.describe("Liquidity Paradox exhibit", () => {
     await expect(ex(page)).toHaveAttribute("data-run-id", "1");
   });
 
-  test("Review Focus 3: five clicks on Run it again within 300 ms leave one run that ends on a clean state", async ({ page }) => {
+  test("Review Focus 3: five quick clicks on Run it again leave one run that ends on a clean state", async ({ page }) => {
     await open(page);
     await watch(page);
     await bringIntoView(page);
     await expect(ex(page)).toHaveAttribute("data-running", "true");
     await expect.poll(async () => Number(await ex(page).getAttribute("data-steps"))).toBeGreaterThan(5);
     const button = ex(page).getByRole("button", { name: "Run it again" });
-    const { took, after } = await button.evaluate(async (b) => {
-      const t0 = performance.now();
+    const { before, after } = await button.evaluate(async (b) => {
+      const before: [string, string][] = [];
       const after: [string, string][] = [];
       const root = document.getElementById("liquidity")!;
-      // Five clicks, one animation frame apart (each its own task, with a render between):
-      // each lands while the run before it is in flight. Frames, not timers: a loaded
-      // test machine can hold a 40 ms timer back for 100 ms or more.
+      // Five clicks, one animation frame apart (each its own task, with a render between).
+      // The checks are structural, not wall-clock: a loaded test machine can hold timers
+      // and frames back several times over.
       for (let i = 0; i < 5; i++) {
         if (i > 0) await new Promise((r) => requestAnimationFrame(() => r(null)));
+        before.push([root.dataset.runId ?? "", root.dataset.running ?? ""]);
         (b as HTMLButtonElement).click();
         after.push([root.dataset.runId ?? "", document.getElementById("mmT")!.textContent ?? ""]);
       }
-      return { took: performance.now() - t0, after };
+      return { before, after };
     });
-    expect(took).toBeLessThan(300);
-    // Each click restarts from zero at once: a new run id and the first trade.
+    // Every click lands while the run before it is still in flight...
+    expect(before).toEqual([
+      ["1", "true"],
+      ["2", "true"],
+      ["3", "true"],
+      ["4", "true"],
+      ["5", "true"],
+    ]);
+    // ...and restarts from zero at once: a new run id and the first trade.
     expect(after).toEqual([
       ["2", "1"],
       ["3", "1"],
@@ -278,6 +328,11 @@ test.describe("Liquidity Paradox exhibit", () => {
     expect(await ex(page).getAttribute("data-steps")).toBe(parked);
     await expect(ex(page)).toHaveAttribute("data-running", "true");
     await setHidden(false);
+    // It resumes where it was: a few frames later it is still running, short of 420,
+    // rather than jumping to the end for the time it spent hidden.
+    await ticks(page, 3);
+    await expect(ex(page)).toHaveAttribute("data-running", "true");
+    expect(Number(await ex(page).getAttribute("data-steps"))).toBeLessThan(420);
     await expect(ex(page)).toHaveAttribute("data-running", "false", { timeout: 15_000 });
     await expectFinal(page);
   });
@@ -287,12 +342,15 @@ test.describe("Liquidity Paradox exhibit", () => {
     const page = await ctx.newPage();
     await noWatchdog(page);
     await open(page);
+    // Zero the counters first, so the instant run's writes are changes the observer sees.
+    await zeroCounters(page);
     await watch(page);
     await bringIntoView(page);
     await expect(ex(page)).toHaveAttribute("data-runs-done", "1");
     await expect(ex(page)).toHaveAttribute("data-run-id", "1");
     await expectFinal(page);
     let log = await readLog(page);
+    expect(log.updates).toBeGreaterThanOrEqual(1);
     expect(log.failures).toEqual([]);
     expect(log.sawRunning).toBe(false);
     await expect(ex(page)).toHaveAttribute("data-rush", "0");
@@ -300,11 +358,22 @@ test.describe("Liquidity Paradox exhibit", () => {
     await expect(ex(page)).toHaveAttribute("data-beat-count", "1");
     await expect(page.locator("#liquidity .cut .big")).not.toHaveClass(/landed/);
     await expect(page.locator("#liquidity [data-say]")).toHaveText("Run finished: net −96 ticks over 420 trades.");
-    // Run it again recomputes at once.
+    // Run it again recomputes at once, and is announced again: the sentence clears, then
+    // comes back (a polite region only speaks when its text changes).
+    const seenBefore = log.updates;
+    await zeroCounters(page);
+    await watchSay(page);
     await ex(page).getByRole("button", { name: "Run it again" }).click();
     await expect(ex(page)).toHaveAttribute("data-runs-done", "2");
     await expectFinal(page);
+    const sentence = "Run finished: net −96 ticks over 420 trades.";
+    await expect(page.locator("#liquidity [data-say]")).toHaveText(sentence);
+    const said = await readSay(page);
+    expect(said.at(-1)).toBe(sentence);
+    expect(said.slice(0, -1)).toContain("");
     log = await readLog(page);
+    // The zeroing plus the replay's write: the observer saw the replay land.
+    expect(log.updates).toBeGreaterThanOrEqual(seenBefore + 2);
     expect(log.failures).toEqual([]);
     expect(log.sawRunning).toBe(false);
     await expect(ex(page)).toHaveAttribute("data-beat-count", "1");
