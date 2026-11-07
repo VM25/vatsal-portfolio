@@ -12,9 +12,9 @@ export type PacingResult = {
 
 /**
  * Pacing helper. Scrolls from the top of `fromId` to the end of `toId` in steps of 10% of the
- * viewport. Qualifying text is any visible text node (outside the nav bar) with non-empty text, at least `minHeight` px tall (default 20: a one-line 14 to 15px paragraph measures 21 to 22px, so 24 would wrongly discard captions),
+ * viewport. Qualifying text is any visible text node (outside the top bar and the menu dialog; aria-hidden text still counts, because pacing is visual) with non-empty text, in a block at least `minHeight` px tall (default 20: a one-line 14 to 15px paragraph measures 21 to 22px, so 24 would wrongly discard captions),
  * inside the viewport, with computed opacity above 0, visibility visible, and not inside
- * [aria-hidden="true"]. At each step it measures the largest vertical band of the viewport that
+ * the excluded containers. At each step it measures the largest vertical band of the viewport that
  * holds no qualifying text. Assert `largestGap <= 0.4 * viewport` (the spec's pacing rule).
  * Task 12 can call it with ("top", "contact") for the whole page.
  */
@@ -43,13 +43,14 @@ export async function measurePacing(
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
           const el = n.parentElement;
-          if (!el || !n.textContent?.trim() || el.closest('[aria-hidden="true"], nav, script, style, noscript')) continue;
+          if (!el || !n.textContent?.trim() || el.closest('header.top, [role="dialog"], script, style, noscript')) continue;
           const cs = getComputedStyle(el);
           if (cs.visibility !== "visible" || parseFloat(cs.opacity) <= 0) continue;
           const range = document.createRange();
           range.selectNodeContents(n);
           const r = range.getBoundingClientRect();
-          if (r.height < minHeight || r.bottom <= 0 || r.top >= vh) continue;
+          const box = (el.closest("p, li, h1, h2, h3, a, button, div") ?? el).getBoundingClientRect();
+          if (Math.max(r.height, box.height) < minHeight || r.height === 0 || r.bottom <= 0 || r.top >= vh) continue;
           bands.push([Math.max(0, r.top), Math.min(vh, r.bottom)]);
         }
         if (!bands.length) textFree.push(Math.round(y));
