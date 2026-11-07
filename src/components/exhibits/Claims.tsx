@@ -69,6 +69,12 @@ function redraw(ev: HTMLElement | null) {
   }, 60);
 }
 
+/*
+  The chart titles are HTML captions above the SVG, not SVG text: at 320px a title on one
+  line inside the scaled viewBox cannot render at 14px. Everything below the title keeps
+  the prototype's geometry, moved up by the title's band (30 units for the bars, 24 for the
+  drop), with every transform origin given in those same viewBox units.
+*/
 function Sharpe({ e }: { e: Evidence["sharpe"] }) {
   const x = (v: number) => (v / e.scaleMax) * SCALE_W;
   const ticks: number[] = [];
@@ -76,12 +82,10 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
   const colors = ["#FFA62B", "#C3CBC6"];
   return (
     <div className="chart">
-      <svg viewBox="0 0 520 240" role="img" aria-label={e.label}>
-        <text className="tt" x="0" y="14" fill="#9AA39E" fontSize="14">
-          {e.chartTitle}
-        </text>
+      <p className="ctitle">{e.chartTitle}</p>
+      <svg viewBox="0 0 520 210" role="img" aria-label={e.label}>
         {e.bars.map((b, k) => {
-          const y = 76 + k * 70;
+          const y = 46 + k * 70;
           const end = x(b.value);
           const c = colors[k % colors.length];
           return (
@@ -107,13 +111,13 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
             </g>
           );
         })}
-        <line x1="0" y1="190" x2={SCALE_W} y2="190" stroke="#5B6661" />
+        <line x1="0" y1="160" x2={SCALE_W} y2="160" stroke="#5B6661" />
         <g className="ticks" fill="#9AA39E" fontSize="13">
           {ticks.map((t, i) => (
             <text
               key={t}
               x={x(t)}
-              y="212"
+              y="182"
               textAnchor={i === 0 ? undefined : i === ticks.length - 1 ? "end" : "middle"}
             >
               {t === 0 ? "0" : fixed(t, 1)}
@@ -128,13 +132,11 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
 function Drawdown({ e }: { e: Evidence["drawdown"] }) {
   return (
     <div className="chart">
-      <svg viewBox="0 0 520 240" role="img" aria-label={e.label}>
-        <text className="tt" x="0" y="14" fill="#9AA39E" fontSize="14">
-          {e.chartTitle}
-        </text>
-        <line x1="0" y1="50" x2="520" y2="50" stroke="#5B6661" />
+      <p className="ctitle">{e.chartTitle}</p>
+      <svg viewBox="0 0 520 216" role="img" aria-label={e.label}>
+        <line x1="0" y1="26" x2="520" y2="26" stroke="#5B6661" />
         <g className="ticks" fill="#9AA39E" fontSize="13">
-          <text x="0" y="40">
+          <text x="0" y="16">
             {e.zero}
           </text>
         </g>
@@ -142,19 +144,19 @@ function Drawdown({ e }: { e: Evidence["drawdown"] }) {
           className="bar"
           data-ax="y"
           x1="60"
-          y1="50"
+          y1="26"
           x2="60"
-          y2="202"
+          y2="178"
           stroke="#FFA62B"
           strokeWidth="5"
           strokeLinecap="round"
-          style={{ transformOrigin: "60px 50px" }}
+          style={{ transformOrigin: "60px 26px" }}
         />
-        <circle cx="60" cy="202" r="7" fill="#FFA62B" />
-        <text className="tb" x="82" y="210" fill="#FFA62B" fontSize="30">
+        <circle cx="60" cy="178" r="7" fill="#FFA62B" />
+        <text className="tb" x="76" y="186" fill="#FFA62B" fontSize="30">
           {e.value}
         </text>
-        <text className="tt" x="82" y="234" fill="#9AA39E" fontSize="14">
+        <text className="tt" x="76" y="210" fill="#9AA39E" fontSize="14">
           {e.note}
         </text>
       </svg>

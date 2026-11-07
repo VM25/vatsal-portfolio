@@ -111,6 +111,8 @@ test.describe("Research chapter", () => {
     await expect(sharpe).toContainText("0.66");
     await expect(sharpe).toContainText("0.48");
     await expect(sharpe).toContainText("Static 60/40");
+    await expect(page.locator("#ev-sharpe .ctitle")).toHaveText(research.evidence.sharpe.chartTitle);
+    await expect(page.locator("#ev-drawdown .ctitle")).toHaveText(research.evidence.drawdown.chartTitle);
     await expect(sharpe).toContainText("Regime-aware rule");
     await expect(page.locator("#ev-sharpe .src")).toHaveText(research.evidence.sharpe.source);
     for (const b of await sharpe.locator(".bar").all()) {
@@ -170,27 +172,34 @@ test.describe("Research chapter", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   });
 
-  test("SVG text renders at 14px or more, tick labels at 12px or more, at 375", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await open(page);
-    for (const i of [0, 1]) {
-      await claim(page, i).click();
-      const sizes = await sec(page).locator(".ev.on svg").evaluate((svg) => {
-        const k = svg.getBoundingClientRect().width / (svg as SVGSVGElement).viewBox.baseVal.width;
-        return [...svg.querySelectorAll("text")].map((t) => ({
-          text: t.textContent,
-          tick: !!t.closest(".ticks"),
-          px: parseFloat(getComputedStyle(t).fontSize) * k,
-          right: t.getBoundingClientRect().right,
-        }));
-      });
-      expect(sizes.length).toBeGreaterThan(2);
-      for (const s of sizes) {
-        expect(s.px, `${s.text}`).toBeGreaterThanOrEqual(s.tick ? 12 : 14);
-        expect(s.right, `${s.text} overflows`).toBeLessThanOrEqual(375);
+  for (const width of [320, 375, 414, 768, 1024, 1280, 1440]) {
+    test(`chart text renders at 14px or more, tick labels at 12px or more, inside the chart, at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await open(page);
+      for (const i of [0, 1]) {
+        await claim(page, i).click();
+        const ev = sec(page).locator(".ev.on");
+        await expect(ev.locator(".ctitle")).toHaveCSS("font-size", "14px");
+        const sizes = await ev.locator("svg").evaluate((svg) => {
+          const box = svg.getBoundingClientRect();
+          const k = box.width / (svg as SVGSVGElement).viewBox.baseVal.width;
+          return [...svg.querySelectorAll("text")].map((t) => ({
+            text: t.textContent,
+            tick: !!t.closest(".ticks"),
+            px: parseFloat(getComputedStyle(t).fontSize) * k,
+            right: t.getBoundingClientRect().right,
+            limit: box.right,
+          }));
+        });
+        expect(sizes.length).toBeGreaterThan(2);
+        for (const s of sizes) {
+          expect(s.px, `${s.text}`).toBeGreaterThanOrEqual(s.tick ? 12 : 14);
+          expect(s.right, `${s.text} overflows the chart`).toBeLessThanOrEqual(s.limit + 1);
+        }
       }
-    }
-  });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    });
+  }
 
   test("links: SSRN and the prospectus, each announced as opening a new tab", async ({ page, request }) => {
     await open(page);

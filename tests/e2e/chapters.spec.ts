@@ -71,14 +71,15 @@ test.describe("Home, Path and Contact", () => {
     await page.goto("/");
     await expect(page.locator("#contact a[href^='mailto:']")).toHaveAttribute("href", `mailto:${EMAIL}`);
     await expect(page.locator("form")).toHaveCount(0);
-    // Chart tick labels ("0 0.2 0.4 0.6 0.8") are not prose: read the page's text without the SVGs.
+    // Chart tick labels ("0 0.2 0.4 0.6 0.8") are not prose: read every text node outside svg and canvas.
     const text = await page.evaluate(() => {
-      const svgs = [...document.querySelectorAll<SVGElement>("svg")];
-      const was = svgs.map((s) => s.style.display);
-      svgs.forEach((s) => (s.style.display = "none"));
-      const t = document.body.innerText;
-      svgs.forEach((s, i) => (s.style.display = was[i]));
-      return t;
+      const out: string[] = [];
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n.parentElement?.closest("svg, canvas, script, style, noscript")) continue;
+        out.push(n.textContent ?? "");
+      }
+      return out.join("\n");
     });
     expect(text).not.toMatch(/\+?\d[\d\s().-]{8,}\d/);
     await expect(page.locator("a[href^='tel:']")).toHaveCount(0);

@@ -245,10 +245,10 @@ html.rm .landed { animation: none; }
 .rail { display: grid; }
 .rail button { text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline; min-height: 54px; padding: 12px 0; border-bottom: 1px solid rgba(195,203,198,0.12); color: #CDD4D0; transition: color 200ms ease; }
 .rail button > span { font-size: 14px; color: var(--fog-mid); }
-.rail button[aria-selected="true"] { color: var(--fog-hi); }
+.rail button[aria-selected="true"], .rail button[aria-expanded="true"] { color: var(--fog-hi); }
 .rail button b { font-weight: 400; }
 .rail .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 12px; vertical-align: 2px; box-shadow: inset 0 0 0 1px var(--fog-lo); }
-.rail button[aria-selected="true"] .dot { background: var(--sodium); box-shadow: 0 0 10px var(--sodium); }
+.rail button[aria-selected="true"] .dot, .rail button[aria-expanded="true"] .dot { background: var(--sodium); box-shadow: 0 0 10px var(--sodium); }
 .stage { display: grid; gap: 14px; align-content: start; }
 .stage .sw { display: grid; gap: 14px; }
 .rail .stage { padding: 6px 0 22px 19px; border-bottom: 1px solid rgba(195,203,198,0.12); }
@@ -299,11 +299,16 @@ html.rm .ev .bar { transition: none; }
 }
 /*
   The charts scale with their column (viewBox 520 wide), so their text is sized by the
-  chart's own width: rendered text stays at 14px or more, tick labels at 12px or more.
+  chart's own width: rendered text stays at 14px or more, tick labels at 12px or more, at
+  every width down to a 280px chart (a 320px screen). Each band's nominal size is the
+  rendered minimum divided by the narrowest scale in the band (width / 520).
+  The title is an HTML caption, so it wraps instead of shrinking.
 */
 .ev .chart { container-type: inline-size; container-name: chart; }
+.ev .ctitle { font-size: 14px; color: var(--fog-mid); margin-bottom: 12px; }
 @container chart (max-width: 519px) { .ev svg .tt { font-size: 17px; } .ev svg .tl { font-size: 18px; } .ev svg .tv { font-size: 23px; } .ev svg .tb { font-size: 34px; } .ev svg .ticks text { font-size: 14px; } }
 @container chart (max-width: 449px) { .ev svg .tt { font-size: 22px; } .ev svg .tl { font-size: 22px; } .ev svg .tv { font-size: 27px; } .ev svg .tb { font-size: 38px; } .ev svg .ticks text { font-size: 19px; } }
+@container chart (max-width: 334px) { .ev svg .tt { font-size: 27px; } .ev svg .tl { font-size: 27px; } .ev svg .tv { font-size: 31px; } .ev svg .tb { font-size: 40px; } .ev svg .ticks text { font-size: 23px; } }
 .ev .ident { font-family: var(--font-argue); font-size: clamp(1.2rem, 3cqi, 1.5rem); line-height: 1.7; color: var(--fog-hi); }
 .ev .ident .where { font-size: 0.8em; color: #CDD4D0; }
 .ev .ident .def { display: block; font-size: 0.8em; color: #CDD4D0; }

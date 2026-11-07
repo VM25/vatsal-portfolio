@@ -4,18 +4,25 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEv
 import type { RailProject } from "@/types";
 
 /*
-  More projects: six projects as WAI-ARIA tabs (vertical: Up/Down move and select,
-  Home/End, roving tabindex) with one stage, ported from the prototype.
+  More projects: a rail of six with one stage, ported from the prototype. Two
+  patterns, chosen by the same measurement as the layout (the .more grid's column
+  count, which the container query in globals.css sets):
 
-  - Wide (the .more grid has two columns): the stage sits beside the rail.
-  - Narrow (one column): the stage is rendered directly after the selected tab and,
-    when the reader picks a tab, scrolled into view with block "nearest" (instantly
-    under reduced motion). Focus always stays on the tab.
-  - The server renders the first tab selected with the stage beside the rail, so the
-    collapsed tabs show from the first paint under html.js. Without JavaScript the
-    chapter's <noscript> list shows all six instead (see Projects.tsx and globals.css).
+  - Wide (two columns): WAI-ARIA tabs. Vertical tablist, Up/Down move and select,
+    Home/End, roving tabindex; the stage is a tabpanel beside the rail, outside the
+    tablist.
+  - Narrow (one column): disclosures. Every row is a button with aria-expanded and
+    aria-controls; the open one's panel (role="region", aria-labelledby) sits right
+    after it and is scrolled into view when the reader opens it (block "nearest",
+    instantly under reduced motion). At most one is open; pressing the open one closes
+    it. Tab reaches every row; Enter and Space toggle. Focus stays on the button.
 
-  Test hooks on the tablist: data-ready once hydrated, data-narrow once measured.
+  The selection carries across the breakpoint. The server renders the wide pattern
+  with the first project selected, so the collapsed rail shows from the first paint
+  under html.js. Without JavaScript the chapter's <noscript> list shows all six (see
+  Projects.tsx and globals.css).
+
+  Test hooks on .rail: data-ready once hydrated, data-narrow once measured.
 */
 
 export type RailCopy = {
@@ -24,8 +31,9 @@ export type RailCopy = {
   source: string;
 };
 
-const tabId = (i: number) => `more-tab-${i}`;
+const rowId = (i: number) => `more-tab-${i}`;
 const STAGE_ID = "more-stage";
+const panelId = (i: number) => `more-panel-${i}`;
 
 function NewTab({ href, children }: { href: string; children: string }) {
   return (
@@ -71,12 +79,14 @@ function isNarrow(more: HTMLElement) {
 
 export function ProjectRail({ items, copy }: { items: RailProject[]; copy: RailCopy }) {
   const [sel, setSel] = useState(0);
+  /** Narrow only: whether the selected project's panel is open. Wide always shows it. */
+  const [open, setOpen] = useState(true);
   const [narrow, setNarrow] = useState<boolean | null>(null);
-  /** Bumped on every pick by the reader: replays the swap and asks for the scroll. */
+  /** Bumped on every choice by the reader: replays the swap and asks for the scroll. */
   const [picks, setPicks] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const scrollWanted = useRef(false);
 
   useEffect(() => {
@@ -95,7 +105,7 @@ export function ProjectRail({ items, copy }: { items: RailProject[]; copy: RailC
     if (narrow !== null && listRef.current) listRef.current.dataset.narrow = String(narrow);
   }, [narrow]);
 
-  // After a pick on a narrow screen, bring the stage (now under the tab) into view.
+  // After a choice on a narrow screen, bring the panel (right under its button) into view.
   useLayoutEffect(() => {
     if (!scrollWanted.current) return;
     scrollWanted.current = false;
@@ -108,10 +118,21 @@ export function ProjectRail({ items, copy }: { items: RailProject[]; copy: RailC
   const pick = (i: number) => {
     scrollWanted.current = true;
     setSel(i);
+    setOpen(true);
     setPicks((n) => n + 1);
   };
 
+  const onRow = (i: number) => {
+    if (narrow && i === sel && open) {
+      setOpen(false);
+      return;
+    }
+    pick(i);
+  };
+
+  // Tabs only: arrow keys move and select.
   const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (narrow) return;
     const n = items.length;
     let next: number;
     if (e.key === "ArrowDown") next = (sel + 1) % n;
@@ -121,47 +142,80 @@ export function ProjectRail({ items, copy }: { items: RailProject[]; copy: RailC
     else return;
     e.preventDefault();
     pick(next);
-    tabRefs.current[next]?.focus();
+    rowRefs.current[next]?.focus();
   };
 
   const p = items[sel];
-  const stage = (
-    <div className="stage" role="tabpanel" id={STAGE_ID} aria-labelledby={tabId(sel)} ref={stageRef}>
-      <div className={picks ? "sw swap" : "sw"} key={`${sel}-${picks}`}>
-        <StageBody p={p} copy={copy} />
-      </div>
+  const body = (
+    <div className={picks ? "sw swap" : "sw"} key={`${sel}-${picks}`}>
+      <StageBody p={p} copy={copy} />
     </div>
   );
+
+  if (narrow) {
+    return (
+      <div className="rail" ref={listRef}>
+        {items.map((it, i) => {
+          const expanded = open && i === sel;
+          return (
+            <Fragment key={it.title}>
+              <button
+                type="button"
+                id={rowId(i)}
+                aria-expanded={expanded}
+                aria-controls={panelId(i)}
+                ref={(el) => {
+                  rowRefs.current[i] = el;
+                }}
+                onClick={() => onRow(i)}
+              >
+                <b>
+                  <i className="dot" aria-hidden="true"></i>
+                  {it.title}
+                </b>
+                <span>{it.field}</span>
+              </button>
+              {expanded ? (
+                <div className="stage" role="region" id={panelId(i)} aria-labelledby={rowId(i)} ref={stageRef}>
+                  {body}
+                </div>
+              ) : null}
+            </Fragment>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="rail" role="tablist" aria-label={copy.label} aria-orientation="vertical" ref={listRef}>
         {items.map((it, i) => (
-          <Fragment key={it.title}>
-            <button
-              type="button"
-              role="tab"
-              id={tabId(i)}
-              aria-selected={i === sel}
-              aria-controls={STAGE_ID}
-              tabIndex={i === sel ? 0 : -1}
-              ref={(el) => {
-                tabRefs.current[i] = el;
-              }}
-              onClick={() => pick(i)}
-              onKeyDown={onKey}
-            >
-              <b>
-                <i className="dot" aria-hidden="true"></i>
-                {it.title}
-              </b>
-              <span>{it.field}</span>
-            </button>
-            {narrow && i === sel ? stage : null}
-          </Fragment>
+          <button
+            key={it.title}
+            type="button"
+            role="tab"
+            id={rowId(i)}
+            aria-selected={i === sel}
+            aria-controls={STAGE_ID}
+            tabIndex={i === sel ? 0 : -1}
+            ref={(el) => {
+              rowRefs.current[i] = el;
+            }}
+            onClick={() => pick(i)}
+            onKeyDown={onKey}
+          >
+            <b>
+              <i className="dot" aria-hidden="true"></i>
+              {it.title}
+            </b>
+            <span>{it.field}</span>
+          </button>
         ))}
       </div>
-      {narrow ? null : stage}
+      <div className="stage" role="tabpanel" id={STAGE_ID} aria-labelledby={rowId(sel)} ref={stageRef}>
+        {body}
+      </div>
     </>
   );
 }
