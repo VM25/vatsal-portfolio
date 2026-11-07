@@ -117,7 +117,7 @@ const rail: RailProject[] = [
     question:
       "When an inflation-regime shock hits a Treasury book, where does the loss actually come from?",
     result:
-      "The engine reprices every cash flow under the shocked curve, attributes the P&L across duration, convexity, curve-shape, real-rate and breakeven channels, and measures what a rule-based hedge overlay recovers. It is the Treasury curve-risk and attribution side of the FE800 research.",
+      "The engine reprices every cash flow under the shocked curve, attributes the P&L across duration, convexity, curve-shape, real-rate and breakeven channels, and measures what a rule-based hedge overlay recovers. This is the Treasury curve-risk and attribution component of my stock–bond diversification research.",
     figures: [
       ["10", "shock scenarios"],
       ["4", "hedge overlays"],

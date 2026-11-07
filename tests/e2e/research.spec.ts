@@ -38,7 +38,6 @@ const beats = (page: Page) => page.evaluate(() => Number(document.documentElemen
 /** Computed transforms of the Sharpe bars. */
 const sharpeBars = (page: Page) =>
   sec(page).locator("#ev-sharpe .bar").evaluateAll((els) => els.map((e) => getComputedStyle(e).transform));
-const dropBar = (page: Page) => page.locator("#ev-drawdown .bar").evaluate((e) => getComputedStyle(e).transform);
 
 /** Pixels between Research's top and its anchor landing (the computed scroll-padding-top). */
 const offAnchor = (page: Page) =>
@@ -147,18 +146,12 @@ test.describe("Research chapter", () => {
       await expect(b).toHaveCSS("transform-box", "view-box");
     }
 
-    const drop = page.locator("#ev-drawdown svg");
-    await expect(drop).toHaveAttribute("role", "img");
-    await expect(drop).toHaveAttribute(
-      "aria-label",
-      "Long-duration Treasury hedge book, modeled 2022 replay: a loss of roughly 19 percent",
-    );
-    await expect(drop).toContainText("≈ −19%");
-    // The chart title carries "modeled 2022 replay"; there is no extra note (refinement R2).
+    // The 2022 loss is a numerical callout with no implied scale: no SVG, no bar, no axis (final pass).
+    const drop = page.locator("#ev-drawdown");
+    await expect(drop.locator(".callout-v")).toHaveText("≈ −19%");
+    await expect(drop.locator("svg, .bar, line")).toHaveCount(0);
+    // The title carries "modeled 2022 replay"; there is no extra note (refinement R2).
     await expect(page.locator("#ev-drawdown > figcaption .ctitle")).toHaveText(research.evidence.drawdown.chartTitle);
-    await expect(drop.locator("text")).toHaveCount(2);
-    await expect(drop.locator(".bar")).toHaveCSS("transform-box", "view-box");
-    await expect(drop.locator(".bar")).toHaveAttribute("data-ax", "y");
 
     // The identity in STIX and one sentence naming what else a breakeven carries.
     const ident = page.locator("#ev-identity");
@@ -367,7 +360,7 @@ test.describe("Research chapter", () => {
     test(`chart text renders at 14px or more, tick labels at 12px or more, inside the chart, at ${width}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await open(page);
-      for (const id of ["#ev-sharpe", "#ev-drawdown"]) {
+      for (const id of ["#ev-sharpe"]) {
         const ev = page.locator(id);
         await expect(ev.locator(".ctitle")).toHaveCSS("font-size", "14px");
         const sizes = await ev.locator("svg").evaluate((svg) => {
@@ -417,7 +410,6 @@ test.describe("Research chapter", () => {
     await expect(sec(page).locator(".claims")).toHaveAttribute("data-play", "false");
     // With motion and JavaScript, the bars start at zero length.
     for (const t of await sharpeBars(page)) expect(t).toMatch(/^matrix\(0, 0, 0, 1, 0, 0\)$/);
-    expect(await dropBar(page)).toMatch(/^matrix\(1, 0, 0, 0, 0, 0\)$/);
     await sec(page).locator(".premise").evaluate((p) => {
       const y = p.getBoundingClientRect().top + window.scrollY - 200;
       window.scrollTo({ top: y, behavior: "instant" });
@@ -426,8 +418,7 @@ test.describe("Research chapter", () => {
     await expect(sec(page).locator(".claims")).toHaveAttribute("data-play", "true");
     await expect(sec(page).locator(".premise")).toHaveClass(/landed/);
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
-    await expect.poll(() => dropBar(page), { timeout: 4000 }).toBe("none");
-    for (const id of ["#ev-sharpe", "#ev-drawdown"]) await expect(page.locator(id)).toHaveAttribute("data-drawn", "true");
+    await expect(page.locator("#ev-sharpe")).toHaveAttribute("data-drawn", "true");
     // Leaving and coming back does not beat again.
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await ticks(page, 6);
@@ -442,7 +433,6 @@ test.describe("Research chapter", () => {
     await noWatchdog(page);
     await open(page);
     expect(await sharpeBars(page)).toEqual(["none", "none"]);
-    expect(await dropBar(page)).toBe("none");
     await sec(page).locator(".premise").scrollIntoViewIfNeeded();
     await expect.poll(() => beats(page)).toBeGreaterThanOrEqual(1);
     await expect(sec(page).locator(".premise")).not.toHaveClass(/landed/);
@@ -475,8 +465,8 @@ test.describe("Research chapter", () => {
     // Short enough that a chart can be in view with the premise above the fold.
     await page.setViewportSize({ width: 375, height: 480 });
     await open(page);
-    // Come up from below: the 2022 drop is in view, the premise is above the viewport.
-    await page.locator("#ev-drawdown").evaluate((e) => {
+    // Come up from below: the Sharpe chart's bottom is in view, the premise is above the viewport.
+    await page.locator("#ev-sharpe svg").evaluate((e) => {
       const y = e.getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 10;
       window.scrollTo({ top: y, behavior: "instant" });
     });
@@ -485,7 +475,6 @@ test.describe("Research chapter", () => {
       return Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height;
     });
     expect(premiseVisible).toBeLessThan(0.5);
-    await expect.poll(() => dropBar(page), { timeout: 4000 }).toBe("none");
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
   });
 
@@ -563,7 +552,6 @@ test.describe("Research chapter", () => {
     for (const id of figs) await expect(page.locator(id)).toBeVisible();
     // The bars grow out from zero (their usual transition) to full length.
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
-    await expect.poll(() => dropBar(page), { timeout: 4000 }).toBe("none");
     const more = page.locator("#more");
     for (const p of projects.rail) {
       await expect(more.getByRole("heading", { level: 4, name: p.title })).toBeVisible();

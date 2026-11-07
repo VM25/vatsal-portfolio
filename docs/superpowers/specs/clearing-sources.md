@@ -13,6 +13,7 @@ The repository paths are Vatsal's project repos (README and docs files). "Kept" 
 | 5 attribution channels | README lines 6–7 (duration, convexity, curve-shape, real-rate, breakeven) | Kept |
 | "Reprices every cash flow … measures what a rule-based hedge overlay recovers" | README lines 6–8 | Kept |
 | "It is the rates engine behind the research memo" | Not in the README. Prospectus `.tex` lines 128–129 say "the Treasury curve-risk and P&L-attribution side". | Changed to "It is the Treasury curve-risk and attribution side of the FE800 research." |
+| Final pass (Vatsal's wording): "This is the Treasury curve-risk and attribution component of my stock–bond diversification research." | Same source: prospectus `.tex` lines 127–129 ("the Treasury curve-risk and P&L-attribution side" of the stock–bond diversification research) | Replaces the FE800 wording |
 
 ## Signal Survival (research-lab/README.md)
 

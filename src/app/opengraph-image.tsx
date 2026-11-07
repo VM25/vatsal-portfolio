@@ -28,9 +28,7 @@ export default function OpengraphImage() {
           fontFamily: "Helvetica, Arial, sans-serif",
         }}
       >
-        <div style={{ display: "flex", fontSize: 26, color: FOG_MID }}>
-          Jersey City, across from Manhattan
-        </div>
+        <div style={{ display: "flex" }} />
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div
@@ -45,7 +43,7 @@ export default function OpengraphImage() {
             Vatsal Maniar
           </div>
           <div style={{ display: "flex", marginTop: 22, fontSize: 34, color: FOG_HI, opacity: 0.86 }}>
-            Financial engineer. Models for markets, risk and portfolios.
+            Financial Engineering · Quantitative Research
           </div>
         </div>
 

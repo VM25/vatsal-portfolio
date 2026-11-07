@@ -361,7 +361,9 @@ html:not(.js) .more > .rail-all .stage { padding-top: 22px; border-top: 1px soli
   of a measured width, with nothing drawn outside it (the SVG clips at its viewBox).
 */
 .ev { margin: 0; min-width: 0; max-width: 35rem; }
-.ev.chart figcaption { display: grid; gap: 2px; margin-bottom: 10px; text-wrap: pretty; }
+.ev.chart figcaption, .ev.callout figcaption { display: grid; gap: 2px; margin-bottom: 10px; text-wrap: pretty; }
+/* The 2022 loss: one number, no scale, so a numerical callout in the site's light display figure style. */
+.ev .callout-v { margin: 0; font-family: var(--font-world); font-weight: 200; font-size: clamp(2.6rem, 6vw, 3.6rem); line-height: 1; letter-spacing: -0.03em; color: var(--sodium); font-variant-numeric: tabular-nums; }
 .ev svg { width: 100%; height: auto; display: block; overflow: hidden; }
 .ev svg text { font-family: var(--font-world); }
 .ev .bar { transform-box: view-box; transition: transform 900ms var(--ease-out); }

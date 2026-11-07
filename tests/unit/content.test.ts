@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as profileMod from "@/data/profile";
 import * as studyMod from "@/data/study";
@@ -117,6 +117,21 @@ describe("content", () => {
         .replace(/const BOOT = `[^`]*`;/, "");
       expect(copy, file).not.toMatch(banned);
     }
+  });
+
+  it("final pass: YieldShock wording, share image and metadata, no published prospectus", () => {
+    const yieldShock = projectsMod.projects.rail.find((p) => p.title === "YieldShock")!;
+    expect(yieldShock.result).toContain(
+      "This is the Treasury curve-risk and attribution component of my stock–bond diversification research.",
+    );
+    for (const { s } of all) expect(s, s).not.toContain("FE800 research");
+    for (const file of ["src/app/layout.tsx", "src/app/opengraph-image.tsx"]) {
+      const src = readFileSync(file, "utf8");
+      expect(src, file).not.toContain("Jersey City");
+      expect(src, file).toContain("Financial Engineering · Quantitative Research");
+    }
+    expect(existsSync("public/research/Maniar-Research-Prospectus.pdf")).toBe(false);
+    expect(existsSync("docs/research/Maniar-Research-Prospectus.pdf")).toBe(true);
   });
 
   it("carries the review's exact lines (refinement R2)", () => {

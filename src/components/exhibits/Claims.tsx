@@ -13,8 +13,8 @@ import type { Claim } from "@/data/research";
     directly under it on phones, its evidence as one <figure> with a <figcaption>.
     All three show at once, with or without JavaScript, so the research reads without
     operating anything. Nothing here is sticky or fixed.
-  - The Sharpe bars and the 2022 drop animate with transform: scaleX / scaleY about
-    origins given in viewBox units, with transform-box: view-box (never fill-box: it
+  - The Sharpe bars animate with transform: scaleX about origins given in viewBox
+    units. The 2022 loss is a numerical callout, not a bar (final pass), with transform-box: view-box (never fill-box: it
     fails silently in Safari).
   - The premise is the page's third and last beat. ResearchBeat owns the only
     observer and passes `play` down: until then, with motion and JavaScript, the bars
@@ -54,7 +54,7 @@ type Evidence = {
     bars: { label: string; value: number }[];
     source: string;
   };
-  drawdown: { label: string; zero: string; chartTitle: string; value: string };
+  drawdown: { chartTitle: string; value: string };
   identity: { body: string };
 };
 
@@ -152,36 +152,20 @@ function Sharpe({ e, drawn }: { e: Evidence["sharpe"]; drawn: boolean }) {
   );
 }
 
-function Drawdown({ e, drawn }: { e: Evidence["drawdown"]; drawn: boolean }) {
+/*
+  The 2022 loss is a single number with no scale to read it against, so it is set as a
+  numerical callout rather than a bar: a bar's length would imply a scale that does not
+  exist (final pass).
+*/
+function Drawdown({ e }: { e: Evidence["drawdown"] }) {
   return (
-    <figure className="ev chart" id="ev-drawdown" data-drawn={String(drawn)}>
+    <figure className="ev callout" id="ev-drawdown">
       <figcaption data-fade="">
         <span className="ctitle">{e.chartTitle}</span>
       </figcaption>
-      <svg viewBox="0 0 520 116" role="img" aria-label={e.label} data-fade="">
-        <line x1="0" y1="34" x2="520" y2="34" stroke="#5B6661" />
-        <g className="ticks" fill="#9AA39E" fontSize="13">
-          <text x="0" y="24">
-            {e.zero}
-          </text>
-        </g>
-        <line
-          className="bar"
-          data-ax="y"
-          x1="60"
-          y1="34"
-          x2="60"
-          y2="94"
-          stroke="#FFA62B"
-          strokeWidth="5"
-          strokeLinecap="round"
-          style={{ transformOrigin: "60px 34px" }}
-        />
-        <circle cx="60" cy="94" r="7" fill="#FFA62B" />
-        <text className="tb" x="76" y="102" fill="#FFA62B" fontSize="30">
-          {e.value}
-        </text>
-      </svg>
+      <p className="callout-v" data-fade="">
+        {e.value}
+      </p>
     </figure>
   );
 }
@@ -216,7 +200,7 @@ export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boole
   const ev = copy.evidence;
   const figure = (kind: Claim["evidenceKind"]) => {
     if (kind === "sharpe") return <Sharpe e={ev.sharpe} drawn={play} />;
-    if (kind === "drawdown") return <Drawdown e={ev.drawdown} drawn={play} />;
+    if (kind === "drawdown") return <Drawdown e={ev.drawdown} />;
     return (
       <figure className="ev" id="ev-identity">
         <p className="ident" data-fade="">

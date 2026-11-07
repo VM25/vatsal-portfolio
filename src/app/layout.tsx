@@ -33,7 +33,7 @@ const stix = STIX_Two_Text({
   display: "swap",
 });
 
-const description = "Financial engineer in Jersey City. Models for markets, risk and portfolios.";
+const description = "Financial Engineering · Quantitative Research. Models for markets, risk, and portfolios.";
 
 /*
   Preview builds only: `CLEARING_NOINDEX=1` at build time marks every page noindex.
