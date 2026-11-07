@@ -121,7 +121,11 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 ## 3. Preview
 
 - Preview URL: https://v2-clearing--v2-previews-c4e19a7b.netlify.app (a branch-alias draft on the separate preview project `v2-previews-c4e19a7b`, not the production project; never `--prod`)
-- Deployed from commit: `094b9af`
+- Deployed from commit: `3de405a` (refinement round). The first preview, `094b9af`, was not approved. Vatsal's review of 2026-11-07 led to four changes:
+  - R1: removed every clock, time label and project date, and replaced the morning switch with a continuous warm night finish.
+  - R2: copy audit.
+  - R3: DiffusionWorks presentation.
+  - R4: Research evidence layout.
 - Command: `CLEARING_NOINDEX=1 npx netlify deploy --alias v2-clearing --site 369b1275-7215-4b09-a8e5-a3a5b8476370 --functions .netlify/functions-internal`, run after `rm -rf .next .netlify/{functions,functions-internal,edge-functions,static,deploy}`.
   - **Why `--functions`:** the Next server handler is not uploaded without it. The first two deploys returned 404 on every page route.
   - **Why the cleanup:** a stale `.next` triggers the intermittent `next/font/google` build error.
