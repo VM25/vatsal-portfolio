@@ -67,6 +67,21 @@ function shotAt(p: number, keys: number[]): Shot {
   return o;
 }
 
+/**
+ * How opaque each pre-rendered still is at progress p: the adjacent pair around
+ * p cross-fades with the same smoothstep the shot interpolation uses, so a
+ * still is fully opaque exactly on its key. Weights sum to one.
+ */
+export function stillWeights(p: number, keys: number[]): number[] {
+  const w = keys.map(() => 0);
+  let i = 0;
+  while (i < keys.length - 2 && p > keys[i + 1]) i++;
+  const t = smoothstep(keys[i], keys[i + 1], p);
+  w[i] = 1 - t;
+  w[i + 1] = t;
+  return w;
+}
+
 export function sceneState(p: number, aspect: number, t: number, keys: number[]): Uniforms {
   const land = aspect >= 1;
   const sh = shotAt(p, keys);

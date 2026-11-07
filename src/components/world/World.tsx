@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { sceneState, type Uniforms } from "@/lib/scene";
+import { useEffect, useRef, useState } from "react";
+import { sceneState, stillWeights, type Uniforms } from "@/lib/scene";
 import { FRAGMENT_SRC, UNIFORMS, VERTEX_SRC } from "./shader";
 import { useSceneBus } from "./ScrollState";
 
@@ -50,6 +50,8 @@ const WATCHDOG_EVERY = 5;
 const WATCHDOG_MIN_SAMPLES = 5;
 const SUSPENDED_MS = 250;
 const STILL_TIME = 11;
+const STILL_COUNT = 5;
+type Orientation = "land" | "port";
 
 function makeGL(canvas: HTMLCanvasElement): Renderer | Reason {
   let gl: WebGLRenderingContext | null = null;
@@ -118,6 +120,10 @@ export function World() {
   const bgRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bus = useSceneBus();
+  // The stills are requested only once the page has decided it can't run the
+  // shader: until then no <img> exists, so WebGL visitors never fetch them.
+  const [stillsOn, setStillsOn] = useState(false);
+  const [orientation, setOrientation] = useState<Orientation>("land");
 
   useEffect(() => {
     const bg = bgRef.current;
@@ -148,6 +154,7 @@ export function World() {
       cancelAnimationFrame(raf);
       bg.dataset.mode = "stills";
       bg.dataset.fallback = reason;
+      setStillsOn(true);
       // The stills are the converged scene.
       writeN(512);
       // Give the GPU back. Unhook first so our own loseContext isn't reported as a loss.
@@ -188,7 +195,9 @@ export function World() {
       const pr = Math.min(1, window.devicePixelRatio || 1);
       const cw = Math.round(nw * pr);
       const ch = Math.round(nh * pr);
-      bg.dataset.orientation = nw / nh >= 1 ? "land" : "port";
+      const o: Orientation = nw / nh >= 1 ? "land" : "port";
+      bg.dataset.orientation = o;
+      setOrientation(o);
       // iOS resizes the viewport as its toolbar slides while scrolling; an
       // unchanged backing size must not clear the canvas.
       if (cw === canvas.width && ch === canvas.height && nw === w && nh === h) return;
@@ -293,10 +302,50 @@ export function World() {
     };
   }, [bus]);
 
+  // Cross-fade the stills against scroll: the adjacent pair around p, measured
+  // keys, smoothstep. Opacity is written straight to the elements (no React
+  // render per scroll) and never transitions, so reduced motion gets the same
+  // immediate changes as everyone else.
+  const stillsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const layer = stillsRef.current;
+    if (!stillsOn || !layer) return;
+    const imgs = [...layer.querySelectorAll<HTMLImageElement>("img[data-still]")];
+    let raf = 0;
+    let lastP = NaN;
+    let lastKeys: number[] | null = null;
+    const apply = () => {
+      raf = requestAnimationFrame(apply);
+      const b = bus.read();
+      if (b.p === lastP && b.keys === lastKeys) return;
+      lastP = b.p;
+      lastKeys = b.keys;
+      const w = stillWeights(b.p, b.keys);
+      imgs.forEach((img, i) => {
+        const v = String(w[i] ?? 0);
+        if (img.style.opacity !== v) img.style.opacity = v;
+      });
+    };
+    apply();
+    return () => cancelAnimationFrame(raf);
+  }, [stillsOn, orientation, bus]);
+
   return (
     <div className="bg" ref={bgRef} aria-hidden="true">
       <canvas id="world" ref={canvasRef} />
-      <div className="stills" />
+      <div className="stills" ref={stillsRef}>
+        {stillsOn &&
+          Array.from({ length: STILL_COUNT }, (_, i) => (
+            // Plain <img>: decorative art cross-faded by opacity, not content for next/image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={`${orientation}${i}`} data-still="" src={`/scene/${orientation}${i}.jpg`} alt="" decoding="async" />
+          ))}
+        {/* Without JavaScript there is no fallback decision to wait for: show the first still. */}
+        <noscript>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/scene/land0.jpg" alt="" />
+        </noscript>
+      </div>
     </div>
   );
 }

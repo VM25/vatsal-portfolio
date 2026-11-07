@@ -244,6 +244,11 @@ test.describe("page shell and world", () => {
     for (let i = 0; i < 4; i++) await expect(h2.nth(i)).toBeVisible();
     await expect(page.locator(".bg .stills")).toBeVisible();
     await expect(page.locator("canvas#world")).toBeHidden();
+    const still = page.locator('.bg .stills img[src="/scene/land0.jpg"]');
+    await expect(still).toBeVisible();
+    await expect(still).toHaveAttribute("alt", "");
+    await expect(still).toHaveCSS("opacity", "1");
+    await expect.poll(() => still.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth)).toBe(1440);
     await ctx.close();
   });
 

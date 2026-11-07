@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHAPTERS, KEYS, SHOTS, clockAt, isMorning, sceneState } from "@/lib/scene";
+import { CHAPTERS, KEYS, SHOTS, clockAt, isMorning, sceneState, stillWeights } from "@/lib/scene";
 
 const K = KEYS;
 
@@ -62,5 +62,17 @@ describe("scene", () => {
   it("isMorning flips with dawn", () => {
     expect(isMorning(0.85)).toBe(false);
     expect(isMorning(0.95)).toBe(true);
+  });
+
+  it("stillWeights puts a still fully on its key and cross-fades the adjacent pair", () => {
+    KEYS.forEach((k, i) => {
+      const w = stillWeights(k, KEYS);
+      w.forEach((v, j) => expect(v).toBe(j === i ? 1 : 0));
+    });
+    const w = stillWeights((KEYS[1] + KEYS[2]) / 2, KEYS);
+    expect(w[1]).toBeCloseTo(0.5, 10);
+    expect(w[2]).toBeCloseTo(0.5, 10);
+    expect(w.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 10);
+    expect(w[0] + w[3] + w[4]).toBe(0);
   });
 });
