@@ -30,6 +30,9 @@ export function MobileMenu() {
   const sheet = useRef<HTMLDivElement>(null);
   const goTo = useRef<string | null>(null);
 
+  // A real unmount (not a re-render) leaves the shared store closed.
+  useEffect(() => () => setMenuOpen(false), []);
+
   useEffect(() => {
     if (!open) return;
     const root = document.documentElement;
@@ -39,8 +42,6 @@ export function MobileMenu() {
     const saved = window.scrollY;
     const behind = [document.querySelector<HTMLElement>("header.top"), document.getElementById("content")];
 
-    // Key times in the menu follow the live layout.
-    window.dispatchEvent(new Event("resize"));
     root.style.overflow = "hidden";
     body.style.overflow = "hidden";
     behind.forEach((el) => {
@@ -76,23 +77,36 @@ export function MobileMenu() {
       const btn = document.querySelector<HTMLElement>("[data-menu-button]");
       if (btn && btn.offsetParent === null) setMenuOpen(false);
     };
+    // iOS Safari scrolls the page behind a fixed layer unless touchmove is stopped
+    // wherever the touched container has nothing to scroll.
+    const onTouchMove = (e: TouchEvent) => {
+      let el = e.target instanceof Element ? e.target : null;
+      while (el && dialog.contains(el)) {
+        if (el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY !== "visible") return;
+        el = el.parentElement;
+      }
+      e.preventDefault();
+    };
     document.addEventListener("keydown", onKey);
     window.addEventListener("resize", onResize);
+    dialog.addEventListener("touchmove", onTouchMove, { passive: false });
 
     return () => {
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("resize", onResize);
+      dialog.removeEventListener("touchmove", onTouchMove);
       root.style.overflow = "";
       body.style.overflow = "";
       behind.forEach((el) => {
         if (el) el.inert = false;
       });
       window.scrollTo({ top: saved, behavior: "instant" });
-      document.querySelector<HTMLElement>("[data-menu-button]")?.focus({ preventScroll: true });
       const href = goTo.current;
       goTo.current = null;
       const target = href ? document.getElementById(href.slice(1)) : null;
-      if (target) {
+      if (target) target.focus({ preventScroll: true });
+      else document.querySelector<HTMLElement>("[data-menu-button]")?.focus({ preventScroll: true });
+      if (target && href) {
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         target.scrollIntoView({ behavior: reduce ? "instant" : "smooth", block: "start" });
         history.replaceState(null, "", href);
@@ -122,11 +136,12 @@ export function MobileMenu() {
           onClick={(e) => choose(e, it.href)}
         >
           {it.label}{" "}
-          <small data-tsec={it.id}>{clockAt(KEYS[CHAPTERS.indexOf(it.id)]).replace(" a.m.", "")}</small>
+          <small data-tsec={it.id} aria-hidden="true">{clockAt(KEYS[CHAPTERS.indexOf(it.id)]).replace(" a.m.", "")}</small>
         </a>
       ))}
       <a className="res" href={profile.links.resume} target="_blank" rel="noopener">
         Résumé (PDF) <span aria-hidden="true">↗</span>
+        <span className="sr-only">, opens in a new tab</span>
       </a>
     </div>
   );

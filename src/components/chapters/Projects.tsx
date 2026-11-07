@@ -3,7 +3,7 @@ import { projects } from "@/data/projects";
 /** Projects (#projects). ScrollState re-measures the time in [data-time] [data-clocktime]. */
 export function Projects() {
   return (
-    <section id="projects" className="sec projects g" data-sec="projects" aria-labelledby="projects-h">
+    <section id="projects" className="sec projects g" data-sec="projects" tabIndex={-1} aria-labelledby="projects-h">
       <div className="veil" />
       <div className="inner">
         <div className="shead">

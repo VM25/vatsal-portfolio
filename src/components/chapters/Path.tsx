@@ -3,7 +3,7 @@ import { route } from "@/data/study";
 /** Path (#path). ScrollState re-measures the time in [data-time] [data-clocktime]. */
 export function Path() {
   return (
-    <section id="path" className="sec path g" data-sec="path" aria-labelledby="path-h">
+    <section id="path" className="sec path g" data-sec="path" tabIndex={-1} aria-labelledby="path-h">
       <div className="veil" />
       <div className="inner">
         <div className="shead">

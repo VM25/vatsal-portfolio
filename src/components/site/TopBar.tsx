@@ -47,7 +47,7 @@ export function TopBar() {
       </nav>
       <Clock className="clock" />
       <a className="res" href={profile.links.resume} target="_blank" rel="noopener">
-        Résumé
+        Résumé<span className="sr-only"> (PDF), opens in a new tab</span>
       </a>
       <button
         className="menu-btn"

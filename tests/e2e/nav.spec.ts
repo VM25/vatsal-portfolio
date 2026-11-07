@@ -118,6 +118,15 @@ test.describe("top bar and menu", () => {
         expect(await focusInDialog(page)).toBe(true);
       }
 
+      // Focus wraps at both ends: back from the first item lands on the last, and on again.
+      const label = () => page.evaluate(() => document.activeElement?.textContent ?? "");
+      for (let i = 0; i < 12 && !(await label()).startsWith("Close"); i++) await page.keyboard.press(keys.prev);
+      expect(await label()).toMatch(/^Close/);
+      await page.keyboard.press(keys.prev);
+      expect(await label()).toMatch(/^Résumé \(PDF\)/);
+      await page.keyboard.press(keys.next);
+      expect(await label()).toMatch(/^Close/);
+
       await page.keyboard.press("Escape");
       await expect(dialog).toBeHidden();
       await expect(menu).toBeFocused();
@@ -139,6 +148,34 @@ test.describe("top bar and menu", () => {
       expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).toBe("visible");
       expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("visible");
       expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(500);
+      expect(await page.evaluate(() => document.activeElement?.id)).toBe("path");
+    });
+
+    test("tabbing to Menu after scrolling does not move the page", async ({ page, browserName }) => {
+      await page.goto("/");
+      await jumpTo(page, 1500);
+      const before = await page.evaluate(() => window.scrollY);
+      expect(before).toBeGreaterThan(1000);
+      const menu = page.getByRole("button", { name: "Menu" });
+      for (let i = 0; i < 6; i++) {
+        await page.keyboard.press(tabKeys(browserName).next);
+        if (await menu.evaluate((el) => el === document.activeElement)) break;
+      }
+      await expect(menu).toBeFocused();
+      expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(2);
+    });
+
+    test("the skip link stays at the top of the viewport when the page is scrolled", async ({ page }) => {
+      await page.goto("/");
+      await jumpTo(page, 1500);
+      const skip = page.getByRole("link", { name: "Skip to content" });
+      // Tabbing from the scrolled position starts after the last focus, so focus the link directly
+      // the way a keyboard user landing on it would.
+      await skip.focus();
+      await expect(skip).toBeFocused();
+      const box = (await skip.boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y).toBeLessThanOrEqual(60);
     });
 
     test("under reduced motion the jump is instant", async ({ page }) => {
@@ -165,7 +202,7 @@ test.describe("top bar and menu", () => {
       await expect(nav.getByRole("link", { name: "Path" })).toBeVisible();
       await expect(nav.getByRole("link", { name: "Contact" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
-      await expect(page.getByRole("link", { name: "Résumé", exact: true })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: /^Résumé \(PDF\)/ })).toHaveAttribute(
         "href",
         "/resume/Maniar_Vatsal.pdf",
       );

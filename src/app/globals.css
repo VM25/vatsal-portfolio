@@ -46,7 +46,7 @@
 */
 @layer base {
   * { box-sizing: border-box; }
-  html { background: var(--night); scroll-behavior: smooth; scroll-padding-top: 76px; }
+  html { background: var(--night); scrollbar-gutter: stable; scroll-behavior: smooth; scroll-padding-top: 76px; }
   html.rm { scroll-behavior: auto; }
   body { margin: 0; background: var(--night); color: var(--fog-hi); font-family: var(--font-world); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
@@ -114,8 +114,8 @@ html.morning .top .res { color: #8A5000; }
 html.morning .top :focus-visible:not(.skip) { outline-color: var(--ink); }
 /* Skip link: off-screen until it takes focus, then a solid pill with a 3:1 ring. */
 .top .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.top .skip:focus { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 8px); left: max(12px, env(safe-area-inset-left, 0px)); display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: var(--ink); color: var(--fog-hi); font-size: 15px; text-decoration: none; outline: 3px solid var(--sodium); outline-offset: 2px; }
-main:focus { outline: none; }
+.top .skip:focus { position: absolute; z-index: 60; top: 8px; left: max(12px, env(safe-area-inset-left, 0px)); display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: var(--ink); color: var(--fog-hi); font-size: 15px; text-decoration: none; outline: 3px solid var(--sodium); outline-offset: 2px; }
+main:focus, .sec:focus { outline: none; }
 @container site (min-width: 760px) { .top .links, .top .clock { display: flex; } .top .res { display: inline-flex; } .menu-btn { display: none; } }
 
 /* mobile menu sheet */
