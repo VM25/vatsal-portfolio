@@ -50,6 +50,7 @@ const copy: DiffusionCopy = {
   treeLabel: dw.treeLabel,
   treeCaption: dw.treeCaption,
   treeCaptionAll: dw.treeCaptionAll,
+  treeTable: dw.treeTable,
   treeMore: dw.treeMore,
   chartLabel: dw.chartLabel,
   chartCaption: dw.chartCaption,

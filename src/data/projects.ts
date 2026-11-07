@@ -42,6 +42,12 @@ const diffusion = {
     one: "All 1 step. Each node shows the option's value there, worked back from expiry.",
     other: "All {total} steps. Each node shows the option's value there, worked back from expiry.",
   },
+  /** The tree's node values as a visually hidden table beside the canvas, one row per step. */
+  treeTable: {
+    caption: "Option value at each node of the tree shown, by step, from the top node down",
+    /** Row header: "{i}" is the step, 0 for today. */
+    step: "Step {i}",
+  },
   /** Drawn on the tree canvas when the tree runs past what is shown. */
   treeMore: {
     one: "… 1 more step to expiry",

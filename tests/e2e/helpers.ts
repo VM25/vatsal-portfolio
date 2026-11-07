@@ -32,8 +32,8 @@ export type PacingResult = {
 };
 
 /**
- * Pacing helper. Scrolls from the top of `fromId` to the end of `toId` in steps of 10% of the
- * viewport. Qualifying text is any visible text node (outside the top bar and the menu dialog; aria-hidden text still counts, because pacing is visual) with non-empty text, in a block at least `minHeight` px tall (default 20: a one-line 14 to 15px paragraph measures 21 to 22px, so 24 would wrongly discard captions),
+ * Pacing helper. Scrolls from the top of `fromId` to the end of `toId` in steps of `step` px
+ * (default: 10% of the viewport; Task 13's acceptance pass uses 60). Qualifying text is any visible text node (outside the top bar and the menu dialog; aria-hidden text still counts, because pacing is visual) with non-empty text, in a block at least `minHeight` px tall (default 20: a one-line 14 to 15px paragraph measures 21 to 22px, so 24 would wrongly discard captions),
  * inside the viewport, with computed opacity above 0, visibility visible, and not inside
  * the excluded containers. At each step it measures the largest vertical band of the viewport that
  * holds no qualifying text. Assert `largestGap <= 0.4 * viewport` (the spec's pacing rule).
@@ -41,6 +41,7 @@ export type PacingResult = {
  *
  * With `graphics` true, visible canvases and SVG images (role="img") also count as content,
  * as in Task 13(a)'s pacing definition: a drawn tree or chart is not an empty band.
+ * Visually hidden text (`.sr-only` and clipped skip links) never counts: pacing is visual.
  */
 export async function measurePacing(
   page: Page,
@@ -48,9 +49,10 @@ export async function measurePacing(
   toId: string,
   minHeight = 20,
   graphics = false,
+  step?: number,
 ): Promise<PacingResult> {
   return page.evaluate(
-    async ({ fromId, toId, minHeight, graphics }) => {
+    async ({ fromId, toId, minHeight, graphics, step }) => {
       const vh = window.innerHeight;
       const start = document.getElementById(fromId)!.getBoundingClientRect().top + window.scrollY;
       const last = document.getElementById(toId)!;
@@ -61,14 +63,14 @@ export async function measurePacing(
       let largestGap = 0;
       let gapAt = 0;
       const textFree: number[] = [];
-      for (let y = start; y <= Math.max(start, end) + 1; y += vh * 0.1) {
+      for (let y = start; y <= Math.max(start, end) + 1; y += step ?? vh * 0.1) {
         window.scrollTo({ top: y, behavior: "instant" });
         await new Promise((r) => requestAnimationFrame(() => r(null)));
         const bands: [number, number][] = [];
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
           const el = n.parentElement;
-          if (!el || !n.textContent?.trim() || el.closest('header.top, [role="dialog"], script, style, noscript')) continue;
+          if (!el || !n.textContent?.trim() || el.closest('header.top, [role="dialog"], script, style, noscript, .sr-only')) continue;
           const cs = getComputedStyle(el);
           if (cs.visibility !== "visible" || parseFloat(cs.opacity) <= 0) continue;
           const range = document.createRange();
@@ -99,6 +101,6 @@ export async function measurePacing(
       }
       return { largestGap: Math.round(largestGap), viewport: vh, gapAt: Math.round(gapAt), textFree };
     },
-    { fromId, toId, minHeight, graphics },
+    { fromId, toId, minHeight, graphics, step },
   );
 }

@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { projects } from "../../src/data/projects";
+import { crrTree } from "../../src/lib/pricing";
 
 /*
   DiffusionWorks: a binomial tree closing in on Black–Scholes. Reference values come
@@ -198,6 +200,28 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect(cap).toContainText("All 3 steps.");
     await setRange(page, "dwN", 1);
     await expect(cap).toContainText("All 1 step.");
+  });
+
+  test("the tree's node values are in a visually hidden table that follows the canvas", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await open(page);
+    const table = ex(page).getByRole("table", { name: projects.diffusion.treeTable.caption });
+    await expect(table).toHaveCount(1);
+    // Hidden from sight, not from assistive technology.
+    expect(await table.evaluate((t) => t.parentElement!.className)).toBe("sr-only");
+    expect(await table.evaluate((t) => { const r = t.parentElement!.getBoundingClientRect(); return r.width * r.height; })).toBeLessThanOrEqual(1);
+    const cells = () =>
+      table.locator("tr").evaluateAll((rows) => rows.map((r) => [...r.querySelectorAll("th, td")].map((c) => c.textContent)));
+    const expected = (N: number, keep: number) =>
+      crrTree({ S: 100, K: 100, r: 0.04, sigma: 0.2, T: 1, N, keep }).rows.map((row, i) => [
+        `Step ${i}`,
+        ...row.map((v) => v.toFixed(2)).reverse(),
+      ]);
+    // Default N = 12: the canvas shows the first 6 steps, so 7 rows (step 0 is today).
+    await expect.poll(cells).toEqual(expected(12, 6));
+    expect((await cells())[0][1]).toBe("9.76");
+    await setRange(page, "dwN", 3);
+    await expect.poll(cells).toEqual(expected(3, 3));
   });
 
   test("the tree shows 5 steps when its canvas is under 420px wide", async ({ page }) => {

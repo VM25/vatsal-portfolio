@@ -3,6 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
 import { useChapter } from "@/components/world/ScrollState";
 import { Clock } from "@/components/site/Clock";
+import { jumpTo } from "@/components/site/jump";
 import { getMenuOpen, getMenuOpenServer, setMenuOpen, subscribeMenu } from "@/components/site/menuStore";
 import { profile } from "@/data/profile";
 import { CHAPTERS, KEYS, clockAt, type Chapter } from "@/lib/scene";
@@ -103,13 +104,9 @@ export function MobileMenu() {
       window.scrollTo({ top: saved, behavior: "instant" });
       const href = goTo.current;
       goTo.current = null;
-      const target = href ? document.getElementById(href.slice(1)) : null;
-      if (target) target.focus({ preventScroll: true });
-      else document.querySelector<HTMLElement>("[data-menu-button]")?.focus({ preventScroll: true });
-      if (target && href) {
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        target.scrollIntoView({ behavior: reduce ? "instant" : "smooth", block: "start" });
-        history.replaceState(null, "", href);
+      // A chosen section takes focus and the scroll (jump.ts); otherwise focus goes back to Menu.
+      if (!href || !jumpTo(href.slice(1), "replace")) {
+        document.querySelector<HTMLElement>("[data-menu-button]")?.focus({ preventScroll: true });
       }
     };
   }, [open]);

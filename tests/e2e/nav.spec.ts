@@ -240,6 +240,49 @@ test.describe("top bar and menu", () => {
       }
     });
 
+    /*
+      A reader who clicks before the web fonts arrive: the smooth jump is aimed at the
+      layout set in the fallback faces, and the page reflows under it when the real
+      faces swap in. Projects sits under the fixed-height opening screen, so it never
+      moves; Research and Path sit under the text-heavy chapters and move by 50 to 80px.
+      The fonts are held until the jump is under way, then released.
+    */
+    for (const [id, name] of [
+      ["projects", "Projects"],
+      ["research", "Research"],
+      ["path", "Path"],
+    ]) {
+      test(`a top-bar click on ${name} before the fonts arrive still lands on the chapter`, async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        let release!: () => void;
+        const held = new Promise<void>((r) => (release = r));
+        await page.route(/\/_next\/static\/media\/.*\.woff2$/, async (route) => {
+          await held;
+          await route.continue();
+        });
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+        await expect(page.locator("html[data-hydrated]")).toHaveCount(1);
+        expect(await page.evaluate(() => document.fonts.status), "fonts must still be loading at the click").toBe("loading");
+        await page.locator("header.top").getByRole("link", { name, exact: true }).click();
+        await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+        release();
+        await page.evaluate(() => document.fonts.ready);
+        await expect
+          .poll(
+            () =>
+              page.evaluate((id) => {
+                const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+                return Math.abs(document.getElementById(id)!.getBoundingClientRect().top - pad);
+              }, id),
+            { message: `${name} lands at the top of the viewport` },
+          )
+          .toBeLessThanOrEqual(2);
+        await expect.poll(() => clockGap(page, id), { message: `${name} clock` }).toBeLessThanOrEqual(1);
+        expect(await page.evaluate(() => location.hash)).toBe(`#${id}`);
+        expect(await page.evaluate(() => document.activeElement?.id)).toBe(id);
+      });
+    }
+
     test("each menu item at 390×844: the clock reads the chapter's label time", async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await settled(page);

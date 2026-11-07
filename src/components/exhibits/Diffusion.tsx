@@ -19,8 +19,10 @@ import { fill, readFonts, sizeCanvas } from "@/components/exhibits/canvas";
   DiffusionWorks: a Cox–Ross–Rubinstein tree closing in on Black–Scholes. The drawing
   is ported from the prototype; the numbers come from src/lib/pricing.ts. The values
   that matter (the binomial and Black–Scholes prices, the difference, u, d, p and how
-  many steps the tree shows) are also in the DOM. The per-node values on the tree and
-  the chart's axis labels are drawn only.
+  many steps the tree shows) are also in the DOM. The per-node values drawn on the tree
+  are repeated in a visually hidden table, one row per step, rendered from the same
+  rows, so it changes with the canvas. The chart's key values (the binomial price at
+  your N and Black–Scholes) are the readouts; only its axis tick labels are canvas-only.
 
   The intro, result and formula copy are rendered by the server component and passed
   in as slots; every other string comes from `copy` (src/data/projects.ts). Default
@@ -59,6 +61,8 @@ export type DiffusionCopy = {
   treeCaption: string;
   /** "{total}" steps, when the whole tree fits. */
   treeCaptionAll: Plural;
+  /** The node values as a visually hidden table; `step` takes "{i}". */
+  treeTable: { caption: string; step: string };
   /** "{n}" steps beyond the canvas. */
   treeMore: Plural;
   chartLabel: string;
@@ -483,6 +487,22 @@ export function Diffusion({
       </div>
       <div className="viz">
         <canvas ref={tc} id="dwTree" height={TREE_H} role="img" aria-label={copy.treeLabel} />
+        <div className="sr-only">
+          <table>
+            <caption>{copy.treeTable.caption}</caption>
+            <tbody>
+              {tree.rows.slice(0, keep + 1).map((row, i) => (
+                <tr key={i}>
+                  <th scope="row">{fill(copy.treeTable.step, { i })}</th>
+                  {row
+                    .slice(0, i + 1)
+                    .map((v, j) => <td key={j}>{fixed(v, 2)}</td>)
+                    .reverse()}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <p className="cap" id="dwTreeCap">
           {treeCaption(N, maxShow, copy)}
         </p>

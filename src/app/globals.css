@@ -94,6 +94,8 @@ html.morning .top { background: linear-gradient(rgba(236,240,238,0.95) 62%, rgba
 .top .mk { font-weight: 500; text-decoration: none; margin-right: auto; min-height: 44px; display: inline-flex; align-items: center; }
 .top .links { display: none; gap: 26px; }
 .top .links a { text-decoration: none; color: var(--fog-mid); min-height: 44px; display: inline-flex; align-items: center; font-size: 15px; transition: color 200ms ease; }
+/* 44px-wide targets for short labels ("Path"): padding grows the hit area into the 26px gap, the negative margin keeps every label where it was. */
+.top .links a { padding-inline: 8px; margin-inline: -8px; }
 html.morning .top .links a { color: var(--ink-mid); }
 .top .links a[aria-current="true"] { color: var(--fog-hi); }
 html.morning .top .links a[aria-current="true"] { color: var(--ink); }
@@ -104,6 +106,8 @@ html.morning .top .res { color: #8A5000; }
 .menu-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px 0 12px; font-size: 15px; }
 .menu-btn .bars { display: grid; gap: 4px; }
 .menu-btn .bars i { display: block; width: 18px; height: 1.5px; background: currentColor; }
+/* Without JavaScript the menu cannot open, so its button is not shown; every section follows in document order. */
+html:not(.js) .menu-btn { display: none; }
 /*
   html has scroll-padding-top so focused content and anchor jumps clear this
   bar. The bar's own controls must not count as "under" it, or focusing one
@@ -359,6 +363,8 @@ html.rm .ev .bar { transition: none; }
 .role { display: grid; grid-template-columns: 1fr; gap: 2px; padding: 12px 0; border-top: 1px solid rgba(195,203,198,0.12); }
 .role b { font-weight: 400; color: var(--fog-hi); }
 .role span { font-size: 14px; color: var(--fog-mid); }
+/* Under the morning sky the veil's light right edge leaves fog-mid at about 3.2:1; fog reads 5:1. */
+html.morning .role span { color: var(--fog); }
 @container site (min-width: 760px) { .role { grid-template-columns: 1.4fr 1fr auto; gap: 18px; align-items: baseline; } }
 
 /* ---------- contact ---------- */
@@ -372,6 +378,7 @@ html.morning .contact .veil { background: linear-gradient(to top, rgba(240,243,2
 .chan > div { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 54px; border-top: 1px solid rgba(195,203,198,0.2); }
 html.morning .chan > div { border-color: rgba(19,32,31,0.18); }
 .chan .k { font-size: 14px; opacity: 0.8; }
+html.morning .chan .k { opacity: 0.9; } /* 0.8 measured 4.4:1 on the morning veil */
 .chan a { text-decoration: none; overflow-wrap: anywhere; min-height: 44px; display: inline-flex; align-items: center; border-bottom: 1px solid currentColor; border-color: rgba(195,203,198,0.3); align-self: center; }
 html.morning .chan a { border-color: rgba(19,32,31,0.75); }
 .copy { min-width: 7.5rem; min-height: 44px; padding: 0 12px; font-size: 14px; border: 1px solid rgba(195,203,198,0.35); }

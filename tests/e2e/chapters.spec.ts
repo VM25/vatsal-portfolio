@@ -71,12 +71,13 @@ test.describe("Home, Path and Contact", () => {
     await page.goto("/");
     await expect(page.locator("#contact a[href^='mailto:']")).toHaveAttribute("href", `mailto:${EMAIL}`);
     await expect(page.locator("form")).toHaveCount(0);
-    // Chart tick labels ("0 0.2 0.4 0.6 0.8") are not prose: read every text node outside svg and canvas.
+    // Chart tick labels ("0 0.2 0.4 0.6 0.8") and the tree's node-value table are not prose:
+    // read every text node outside svg, canvas and tables.
     const text = await page.evaluate(() => {
       const out: string[] = [];
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-        if (n.parentElement?.closest("svg, canvas, script, style, noscript")) continue;
+        if (n.parentElement?.closest("svg, canvas, table, script, style, noscript")) continue;
         out.push(n.textContent ?? "");
       }
       return out.join("\n");
