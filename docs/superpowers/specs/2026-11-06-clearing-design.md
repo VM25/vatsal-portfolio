@@ -285,7 +285,12 @@ directly under the selected item and scrolls into view. Arrow keys move between 
 | Measurement and attribution, not prediction or causal identification | prospectus, "Expected contribution" |
 | DiffusionWorks: 15 studies, 10 clean, 5 caveats, none failed; BGK 16/18 down, 23/24 up | `stochastic-lab/README.md`; `docs/BARRIER-MONITORING-METHODOLOGY.md` §6–6.2 |
 | Liquidity Paradox: 20 sessions SOL/USDT; held-out R² 4.2% at 5 s, 5 of 5 positive; −1 to −2 bp before fees; −11 to −12 bp at default fee tier; modeled replay | `liquidity-lab/README.md`; `results/closeout/CLOSEOUT_report.md` (H1-F); `results/e002/E002_report.md` |
-| YieldShock: 10 shock scenarios, 4 hedge overlays, 5 attribution channels | `inflation-lab/README.md` |
+| YieldShock: 10 shock scenarios, 4 hedge overlays, 5 attribution channels; the Treasury curve-risk and attribution side of the FE800 research | `inflation-lab/README.md` (header; stages 1, 5, 6); `FE800/Writing Sample/Vatsal_Maniar_FE800_Research_Prospectus.tex` lines 128–129 |
+| Signal Survival: 5 signals, 20 years of ETF data (2006–2026), 3 survived, 1 conditional (risk-control overlay), 1 rejected (12.8x/yr turnover trails every passive benchmark and degrades sharply as costs rise) | `research-lab/README.md`, "Final verdicts", "Data" |
+| Currency Options Desk: USD 4.65M gross notional; 10,000-path Monte Carlo VaR/ES; delta hedge takes net delta to ~0 and reduces worst-case loss ~99%; book breaches illustrative limits before hedging; illustrative data | `fx-options-risk-lab/README.md`, "Headline figures", "Quant methodology", "Limitations" |
+| Lending Decisions: 94,999 credit applicants, 180 policy scenarios; underwriting model ROC-AUC about 0.695 = Monitor, fraud model = Pass, stablecoin scorer = Pass (1 of 3 marked Monitor); public and synthetic data | `credits-lab/README.md`, "What it answers", "Key results", "Data sources" |
+| ApexGP: 2025 season replayed lap by lap, $100,000 simulated book, circuit-breaker halts, audit ledger; 30% total and 15% single-contract exposure limits; 24 races | `ApexGP/README.md` ("Race Replay Engine", "Portfolio Management", sandbox balance); `ApexGP/docs/v2/README.md` lines 29, 97–98 (limits); `ApexGP/public/data/official/` (24 round files) |
+| Allocation Study: 13 assets, benchmarks, 35% per-asset cap, 5 bps costs, three crisis windows (2008, 2020, 2022) | `portfolio-lab-4/README.md`, "What this is"; sample start April 2007 per its data notes |
 
 Any copy change to these claims requires re-checking the source and updating this table.
 

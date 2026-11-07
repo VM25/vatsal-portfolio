@@ -1,27 +1,78 @@
 /**
- * The paper. Closed it is a title; the argument only appears if someone opens
- * it or downloads it.
+ * The paper. Every claim below is in the spec's section 9 register with its
+ * source. Change a claim only after re-checking that source.
  */
-export const paper = {
-  title: "Stock–Bond Diversification in an Inflation-Driven Rates Regime",
-  period: "2007–2026",
+export interface Claim {
+  id: string;
+  /** Small label above the claim. */
+  context: string;
+  /** The claim at its register wording. */
+  text: string;
+  evidenceKind: "sharpe" | "drawdown" | "identity";
+}
 
-  /** One line, shown alongside the title. */
+export const research = {
+  title: "The hedge that stopped working",
+  kicker: "Research memo, June 2026 · on SSRN",
+  paperTitle: "Stock–Bond Diversification in an Inflation-Driven Rates Regime",
+
   premise:
-    "For forty years, bonds cushioned the fall when shares dropped. In 2022 they stopped.",
+    "For most of the period from the late 1990s through 2020, U.S. stocks and Treasuries did not fall together. In 2022 they did.",
 
-  detail:
-    "The paper asks a narrow version of a large question: if you only react to what you can actually see at the time, and you pay real costs to trade, does noticing that the cushion is failing help you at all? It tests a rule that watches for the warning signs against a plain 60/40 split, then takes the bond side apart to find out where the money actually went.",
+  ask: "asks whether acting on that helps in practice, using only lagged, observable signals with realistic trading costs and position limits, and then measures why the hedge failed. Three findings, each with its evidence:",
 
-  finding:
-    "Noticing did not help. The reactive rule does not beat 60/40 once risk is accounted for. What it does do is make the failure legible — and taking 2022 apart shows the loss came almost entirely from real interest rates rising, not from inflation expectations, which is the opposite of the intuitive story.",
+  claims: [
+    {
+      id: "sharpe",
+      context: "13 assets, 2007–2026, costs and limits",
+      text: "Regime-aware allocation did not beat a static 60/40 on a risk-adjusted basis: Sharpe 0.48 vs 0.66",
+      evidenceKind: "sharpe",
+    },
+    {
+      id: "loss",
+      context: "Replaying 2022 on a Treasury curve model",
+      text: "A long-duration Treasury hedge book lost roughly 19% in the modeled 2022 replay",
+      evidenceKind: "drawdown",
+    },
+    {
+      id: "real-yields",
+      context: "Under the memo's attribution framework, for this one episode",
+      text: "That loss came primarily from rising real yields, not breakevens",
+      evidenceKind: "identity",
+    },
+  ] satisfies Claim[],
 
-  figures: [
-    { value: "0.48 vs 0.66", label: "Reactive rule against plain 60/40" },
-    { value: "−19%", label: "Loss on the bond side in 2022" },
-    { value: "13", label: "Markets tested" },
-  ],
+  /** Evidence panels. */
+  evidence: {
+    sharpe: {
+      chartTitle: "Full-sample Sharpe ratio, 2007–2026",
+      bars: [
+        { label: "Static 60/40", value: 0.66 },
+        { label: "Regime-aware rule", value: 0.48 },
+      ],
+      source:
+        "Also benchmarked against equal weight, minimum variance, maximum Sharpe and SPY.",
+    },
+    drawdown: {
+      chartTitle: "Long-duration hedge book, modeled 2022 replay",
+      value: "≈ −19%",
+      note: "a modeled book, not a fund's return",
+    },
+    identity: {
+      definition: "b ≈ expected inflation + inflation risk premium + TIPS liquidity effects",
+      body: "A breakeven is inflation compensation read off nominal minus TIPS yields. It is not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects.",
+    },
+  },
 
-  limit:
-    "One episode, examined closely. Not a claim that any of this can be predicted.",
-} as const;
+  now: {
+    label: "Now · FE800, Fall 2026",
+    body: "Testing whether real-rate dominance is a general feature of Treasury hedge failures or specific to 2022, by applying one standardized hedge book across other market-stress episodes.",
+  },
+
+  limit: "Measurement and attribution, not prediction or causal identification.",
+
+  links: {
+    ssrn: { label: "Read on SSRN", href: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7469079" },
+    prospectus: { label: "FE800 prospectus", href: "/research/Maniar-Research-Prospectus.pdf" },
+  },
+};
