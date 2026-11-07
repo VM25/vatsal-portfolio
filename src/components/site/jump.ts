@@ -11,6 +11,8 @@
   the jump is aimed again, once.
 */
 
+import type { MouseEvent } from "react";
+
 const INTENTS = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
 
 function docTop(el: HTMLElement): number {
@@ -51,4 +53,13 @@ export function jumpTo(id: string, history: "push" | "replace"): boolean {
     ),
   );
   return true;
+}
+
+/**
+ * Click handler for an in-page link: a plain left click jumps through jumpTo (adding a
+ * history entry, as a native anchor does); modified clicks and unknown targets stay native.
+ */
+export function onJumpClick(e: MouseEvent<HTMLAnchorElement>) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  if (jumpTo(e.currentTarget.hash.slice(1), "push")) e.preventDefault();
 }

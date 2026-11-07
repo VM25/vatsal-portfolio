@@ -150,6 +150,24 @@ main:focus, .sec:focus { outline: none; }
 .tlink { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px; min-height: 44px; display: inline-flex; align-items: center; }
 .refl { margin-top: 36px; max-width: 34ch; font-size: 15px; line-height: 1.45; color: #B5BEB9; }
 .refl b { font-weight: 500; color: var(--sodium); font-family: var(--font-num); font-size: 14px; }
+/*
+  Night halo (controller ruling, Task 13): on phones the lamp and its reflection sit
+  behind the opening screen's smaller text. A soft night-deep (#060A0B) halo under those
+  lines keeps them at 4.5:1 or more without moving the lamp or changing their colour.
+  The reflection count is a thin sodium digit sitting right on the reflection, where a
+  blur alone fades within a pixel of the stroke, so it also gets a 1px night-deep edge.
+*/
+@container site (max-width: 759px) {
+  html:not(.morning) .hero :is(.place, .avail, .tlink, .refl) {
+    text-shadow: 0 0 3px rgba(6,10,11,0.9), 0 0 8px rgba(6,10,11,0.75), 0 0 16px rgba(6,10,11,0.6);
+  }
+  html:not(.morning) .hero .refl b {
+    text-shadow:
+      1px 0 1px #060A0B, -1px 0 1px #060A0B, 0 1px 1px #060A0B, 0 -1px 1px #060A0B,
+      1px 1px 1px #060A0B, -1px 1px 1px #060A0B, 1px -1px 1px #060A0B, -1px -1px 1px #060A0B,
+      0 0 3px #060A0B, 0 0 3px #060A0B, 0 0 6px #060A0B, 0 0 12px rgba(6,10,11,0.8);
+  }
+}
 
 .shead { display: grid; gap: 10px; margin-bottom: 36px; }
 .shead .t { font-size: 14px; color: var(--fog-mid); }

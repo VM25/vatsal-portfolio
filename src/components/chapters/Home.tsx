@@ -1,4 +1,5 @@
 import { profile } from "@/data/profile";
+import { JumpLink } from "@/components/site/JumpLink";
 
 /** Home (#top). The place line's clock and the reflection count are written by the scene. */
 export function Home() {
@@ -16,12 +17,12 @@ export function Home() {
           {profile.availability}
         </p>
         <div className="acts">
-          <a className="btn" href="#projects">
+          <JumpLink className="btn" href="#projects">
             See the work
-          </a>
-          <a className="tlink" href="#research">
+          </JumpLink>
+          <JumpLink className="tlink" href="#research">
             Read the research
-          </a>
+          </JumpLink>
         </div>
         <p className="refl stix" aria-hidden="true">
           The lamp&apos;s reflection averages <i>n</i> = <b data-n>1</b> ripples. Its wobble shrinks like <i>σ</i>/√<i>n</i>.

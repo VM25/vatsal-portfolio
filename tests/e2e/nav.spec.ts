@@ -245,14 +245,17 @@ test.describe("top bar and menu", () => {
       layout set in the fallback faces, and the page reflows under it when the real
       faces swap in. Projects sits under the fixed-height opening screen, so it never
       moves; Research and Path sit under the text-heavy chapters and move by 50 to 80px.
-      The fonts are held until the jump is under way, then released.
+      The fonts are held until the jump is under way, then released. The opening
+      screen's "Read the research" link goes through the same jump.
     */
-    for (const [id, name] of [
-      ["projects", "Projects"],
-      ["research", "Research"],
-      ["path", "Path"],
+    for (const [id, name, from] of [
+      ["projects", "Projects", "header.top"],
+      ["research", "Research", "header.top"],
+      ["path", "Path", "header.top"],
+      ["research", "Read the research", "#top"],
     ]) {
-      test(`a top-bar click on ${name} before the fonts arrive still lands on the chapter`, async ({ page }) => {
+      const where = from === "#top" ? "an opening-screen" : "a top-bar";
+      test(`${where} click on ${name} before the fonts arrive still lands on the chapter`, async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
         let release!: () => void;
         const held = new Promise<void>((r) => (release = r));
@@ -263,7 +266,7 @@ test.describe("top bar and menu", () => {
         await page.goto("/", { waitUntil: "domcontentloaded" });
         await expect(page.locator("html[data-hydrated]")).toHaveCount(1);
         expect(await page.evaluate(() => document.fonts.status), "fonts must still be loading at the click").toBe("loading");
-        await page.locator("header.top").getByRole("link", { name, exact: true }).click();
+        await page.locator(from).getByRole("link", { name, exact: true }).click();
         await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
         release();
         await page.evaluate(() => document.fonts.ready);

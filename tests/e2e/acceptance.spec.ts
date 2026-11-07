@@ -257,6 +257,7 @@ test.describe("acceptance", () => {
     { width: 414, height: 896 },
     { width: 390, height: 844 },
     { width: 375, height: 812 },
+    { width: 360, height: 780 },
     { width: 320, height: 568 },
   ]) {
     test(`(f) contrast: text against the scene behind it at night, research and morning, at ${vp.width}`, async ({ page }) => {
@@ -273,10 +274,6 @@ test.describe("acceptance", () => {
             (r.belowAtWorstPixel.length ? `; below the ratio at the worst pixel only: ${r.belowAtWorstPixel.join("; ")}` : ""),
         );
         fails.push(...r.fails.map((f) => `${at}: ${f}`));
-        for (const f of r.pending) {
-          console.log(`(f) PENDING RULING ${vp.width} ${at}: ${f}`);
-          test.info().annotations.push({ type: "pending ruling", description: `${vp.width} ${at}: ${f}` });
-        }
       }
       expect(fails).toEqual([]);
     });
@@ -405,10 +402,6 @@ test.describe("acceptance", () => {
         await page.evaluate((f) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * f), frac);
         await page.waitForTimeout(300);
         const r = await contrastHere(page);
-        for (const f of r.pending) {
-          console.log(`(g) PENDING RULING ${vp.width} at ${frac}: ${f}`);
-          test.info().annotations.push({ type: "pending ruling", description: `no JS ${vp.width} at ${frac}: ${f}` });
-        }
         expect(r.background, `background luminance at ${frac}`).toBeLessThan(0.1);
         expect(r.fails, `contrast at ${frac}`).toEqual([]);
       }
@@ -417,23 +410,10 @@ test.describe("acceptance", () => {
   });
 });
 
-/*
-  Known contrast shortfalls awaiting a design ruling (Task 13 report). At phone widths the
-  night scene's lamp and its reflection sit behind the opening screen's second link
-  ("Read the research") and the reflection caption's count, and at 320 the lit skyline
-  sits behind the availability line: 2.9 to 4.45:1 at the 95th percentile. Any fix
-  changes the approved look (a halo, a veil over the lamp, or moving the lamp or the
-  text), so these are logged and annotated rather than failed. Delete an entry once its
-  ruling lands.
-*/
-const PENDING_RULING = ["#top a.tlink", "#top p.refl", "#top p.avail"];
-
 type ContrastResult = {
   checked: number;
   /** Runs whose 95th-percentile background gives less than 4.5:1 (3:1 at 24px and up). */
   fails: string[];
-  /** Failing runs listed in PENDING_RULING: reported, not asserted (see that list). */
-  pending: string[];
   /** Runs that pass at the 95th percentile but not against their single worst pixel (logged only). */
   belowAtWorstPixel: string[];
   /** The lowest 95th-percentile ratio seen, with that run's worst-pixel ratio. */
@@ -444,14 +424,24 @@ type ContrastResult = {
 
 /**
  * Contrast of every visible text run in the viewport (top bar and main) against what is
- * actually behind it: read each run's colour, size and effective opacity, make all text
- * transparent, screenshot the viewport, and compare the text colour (blended over each
- * pixel at its opacity) with every background pixel under the run (every second pixel).
- * A run passes when 95% of those pixels give at least 4.5:1 (3:1 at 24px and up): the
- * single worst pixel is usually a lit window or the reflection's one-pixel highlight in
- * the moving scene, which no reader resolves behind a glyph. Worst-pixel figures are
- * logged alongside. Text under the sticky top bar is skipped (the bar covers it). Works
- * without page JS.
+ * actually behind its glyphs, halos included:
+ *
+ * 1. Read each run's colour, size, effective opacity and line boxes.
+ * 2. With animation frames held, so the scene stands still, screenshot the page as it
+ *    is (A), then make every glyph and text decoration
+ *    transparent, keeping text shadows (a transparent glyph still casts its shadow, in
+ *    Chromium and WebKit alike), and screenshot again (B). B is the backdrop each glyph
+ *    sits on, with any halo composited into it.
+ * 3. The glyph mask is where A and B differ inside the run's line boxes. The sample is
+ *    that mask grown by a ring of radius 2px: the pixels under and immediately around the strokes,
+ *    read from B. (A run whose mask is nearly empty, such as text too close to its
+ *    backdrop to show, falls back to its whole line boxes.)
+ * 4. Compare the text colour, blended over each sampled pixel at its opacity, with that
+ *    pixel. A run passes when 95% of its samples reach 4.5:1 (3:1 at 24px and up); the
+ *    single worst pixel is usually a lit window or a one-pixel reflection highlight in the
+ *    moving scene, and is logged alongside.
+ *
+ * Text under the sticky top bar is skipped (the bar covers it). Works without page JS.
  */
 async function contrastHere(page: Page): Promise<ContrastResult> {
   const runs = await page.evaluate(() => {
@@ -506,30 +496,91 @@ async function contrastHere(page: Page): Promise<ContrastResult> {
     }
     return out.map(({ where, text, color, alpha, large, rects }) => ({ where, text, color, alpha, large, rects }));
   });
-  // Hide the text (and its decorations) without moving anything, then screenshot what is behind it.
+  // Hold the scene still between the two screenshots, so only the glyphs differ: animation
+  // frames are queued (the canvas keeps its last frame) and released afterwards.
+  await page.evaluate(() => {
+    const w = window as unknown as { __rafHold?: { orig: typeof requestAnimationFrame; q: FrameRequestCallback[] } };
+    const hold = { orig: window.requestAnimationFrame, q: [] as FrameRequestCallback[] };
+    w.__rafHold = hold;
+    window.requestAnimationFrame = (cb) => {
+      hold.q.push(cb);
+      return 0;
+    };
+  });
+  await page.waitForTimeout(100);
+  const shown = await page.screenshot({ scale: "css", caret: "hide" });
+  // Hide the glyphs (and their decorations) without moving anything, then screenshot what is behind
+  // them. Text shadows stay: a transparent glyph still casts its shadow, so a halo is in the backdrop.
   await page.evaluate(() => {
     const s = document.createElement("style");
     s.id = "__hide-text";
     s.textContent =
-      "header.top *, main * { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; text-decoration-color: transparent !important; transition: none !important; caret-color: transparent !important; } svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }";
+      "header.top *, main * { color: transparent !important; -webkit-text-fill-color: transparent !important; text-decoration-color: transparent !important; transition: none !important; caret-color: transparent !important; } svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }";
     document.head.append(s);
   });
   await page.waitForTimeout(50);
   const shot = await page.screenshot({ scale: "css", caret: "hide" });
   await page.evaluate(() => document.getElementById("__hide-text")?.remove());
+  await page.evaluate(() => {
+    const w = window as unknown as { __rafHold?: { orig: typeof requestAnimationFrame; q: FrameRequestCallback[] } };
+    const hold = w.__rafHold;
+    if (!hold) return;
+    window.requestAnimationFrame = hold.orig;
+    delete w.__rafHold;
+    hold.q.forEach((cb) => hold.orig.call(window, cb));
+  });
   // Colours transition back in (up to 800ms); let them land before anything reads them again.
   await page.waitForTimeout(900);
   return page.evaluate(
-    async ({ runs, src, pendingRuling }) => {
-      const img = new Image();
-      img.src = src;
-      await img.decode();
-      const c = document.createElement("canvas");
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
-      const g = c.getContext("2d")!;
-      g.drawImage(img, 0, 0);
-      const data = g.getImageData(0, 0, c.width, c.height).data;
+    async ({ runs, src, srcShown }) => {
+      const pixels = async (url: string) => {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        const cv = document.createElement("canvas");
+        cv.width = img.naturalWidth;
+        cv.height = img.naturalHeight;
+        const g = cv.getContext("2d")!;
+        g.drawImage(img, 0, 0);
+        return { w: cv.width, h: cv.height, data: g.getImageData(0, 0, cv.width, cv.height).data };
+      };
+      const back = await pixels(src);
+      const front = await pixels(srcShown);
+      const c = { width: back.w, height: back.h };
+      const data = back.data;
+      const RING = 2;
+      /** Pixel indices to sample for one line box: the glyph mask grown by RING px. */
+      const samples = (l: number, t: number, r: number, b: number): number[] => {
+        const x0 = Math.max(0, Math.floor(l));
+        const y0 = Math.max(0, Math.floor(t));
+        const x1 = Math.min(c.width - 1, Math.ceil(r));
+        const y1 = Math.min(c.height - 1, Math.ceil(b));
+        const glyph: number[] = [];
+        for (let y = y0; y <= y1; y++)
+          for (let x = x0; x <= x1; x++) {
+            const i = (y * c.width + x) * 4;
+            const d = Math.abs(front.data[i] - data[i]) + Math.abs(front.data[i + 1] - data[i + 1]) + Math.abs(front.data[i + 2] - data[i + 2]);
+            if (d > 30) glyph.push(y * c.width + x);
+          }
+        if (glyph.length < 6) {
+          const all: number[] = [];
+          for (let y = y0 + 1; y < y1 - 1; y += 2) for (let x = x0 + 1; x < x1 - 1; x += 2) all.push(y * c.width + x);
+          return all;
+        }
+        const set = new Set<number>();
+        for (const k of glyph) {
+          const gx = k % c.width;
+          const gy = (k - gx) / c.width;
+          for (let dy = -RING; dy <= RING; dy++)
+            for (let dx = -RING; dx <= RING; dx++) {
+              if (dx * dx + dy * dy > RING * RING) continue;
+              const x = gx + dx;
+              const y = gy + dy;
+              if (x >= 0 && y >= 0 && x < c.width && y < c.height) set.add(y * c.width + x);
+            }
+        }
+        return [...set];
+      };
       const lin = (v: number) => {
         const s = v / 255;
         return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
@@ -541,7 +592,6 @@ async function contrastHere(page: Page): Promise<ContrastResult> {
       };
       const fails: string[] = [];
       const belowAtWorstPixel: string[] = [];
-      const pending: string[] = [];
       const bgs: number[] = [];
       let lowest = { ratio: Infinity, min: Infinity, text: "" };
       for (const run of runs) {
@@ -549,18 +599,16 @@ async function contrastHere(page: Page): Promise<ContrastResult> {
         let worst = Infinity;
         const all: number[] = [];
         for (const [l, t, r, b] of run.rects) {
-          for (let y = Math.max(0, Math.ceil(t) + 1); y < Math.min(c.height, Math.floor(b) - 1); y += 2) {
-            for (let x = Math.max(0, Math.ceil(l) + 1); x < Math.min(c.width, Math.floor(r) - 1); x += 2) {
-              const i = (y * c.width + x) * 4;
-              const [br, bg, bb] = [data[i], data[i + 1], data[i + 2]];
-              const a = run.alpha;
-              const L1 = lum(tr * a + br * (1 - a), tg * a + bg * (1 - a), tb * a + bb * (1 - a));
-              const L2 = lum(br, bg, bb);
-              bgs.push(L2);
-              const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
-              all.push(ratio);
-              if (ratio < worst) worst = ratio;
-            }
+          for (const k of samples(l, t, r, b)) {
+            const i = k * 4;
+            const [br, bg, bb] = [data[i], data[i + 1], data[i + 2]];
+            const a = run.alpha;
+            const L1 = lum(tr * a + br * (1 - a), tg * a + bg * (1 - a), tb * a + bb * (1 - a));
+            const L2 = lum(br, bg, bb);
+            bgs.push(L2);
+            const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+            all.push(ratio);
+            if (ratio < worst) worst = ratio;
           }
         }
         if (!all.length) continue;
@@ -570,14 +618,16 @@ async function contrastHere(page: Page): Promise<ContrastResult> {
         if (p5 < lowest.ratio) lowest = { ratio: p5, min: worst, text: run.text };
         const need = run.large ? 3 : 4.5;
         if (worst < need) belowAtWorstPixel.push(`${worst.toFixed(2)}:1 (95% ${p5.toFixed(2)}) "${run.text}"`);
-        if (p5 < need) {
-          const msg = `${p5.toFixed(2)}:1 < ${need} "${run.text}" ${run.where} (${run.color} at ${run.alpha.toFixed(2)}; worst pixel ${worst.toFixed(2)}, n ${all.length})`;
-          (pendingRuling.some((w) => run.where === w) ? pending : fails).push(msg);
-        }
+        if (p5 < need)
+          fails.push(`${p5.toFixed(2)}:1 < ${need} "${run.text}" ${run.where} (${run.color} at ${run.alpha.toFixed(2)}; worst pixel ${worst.toFixed(2)}, n ${all.length})`);
       }
       bgs.sort((a, b) => a - b);
-      return { checked: runs.length, fails, pending, belowAtWorstPixel, lowest, background: bgs.length ? bgs[bgs.length >> 1] : 0 };
+      return { checked: runs.length, fails, belowAtWorstPixel, lowest, background: bgs.length ? bgs[bgs.length >> 1] : 0 };
     },
-    { runs, src: `data:image/png;base64,${shot.toString("base64")}`, pendingRuling: PENDING_RULING },
+    {
+      runs,
+      src: `data:image/png;base64,${shot.toString("base64")}`,
+      srcShown: `data:image/png;base64,${shown.toString("base64")}`,
+    },
   );
 }

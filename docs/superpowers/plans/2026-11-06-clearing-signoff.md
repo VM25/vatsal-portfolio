@@ -13,8 +13,8 @@ Branch `v2-clearing` (worktree `.claude/worktrees/v2-clearing`). Nothing here is
 | vitest | 42/42 |
 | `tsc --noEmit`, eslint | clean |
 | `next build` (clean `.next`) | passes. See "Build flakiness" in section 5. |
-| e2e, Chromium + WebKit (full suite) | 270 passed, 0 failed, 4 skipped (the two Chromium-only clipboard tests on WebKit, the Chromium-only `--disable-webgl` launch on WebKit, and the Chromium-only layout-shift (CLS) deep-link test on WebKit), plus the 4 focus tests added afterwards (passing). Firefox not run. |
-| `acceptance.spec.ts --repeat-each=2`, Chromium + WebKit | 68/68 passed |
+| e2e, Chromium + WebKit (full suite) | 278 passed, 0 failed, 4 skipped (the two Chromium-only clipboard tests on WebKit, the Chromium-only `--disable-webgl` launch on WebKit, and the Chromium-only layout-shift (CLS) deep-link test on WebKit). Firefox not run. |
+| `acceptance.spec.ts --repeat-each=2`, Chromium + WebKit | 72/72 passed |
 | Firefox | **Pending.** Firefox can't launch in this sandbox. Run `npx playwright test --project=firefox` on a normal machine, or cover it in the device pass. |
 | Unused dependencies | `npm ls gsap framer-motion scrollama`: none present (removed in Task 6). The remaining dependencies are all in use: `next`, `react`, `react-dom`; dev: tailwind, eslint, typescript, vitest, playwright, `@axe-core/playwright`. |
 
@@ -46,7 +46,7 @@ Test names are given as `file › test`. "Unit" means `tests/unit/*.test.ts` (vi
 
 | Criterion | Evidence |
 |---|---|
-| Text contrast ≥ 4.5:1 (≥ 3:1 at 24px and up) against the scene at night, research fog and morning | e2e: `acceptance › (f) contrast: …` at 1440, 1280, 768, 414, 390, 375 and 320. Every text run is measured against a screenshot of what is behind it, with the text made transparent. A run passes when 95% of its background pixels meet the ratio; the worst pixel is logged too. All pass, with **one exception pending a ruling** (section 5, item 1): the opening screen at phone widths at night. Lowest passing values at 95%: night 6.5 to 7.1 (≥ 768 wide), research 6.3 to 7.3, morning 5.0 to 6.2. axe also passes at the same positions (see below). |
+| Text contrast ≥ 4.5:1 (≥ 3:1 at 24px and up) against the scene at night, research fog and morning | e2e: `acceptance › (f) contrast: …` at 1440, 1280, 768, 414, 390, 375, 360 and 320, and `(g)` without JavaScript. The method is halo-aware (section 5, "Contrast method"): with the scene held still, the glyphs are compared with the pixels under and within 2px of their strokes, taken from a screenshot with the glyphs transparent but their text shadows kept. A run passes when 95% of those pixels meet the ratio; the worst pixel is logged too. **All pass.** Lowest values at 95%, over two runs on each browser: night 5.06 (360) to 6.78; research 6.11 to 7.19; morning 5.01 to 5.69. On phones the opening screen meets this through the night halo (controller ruling, section 5). axe also passes at the same positions (see below). |
 | Visible focus on every control (sodium outline); logical tab order; skip link | e2e: `acceptance › focus: Tab walks every control in document order, each with a visible ring` (1280 and 375); `nav › the first Tab press shows a Skip to content link…`; `nav › the skip link stays at the top of the viewport…` |
 | Mobile menu is a modal dialog: focus in, trapped, back to Menu; Escape; scroll locked | e2e: `nav › the dialog fills the viewport after scrolling, traps focus and closes with Escape`, `› tapping Path closes the menu and lands on Path`. iOS touch-scroll lock: device pass. |
 | Rail uses the tabs pattern; claims use `aria-expanded`/`aria-controls` | e2e: `rail › wide: tabs ›` (4 tests) and `research › claims are buttons inside level-3 headings`. **Deviation (ruling, Task 12):** below the rail's breakpoint the rail is a set of disclosures (`aria-expanded` buttons with their panels), not tabs. A tabpanel inside a tablist is invalid ARIA (axe `aria-required-children`, critical). Tests: `rail › narrow: disclosures ›` (5 tests); axe is clean at both widths. |
@@ -95,7 +95,7 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 | default config, run 2 (for the record) | simulated | 94 | 3.07 s | 0 | 7 ms |
 
 - **Plan command:** every target is met (≥ 90, LCP ≤ 2.5 s, CLS ≤ 0.05, TBT ≤ 200 ms).
-- **Default simulated config:** LCP misses (3.1–3.6 s), and the score swings between runs (78/94).
+- **Default simulated config:** LCP misses (3.1–3.6 s), and the score swings between runs (78/94). Controller ruling: recorded only, since the plan's command passes; both tables are kept.
   - The observed LCP equals FCP (0.95 s unthrottled). The LCP element is the opening line, `p.lede`.
   - The simulator lengthens it because it treats the six web-font files (about 141 KB, four preloaded) and the hydration task as LCP dependencies on simulated slow 4G.
   - Its TBT of 459 ms in run 1 is a 4× projection of a single ~130 ms load task (React hydration of the whole page plus the first scene frame). Measured with real 4× CPU throttling in Chromium, the load produces two long tasks (59 and 118 ms), about 77 ms of TBT.
@@ -104,7 +104,7 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 
 | Criterion | Evidence |
 |---|---|
-| Page JS ≤ 120 KB gzipped (excluding fonts) | **Not met: 164.9 KB.** Method: fetch the page HTML, take every `/_next/static/chunks/*.js` it references, and gzip each file from `.next` at level 9. The `noModule` polyfill chunk (38.5 KB) is excluded because modern browsers don't load it. Lighthouse's transfer total for scripts agrees: 168.2 KB. App code is one 23.1 KB chunk (ScrollState, World, both exhibits, rail, claims, menu). The other ~142 KB is the Next 16 and React 19 client runtime (react-dom 69 KB, the Next router and RSC client 48 KB, the rest about 25 KB). Next 16's build output no longer prints per-route sizes, so the build output can't be used. |
+| Page JS ≤ 120 KB gzipped (excluding fonts) | **Target not achievable on Next 16 + React 19. Site code is 23.1 KB. Flagged to Vatsal.** (Controller ruling: accepted as a spec miss; no framework surgery.) Measured 164.9 KB. Method: fetch the page HTML, take every `/_next/static/chunks/*.js` it references, and gzip each file from `.next` at level 9. The `noModule` polyfill chunk (38.5 KB) is excluded because modern browsers don't load it. Lighthouse's transfer total for scripts agrees: 168.2 KB. The site's own code is one 23.1 KB chunk (ScrollState, World, both exhibits, rail, claims, menu). The other ~142 KB is the Next 16 and React 19 client runtime (react-dom 69 KB, the Next router and RSC client 48 KB, the rest about 25 KB). Next 16's build output no longer prints per-route sizes. |
 | Fonts subset and preloaded | `next/font/google`, latin subset; 4 of 6 files preloaded (`*.p.*.woff2`). |
 | One fragment shader; DPR caps 1 (scene) and 2 (UI canvases); paused when hidden; ≤ 30 fps | e2e: `world › the scene canvas is capped at one device pixel per CSS pixel`; `diffusion › canvases are labelled images sized by CSS width with a backing store at DPR capped at 2`; `liquidity › the canvas is sized by CSS width at DPR capped at 2…`; `liquidity › a hidden tab pauses the run…`. The 30 fps cap is in `World.tsx` (`FRAME_MS`). |
 | Steady ≥ 30 fps on a 2020 MacBook Air and an iPhone 12; drops to stills if not | Watchdog: `world › the GPU watchdog drops to the stills…`, `› throttled requestAnimationFrame keeps the live scene`, `› one long main-thread stall keeps the live scene`. Frame rate on those devices: **device pass**. |
@@ -133,7 +133,7 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
 | 2 | Scroll the whole page slowly. The scene moves from night to morning, the clock in the bar follows, and there is no jump or blank flash. | | | | |
 | 3 | Rotate the phone, or resize the window, mid-page. The scene recomposes and the clock stays consistent. | | | | n/a |
 | 4 | Phones: open Menu. It fills the screen, the page behind does not scroll when you drag, and Close/Escape return to the same place. Choose Research: it lands on Research. | | | n/a | n/a |
-| 5 | Desktop: click each top-bar link straight after a hard reload (before fonts settle). Each lands on its chapter's heading. | n/a | n/a | | |
+| 5 | Straight after a hard reload (before fonts settle): desktop, click each top-bar link; any device, tap "Read the research" on the opening screen. Each lands on its chapter's heading. | | | | |
 | 6 | DiffusionWorks: drag each slider. The numbers and tree update and the sweep runs once after release. The "10 of 15" stamp lands once. | | | | |
 | 7 | Liquidity: the run plays once on first sight and lands on −96. Press "Run it again" several times quickly: one clean run, again −96. | | | | |
 | 8 | More projects: phones, tap rows (each opens under itself, one at a time); desktop, arrow keys move between tabs. | | | | |
@@ -141,34 +141,39 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
 | 10 | Contact: Copy puts the email on the clipboard (or selects it). Links open in new tabs. | | | | |
 | 11 | Turn on OS Reduce Motion and reload. The scene is still and changes only with scroll; no stamps or sweeps; Liquidity shows −96 at once; jumps are instant. | | | | |
 | 12 | Low Power Mode (iPhone) or a backgrounded tab: the scene keeps running or falls back to the stills, never blank. | | | n/a | n/a |
-| 13 | Opening screen at night: is "Read the research" (and the small reflection caption) easy to read against the lamp's glow? (Pending ruling, section 5.) | | | | |
+| 13 | Phones, opening screen at night: review the night halo (controller ruling, section 5). The place line, availability line, "Read the research" and the reflection caption read clearly against the lamp's glow, and the halo itself does not look like a smudge. The reflection count has a slightly firmer edge. | | | n/a | n/a |
 | 14 | Frame rate: the scene feels steady (≥ 30 fps). Android: DevTools performance check of a slider drag, ≤ 8 ms per update. | | | | |
 
 ## 5. Known deviations, rulings and open items
 
-**Open, needs a ruling**
+**Controller rulings for Vatsal to review on the preview**
 
-1. **Opening-screen contrast at phone widths, night (§8.3).**
-   - **What fails.** The night scene's lamp and its reflection sit behind:
-     - the hero's second link, "Read the research";
-     - the small reflection caption's count;
-     - at 320px, the lit skyline behind the availability line.
-   - **Measured at the 95th percentile** (`acceptance › (f)`):
+1. **Night halo on the opening screen at phone widths (§8.3; WCAG AA is a hard requirement).**
+   - **The problem.** At phone widths the night scene's lamp and its reflection sit behind the opening screen's smaller text. Measured with the halo-aware method and no halo, two items were below 4.5:1 at the 95th percentile:
+     - the reflection count, at 3.3–3.7:1 (320 and 360);
+     - "Read the research", at 4.25–4.4:1 (360).
+     The earlier whole-box method also flagged "Read the research" at 375 (3.7–4.0:1) and the availability line at 320.
+   - **The fix.** A soft night-deep (`#060A0B`) text shadow, only below 760px of site width and only while the page is not in its morning state (`html:not(.morning)`). The lamp, the scene, the layout and every text colour are unchanged.
+     - **Place line, availability line, "Read the research", reflection caption:** `0 0 3px rgba(6,10,11,0.9), 0 0 8px rgba(6,10,11,0.75), 0 0 16px rgba(6,10,11,0.6)`.
+     - **Reflection count** (a thin sodium digit sitting right on the reflection, where a blur alone fades within a pixel of the stroke): eight 1px offset shadows with a 1px blur, which give a 1px night-deep edge, plus `0 0 3px` ×2, `0 0 6px` and `0 0 12px rgba(6,10,11,0.8)`.
+   - **Tuning.** This is the lightest of the candidates tried that passed at 320, 360, 375, 390 and 414 on both browsers over two runs:
+     - The suggested `0 0 14px …0.85, 0 0 3px …0.6` left "Read the research" at 4.25–4.4:1 (360) and the count at 3.4–3.7:1.
+     - The three-layer blur alone left the count at 3.8–4.3:1.
+   - **Result at 95%, night, after the halo** (two runs each on Chromium and WebKit):
 
-     | Text | Width | Ratio | Worst pixel |
-     |---|---|---|---|
-     | "Read the research" | 375 | 3.7–4.0:1 | about 2:1 |
-     | "Read the research" | 360 (manual probe) | 2.7:1 | — |
-     | Reflection count | 320 to 414 | 2.8–4.5:1 | — |
-     | Availability line | 320 | 4.35–4.45:1 | — |
+     | Width | Lowest | Run |
+     |---|---|---|
+     | 320 | 5.59:1 | count |
+     | 360 | 5.06:1 | count; "Read the research" 5.05–5.7:1 |
+     | 375 | 6.63:1 | "Read the research" |
+     | 390 | 6.78:1 | — |
+     | 414 | 6.77:1 | — |
 
-     The no-JS still at 375 shows the same reflection-count shortfall (4.0:1).
-   - Every other width and position passes.
-   - **Why it isn't fixed here.** Every fix changes the approved look:
-     - a dark halo or text shadow behind those lines;
-     - a stronger hero veil over the lamp at phone widths;
-     - moving the lamp in the portrait composition, or moving the hero text.
-   - **For now.** The three runs are listed in `PENDING_RULING` in `acceptance.spec.ts`. They are logged and annotated ("pending ruling") but not failed. Delete each entry once its ruling lands.
+     Desktop already passed and has no halo (1440: 5.08; 1280: 6.77).
+   - **For Vatsal.** Please check this on the preview (device checklist, row 13).
+
+2. **Page JS above 120 KB:** accepted as a spec miss; see 8.7.
+3. **Default-config Lighthouse LCP:** recorded only; see 8.7.
 
 **Recorded rulings and deviations**
 
@@ -181,7 +186,14 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
   - Task 13: the Contact row labels (Email, LinkedIn, GitHub, Résumé) go from 0.8 to 0.9 opacity (they measured 4.4:1); Path role details go from fog-mid to fog (they measured 3.2–4.4:1 under the morning sky on viewports tall enough to show Path at the bottom, from 390 wide up).
 - **Black–Scholes readout 9.9251, not 9.9250** (Tasks 1–4); normCdf uses Hart/West.
 - **Hero height 88svh**, as in the prototype (Task 9 ruling).
-- **Contrast is measured at the 95th percentile** of each text run's background pixels, not the single worst pixel. Lit windows and the reflection's one-pixel highlights move under the text. Worst-pixel values are logged next to each result.
+- **Contrast method** (`contrastHere` in `acceptance.spec.ts`).
+  1. Hold animation frames, so the scene stands still (the canvas keeps its last frame).
+  2. Screenshot the page as it is (A).
+  3. Make every glyph and text decoration transparent while keeping text shadows, and screenshot again (B). A transparent glyph still casts its shadow in both Chromium and WebKit (checked), so B is each glyph's backdrop with any halo composited into it.
+  4. The glyph mask is where A and B differ inside each run's line boxes. The sample is that mask grown by a 2px-radius ring, read from B.
+  5. A run passes when 95% of the sampled pixels reach 4.5:1 (3:1 at 24px and up) against the text colour blended at its opacity. The worst pixel is logged.
+
+  This replaces Task 13's first method (95% of every pixel in the line box, with shadows removed), which could not see a halo.
 
 **Fixed in Task 13**
 
@@ -189,11 +201,12 @@ Mark each step pass or fail, with notes. The steps are the same on every device 
   - The problem: a top-bar or menu click made before the web fonts arrived landed 50–80px off. The smooth jump was aimed at the fallback-font layout, and the page reflowed under it. Projects is not affected, because the fixed-height opening screen sits above it; Research and Path are.
   - The fix: `src/components/site/jump.ts`. It focuses the section, calls `scrollIntoView` (instant under reduced motion) and updates the hash (push for the bar, replace for the menu). Once `document.fonts.ready` resolves, it re-aims once if the section moved and the reader hasn't scrolled, pressed a key, touched or clicked since.
   - The test: `nav › a top-bar click on {Projects, Research, Path} before the fonts arrive still lands on the chapter`. Fonts are held with `page.route` until the jump is under way. It asserts the landing is within 2px and the clock within 1 minute. It failed for Research and Path before the fix.
-  - The hero's own two buttons are still native anchors (server-rendered). They jump to Projects, which never moves, and Research, which could.
+  - The opening screen's "See the work" and "Read the research" go through the same jump via `src/components/site/JumpLink.tsx`. This is a small client wrapper; the server-rendered anchor stays as the fallback before hydration and without JavaScript. The held-fonts test also covers "Read the research" (`nav › an opening-screen click on Read the research before the fonts arrive…`). It failed by 76px before the wrapper.
 - **Tree node values as text** (§8.3): see 8.3.
 - **Touch target** for "Path" in the top bar: see 8.3.
 - **No-JS Menu button** hidden: see 8.6.
 - **Morning contrast** for Contact labels and Path role details: see above.
+- **Night halo** on the opening screen at phone widths: see the controller rulings above.
 - `measurePacing` gained a `step` option (60px here) and ignores `.sr-only` text. The phone-number check in `chapters.spec.ts` now skips tables, so it doesn't read the node-value table as a phone number.
 
 **Environment notes**
