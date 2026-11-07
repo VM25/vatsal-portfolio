@@ -154,8 +154,11 @@ test.describe("page shell and world", () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator(".bg")).toHaveAttribute("data-orientation", "port");
+    // Wait for the reflow to settle into a different key time before reading it.
+    await expect
+      .poll(async () => clockAt((await measuredKeys(page))[2]))
+      .not.toBe(clockAt(wideKey));
     const narrowKey = (await measuredKeys(page))[2];
-    expect(clockAt(narrowKey)).not.toBe(clockAt(wideKey));
     await expect(label).toHaveText(new RegExp(`^${clockAt(narrowKey)} · `));
     expect(await label.textContent()).not.toBe(wideLabel);
 
@@ -212,11 +215,12 @@ test.describe("page shell and world", () => {
     await ctx.close();
   });
 
-  test("the frame-time watchdog drops to the stills when frames are too slow", async ({ browser }) => {
+  test("the GPU watchdog drops to the stills when draws are too slow", async ({ browser }) => {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
+    // -1 ms: any measured draw time is "too slow", so the watchdog must trip.
     await page.addInitScript(() => {
-      (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdogMs: 0 };
+      (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdogMs: -1 };
     });
     await page.goto("/");
     if (!(await hasWebGL(page))) {
@@ -224,9 +228,39 @@ test.describe("page shell and world", () => {
       await ctx.close();
       return;
     }
-    await expect(page.locator(".bg")).toHaveAttribute("data-fallback", "slow", { timeout: 8000 });
+    await expect(page.locator(".bg")).toHaveAttribute("data-fallback", "slow", { timeout: 10_000 });
     await expect(page.locator(".bg .stills")).toBeVisible();
     await expect(page.locator("canvas#world")).toBeHidden();
+    await ctx.close();
+  });
+
+  test("no JavaScript: every heading readable over the stills", async ({ browser }) => {
+    const ctx = await browser.newContext({ javaScriptEnabled: false });
+    const page = await ctx.newPage();
+    await page.goto("/");
+    await expect(page.locator("main h1")).toBeVisible();
+    const h2 = page.locator("main h2");
+    await expect(h2).toHaveCount(4);
+    for (let i = 0; i < 4; i++) await expect(h2.nth(i)).toBeVisible();
+    await expect(page.locator(".bg .stills")).toBeVisible();
+    await expect(page.locator("canvas#world")).toBeHidden();
+    await ctx.close();
+  });
+
+  test("the scene canvas is capped at one device pixel per CSS pixel", async ({ browser }) => {
+    const ctx = await browser.newContext({ deviceScaleFactor: 2, viewport: { width: 800, height: 600 } });
+    const page = await ctx.newPage();
+    await noWatchdog(page);
+    await page.goto("/");
+    await sceneMode(page);
+    const dims = await page.evaluate(() => {
+      const c = document.getElementById("world") as HTMLCanvasElement;
+      const b = document.querySelector(".bg")!.getBoundingClientRect();
+      return { dpr: window.devicePixelRatio, cw: c.width, ch: c.height, w: b.width, h: b.height };
+    });
+    expect(dims.dpr).toBe(2);
+    expect(dims.cw).toBe(Math.round(dims.w));
+    expect(dims.ch).toBe(Math.round(dims.h));
     await ctx.close();
   });
 
@@ -234,5 +268,68 @@ test.describe("page shell and world", () => {
     await page.goto("/");
     await sceneMode(page);
     await expect(page.locator("html")).toHaveAttribute("data-beats", "0");
+  });
+});
+
+/*
+  The watchdog runs at its production threshold here. It must judge the GPU,
+  not the frame spacing: throttled requestAnimationFrame and one long stall are
+  not a slow GPU.
+*/
+test.describe("watchdog at the production threshold", () => {
+  // Headless Chromium draws with SwiftShader on the CPU. Measured median
+  // draw + sync: ≈19 ms at 1280×720 alone, but above 50 ms when two workers
+  // share the CPU, which is a genuinely slow "GPU". At 400×300 it is ≈3 ms,
+  // so these tests isolate the frame-spacing behaviour they are about.
+  test.use({ viewport: { width: 400, height: 300 } });
+
+  test("throttled requestAnimationFrame keeps the live scene", async ({ page }) => {
+    await page.addInitScript(() => {
+      const timers = new Map<number, ReturnType<typeof setTimeout>>();
+      let id = 0;
+      window.requestAnimationFrame = (cb: FrameRequestCallback) => {
+        const n = ++id;
+        timers.set(
+          n,
+          setTimeout(() => {
+            timers.delete(n);
+            cb(performance.now());
+          }, 400),
+        );
+        return n;
+      };
+      window.cancelAnimationFrame = (n: number) => {
+        clearTimeout(timers.get(n));
+        timers.delete(n);
+      };
+    });
+    await page.goto("/");
+    if (!(await hasWebGL(page))) {
+      expect(await sceneMode(page)).toBe("stills");
+      return;
+    }
+    await expect(page.locator(".bg")).toHaveAttribute("data-mode", "gl");
+    await page.waitForTimeout(4000);
+    await expect(page.locator(".bg")).toHaveAttribute("data-mode", "gl");
+    await expect(page.locator(".bg")).not.toHaveAttribute("data-fallback", /.*/);
+  });
+
+  test("one long main-thread stall keeps the live scene", async ({ page }) => {
+    await page.goto("/");
+    if (!(await hasWebGL(page))) {
+      expect(await sceneMode(page)).toBe("stills");
+      return;
+    }
+    await expect(page.locator(".bg")).toHaveAttribute("data-mode", "gl");
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => {
+      const end = performance.now() + 1500;
+      while (performance.now() < end) {
+        /* block the main thread once */
+      }
+    });
+    await page.waitForTimeout(4000);
+    await expect(page.locator(".bg")).toHaveAttribute("data-mode", "gl");
+    await expect(page.locator(".bg")).not.toHaveAttribute("data-fallback", /.*/);
   });
 });

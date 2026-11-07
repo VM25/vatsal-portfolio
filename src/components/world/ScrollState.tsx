@@ -19,8 +19,8 @@ import { CHAPTERS, KEYS, clockAt, isMorning, type Chapter } from "@/lib/scene";
   and the OS reduced-motion setting.
 
   Static labels rendered by server components are kept current imperatively, as
-  the prototype does: every [data-clock] shows clockAt(p), every [data-time]
-  inside a chapter has its leading time replaced by that chapter's key time, and
+  the prototype does: every [data-clock] shows clockAt(p), every [data-clocktime]
+  inside a chapter's [data-time] label shows that chapter's key time, and
   every [data-tsec="chapter"] shows the key time without "a.m.". <html> carries
   .morning, .rm and data-beats (the count of requestBeat calls).
 */
@@ -95,12 +95,17 @@ function sameKeys(a: number[], b: number[]) {
   return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
+/*
+  Only the leaf spans are rewritten: [data-clocktime] inside a chapter's
+  [data-time] label holds nothing but the time, so no React-owned mixed
+  children are ever replaced.
+*/
 function relabel(keys: number[]) {
-  document.querySelectorAll<HTMLElement>("[data-time]").forEach((e) => {
+  document.querySelectorAll<HTMLElement>("[data-time] [data-clocktime]").forEach((e) => {
     const sec = e.closest<HTMLElement>("[data-sec]");
     const i = sec ? CHAPTERS.indexOf(sec.dataset.sec as Chapter) : -1;
     if (i < 0) return;
-    const next = (e.textContent ?? "").replace(/^\d+:\d\d a\.m\./, clockAt(keys[i]));
+    const next = clockAt(keys[i]);
     if (next !== e.textContent) e.textContent = next;
   });
   document.querySelectorAll<HTMLElement>("[data-tsec]").forEach((e) => {
@@ -260,6 +265,16 @@ export function useScrollState(): ScrollState {
   const actions = useContext(ActionsCtx);
   if (!state || !actions) throw new Error("useScrollState must be used inside <ScrollStateProvider>");
   return { ...state, ...actions };
+}
+
+/**
+ * Only the actions. Stable for the page's lifetime, so exhibits that need to
+ * fire a beat or set the rush don't re-render on every scroll.
+ */
+export function useSceneActions(): Pick<ScrollState, "requestBeat" | "setRush"> {
+  const actions = useContext(ActionsCtx);
+  if (!actions) throw new Error("useSceneActions must be used inside <ScrollStateProvider>");
+  return actions;
 }
 
 /** For World only: the per-frame values, read without re-rendering. */
