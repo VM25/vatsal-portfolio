@@ -158,26 +158,166 @@ test.describe("Research chapter", () => {
     }
   });
 
-  test("evidence sits beside the claims at 1440 and under each claim at 375", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await open(page);
-    let c = (await claim(page, 0).boundingBox())!;
-    let e = (await page.locator("#ev-sharpe").boundingBox())!;
-    expect(e.x).toBeGreaterThan(c.x + c.width);
+  /*
+    Refinement R4: each piece of evidence is one <figure> (caption, chart, or formula and
+    its explanation) directly under its claim at every width, anchored to it, with
+    nothing sticky. Pieces marked data-fade dissolve before the sticky top bar reaches them.
+  */
+  const figs = [{ id: "#ev-sharpe" }, { id: "#ev-drawdown" }, { id: "#ev-identity" }];
 
-    await page.setViewportSize({ width: 375, height: 812 });
-    await ticks(page, 3);
-    c = (await claim(page, 0).boundingBox())!;
-    e = (await page.locator("#ev-sharpe").boundingBox())!;
-    const c2 = (await claim(page, 1).boundingBox())!;
-    expect(e.y).toBeGreaterThanOrEqual(c.y + c.height - 1);
-    expect(e.y + e.height).toBeLessThanOrEqual(c2.y + 1);
-    await claim(page, 2).click();
-    const c3 = (await claim(page, 2).boundingBox())!;
-    const e3 = (await page.locator("#ev-identity").boundingBox())!;
-    expect(e3.y).toBeGreaterThanOrEqual(c3.y + c3.height - 1);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
-  });
+  for (const vp of [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+    { width: 390, height: 844 },
+    { width: 375, height: 812 },
+  ]) {
+    test(`each figure is one unit directly under its claim, at ${vp.width}x${vp.height}`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await open(page);
+      for (let i = 0; i < 3; i++) {
+        if (i) await claim(page, i).click();
+        const fig = page.locator(`${figs[i].id} figure`);
+        await expect(fig).toHaveCount(1);
+        // The caption is the figure's own: first child for the charts, last for the identity.
+        await expect(fig.locator("> figcaption")).toHaveCount(1);
+        const c = (await claim(page, i).boundingBox())!;
+        const f = (await fig.boundingBox())!;
+        // Anchored: the figure's top within 24px under the open claim's bottom, same left edge.
+        expect(f.y - (c.y + c.height)).toBeGreaterThanOrEqual(-1);
+        expect(f.y - (c.y + c.height)).toBeLessThanOrEqual(24);
+        expect(Math.abs(f.x - c.x)).toBeLessThanOrEqual(1);
+        expect(f.x + f.width).toBeLessThanOrEqual(c.x + c.width + 1);
+        // And before the next claim (or the Now line).
+        const next = i < 2 ? (await claim(page, i + 1).boundingBox())! : (await sec(page).locator(".now").boundingBox())!;
+        expect(f.y + f.height).toBeLessThanOrEqual(next.y + 1);
+        // Every part of the unit lies inside the figure's box.
+        const out = await fig.evaluate((el) => {
+          const b = el.getBoundingClientRect();
+          return [...el.querySelectorAll("*")]
+            .map((n) => ({ n: `${n.tagName}.${n.getAttribute("class") ?? ""}`, r: n.getBoundingClientRect() }))
+            .filter(({ r }) => r.width > 0 && (r.top < b.top - 1 || r.bottom > b.bottom + 1 || r.left < b.left - 1 || r.right > b.right + 1))
+            .map(({ n }) => n);
+        });
+        expect(out).toEqual([]);
+        // Nothing in Research is sticky or fixed.
+        const stuck = await sec(page).evaluate((s) =>
+          [...s.querySelectorAll("*")].filter((n) => /sticky|fixed/.test(getComputedStyle(n).position)).length,
+        );
+        expect(stuck).toBe(0);
+      }
+      // The Sharpe note sits inside the Sharpe figure, in its caption.
+      await claim(page, 0).click();
+      await expect(page.locator("#ev-sharpe figure > figcaption .src")).toHaveText(research.evidence.sharpe.source);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(vp.width);
+    });
+  }
+
+  /*
+    The scroll sweep. Every 40px through Research with each claim open, each part of the
+    open figure (caption, title, note, svg, each bar, each value and label, the axis, each
+    tick; the formula and its explanation) is either fully below the top bar or out of
+    sight (under the bar, off screen, or dissolved to opacity 0): never seen cut by the bar
+    while another part of the figure shows. The parts that show form one unbroken run,
+    from the first one shown to the figure's end in view.
+  */
+  for (const vp of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`scroll sweep: no figure part is cut by the top bar while the rest shows, at ${vp.width}x${vp.height}`, async ({ page }) => {
+      test.setTimeout(120_000);
+      await page.setViewportSize(vp);
+      await open(page);
+      await page.evaluate(() => document.fonts.ready);
+      for (let i = 0; i < 3; i++) {
+        await claim(page, i).evaluate((b) => (b as HTMLButtonElement).click());
+        await expect(claim(page, i)).toHaveAttribute("aria-expanded", "true");
+        const { from, to } = await sec(page).locator(".claims").evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return { from: Math.max(0, r.top + scrollY - innerHeight), to: r.bottom + scrollY };
+        });
+        let steps = 0;
+        for (let y = from; y <= to; y += 40) {
+          await page.evaluate((top) => window.scrollTo({ top, behavior: "instant" }), y);
+          await ticks(page, 2);
+          const s = await page.evaluate((id) => {
+            const bar = document.querySelector("header.top")!.getBoundingClientRect().bottom;
+            const fig = document.querySelector(`${id} figure`)!;
+            const parts = [
+              ...fig.querySelectorAll(
+                "figcaption, .ctitle, .src, svg, .bar, svg text, svg line:not(.bar), .ident, .note",
+              ),
+            ];
+            const seen = (el: Element) => {
+              let o = 1;
+              for (let n: Element | null = el; n && n !== fig.parentElement; n = n.parentElement) {
+                o *= parseFloat(getComputedStyle(n).opacity);
+              }
+              return o;
+            };
+            return parts.map((el) => {
+              const r = el.getBoundingClientRect();
+              const onScreen = r.bottom > bar && r.top < innerHeight;
+              return {
+                name: `${el.tagName}.${el.getAttribute("class") ?? ""} "${(el.textContent ?? "").slice(0, 16)}"`,
+                top: r.top,
+                cut: r.top < bar && r.bottom > bar,
+                shown: onScreen && seen(el) > 0,
+              };
+            });
+          }, figs[i].id);
+          const shown = s.filter((p) => p.shown);
+          const cutShown = shown.filter((p) => p.cut);
+          if (shown.length > 1) {
+            expect(cutShown.map((p) => p.name), `claim ${i + 1} at scrollY ${Math.round(y)}`).toEqual([]);
+          }
+          // One unbroken run: no hidden part on screen below a shown part.
+          const firstShown = Math.min(...shown.map((p) => p.top));
+          const gaps = s.filter((p) => !p.shown && !p.cut && p.top > firstShown && p.top < vp.height);
+          expect(gaps.map((p) => p.name), `claim ${i + 1} at scrollY ${Math.round(y)}`).toEqual([]);
+          steps++;
+        }
+        expect(steps).toBeGreaterThan(20);
+      }
+    });
+  }
+
+  for (const vp of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`opening another claim keeps it where it was on screen, at ${vp.width}x${vp.height}`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await open(page);
+      // Claim 1 open, its figure on screen above claim 2.
+      await claim(page, 0).evaluate((b) => {
+        window.scrollTo({ top: b.getBoundingClientRect().top + window.scrollY - 120, behavior: "instant" });
+      });
+      await ticks(page, 3);
+      for (const [from, to] of [
+        [0, 1],
+        [1, 2],
+        [2, 0],
+        [0, 2],
+      ]) {
+        await expect(claim(page, from)).toHaveAttribute("aria-expanded", "true");
+        // Where a reader can click it (a click scrolls a claim that is cut by the viewport into view first).
+        await claim(page, to).scrollIntoViewIfNeeded();
+        await ticks(page, 2);
+        const before = (await claim(page, to).boundingBox())!.y;
+        const scrollBefore = await page.evaluate(() => window.scrollY);
+        await claim(page, to).click();
+        await expect(claim(page, to)).toHaveAttribute("aria-expanded", "true");
+        await ticks(page, 3);
+        const after = (await claim(page, to).boundingBox())!.y;
+        const fig = (await page.locator(`${figs[to].id} figure`).boundingBox())!;
+        const inView = fig.y >= 0 && fig.y + fig.height <= vp.height;
+        expect(Math.abs(after - before) <= 4 || inView, `claim ${from + 1} to ${to + 1}: moved ${after - before}px`).toBe(true);
+        // A figure that closed above the clicked claim was compensated for by scrolling.
+        if (to > from) expect(await page.evaluate(() => window.scrollY)).toBeLessThan(scrollBefore);
+      }
+    });
+  }
 
   for (const width of [320, 375, 414, 768, 1024, 1280, 1440]) {
     test(`chart text renders at 14px or more, tick labels at 12px or more, inside the chart, at ${width}`, async ({ page }) => {
@@ -194,15 +334,20 @@ test.describe("Research chapter", () => {
             text: t.textContent,
             tick: !!t.closest(".ticks"),
             px: parseFloat(getComputedStyle(t).fontSize) * k,
-            right: t.getBoundingClientRect().right,
-            limit: box.right,
+            r: t.getBoundingClientRect().toJSON() as DOMRect,
+            box: box.toJSON() as DOMRect,
           }));
         });
         expect(sizes.length).toBeGreaterThanOrEqual(2);
         for (const s of sizes) {
           expect(s.px, `${s.text}`).toBeGreaterThanOrEqual(s.tick ? 12 : 14);
-          expect(s.right, `${s.text} overflows the chart`).toBeLessThanOrEqual(s.limit + 1);
+          // Each label's whole text box inside the chart (refinement R4: the SVG clips at its edge).
+          expect(s.r.right, `${s.text} overflows the chart`).toBeLessThanOrEqual(s.box.right + 1);
+          expect(s.r.left, `${s.text} overflows the chart`).toBeGreaterThanOrEqual(s.box.left - 1);
+          expect(s.r.top, `${s.text} overflows the chart`).toBeGreaterThanOrEqual(s.box.top - 1);
+          expect(s.r.bottom, `${s.text} overflows the chart`).toBeLessThanOrEqual(s.box.bottom + 1);
         }
+        await expect(ev.locator("svg")).toHaveCSS("overflow", "hidden");
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     });

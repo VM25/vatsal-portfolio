@@ -22,6 +22,18 @@ import type { Claim } from "@/data/research";
     on short timers does its job, and bars that are on screen for a moment without the
     premise being in view are drawn anyway, so a bar never stays at zero.
 
+  - Layout (refinement R4): at every width the open claim's evidence is one <figure>
+    directly under its claim, nothing in another column or scroll layer, and nothing
+    sticky. Each figure reads top to bottom as caption (title, and the Sharpe note),
+    then the chart; the identity is the formula, then its explanation. The pieces
+    marked data-fade (the caption, the chart as a whole, the formula) dissolve as they
+    rise toward the sticky top bar and are fully transparent before the bar reaches
+    them, so no piece is ever seen cut by the bar while the rest of its figure shows,
+    and the chart always leaves last, straight before the next claim. Only plain text
+    that ends a figure (the identity's explanation) passes under the bar as text does.
+    Opening another claim keeps the clicked claim where it was on screen, however much
+    the figure above it shrinks.
+
   Test hooks: .claims has data-ready once hydrated and data-play; each .ev has
   data-drawn; ResearchBeat marks the premise data-beat-done once it has fired.
 */
@@ -31,6 +43,10 @@ const REDUCED = "(prefers-reduced-motion: reduce)";
 const SCALE_W = 500;
 /** A bar on screen this long without its beat is drawn anyway. */
 const BAR_FALLBACK_MS = 900;
+/** Scroll distance over which a figure piece dissolves as it rises toward the top bar. */
+const FADE_PX = 64;
+/** A piece is fully transparent this far below the bar, so a frame of lag never shows it cut. */
+const FADE_GAP = 8;
 
 type Evidence = {
   sharpe: {
@@ -69,11 +85,36 @@ function redraw(ev: HTMLElement | null) {
   }, 60);
 }
 
+/**
+ * Opacity of each piece of the open figure from its distance to the sticky top bar:
+ * full until its top is FADE_GAP + FADE_PX below the bar's bottom edge, zero from
+ * FADE_GAP below it, so a piece is gone before the bar covers any part of it. Pieces
+ * of closed figures are reset, so a reopened one starts from its own position.
+ */
+function fadeAtBar(root: HTMLElement | null) {
+  if (!root) return;
+  for (const f of root.querySelectorAll<HTMLElement | SVGElement>(".ev:not(.on) [data-fade][style]")) {
+    f.style.opacity = "";
+  }
+  const pieces = root.querySelectorAll<HTMLElement | SVGElement>(".ev.on [data-fade]");
+  if (!pieces.length) return;
+  const bar = document.querySelector("header.top")?.getBoundingClientRect().bottom ?? 0;
+  for (const f of pieces) {
+    const d = f.getBoundingClientRect().top - bar - FADE_GAP;
+    const o = Math.min(1, Math.max(0, d / FADE_PX));
+    f.style.opacity = o >= 1 ? "" : o.toFixed(3);
+  }
+}
+
 /*
   The chart titles are HTML captions above the SVG, not SVG text: at 320px a title on one
   line inside the scaled viewBox cannot render at 14px. Everything below the title keeps
   the prototype's geometry, moved up by the title's band (30 units for the bars, 24 for the
-  drop), with every transform origin given in those same viewBox units.
+  drop), with every transform origin given in those same viewBox units. Refinement R4 set
+  the caption (title, then the Sharpe note) as the figure's figcaption over the chart, and
+  sized each viewBox so every label's text box stays inside it at every width (the SVG
+  clips at its edge): the bars' viewBox ends at 194, below the ticks; the drop sits
+  8 units lower in a 208-unit box, its length unchanged.
 */
 function Sharpe({ e }: { e: Evidence["sharpe"] }) {
   const x = (v: number) => (v / e.scaleMax) * SCALE_W;
@@ -81,9 +122,12 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
   for (let t = 0; t <= e.scaleMax + 1e-9; t += 0.2) ticks.push(Math.round(t * 10) / 10);
   const colors = ["#FFA62B", "#C3CBC6"];
   return (
-    <div className="chart">
-      <p className="ctitle">{e.chartTitle}</p>
-      <svg viewBox="0 0 520 210" role="img" aria-label={e.label}>
+    <figure className="fig chart">
+      <figcaption data-fade="">
+        <span className="ctitle">{e.chartTitle}</span>
+        <span className="src">{e.source}</span>
+      </figcaption>
+      <svg viewBox="0 0 520 194" role="img" aria-label={e.label} data-fade="">
         {e.bars.map((b, k) => {
           const y = 46 + k * 70;
           const end = x(b.value);
@@ -125,18 +169,20 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
           ))}
         </g>
       </svg>
-    </div>
+    </figure>
   );
 }
 
 function Drawdown({ e }: { e: Evidence["drawdown"] }) {
   return (
-    <div className="chart">
-      <p className="ctitle">{e.chartTitle}</p>
-      <svg viewBox="0 0 520 200" role="img" aria-label={e.label}>
-        <line x1="0" y1="26" x2="520" y2="26" stroke="#5B6661" />
+    <figure className="fig chart">
+      <figcaption data-fade="">
+        <span className="ctitle">{e.chartTitle}</span>
+      </figcaption>
+      <svg viewBox="0 0 520 208" role="img" aria-label={e.label} data-fade="">
+        <line x1="0" y1="34" x2="520" y2="34" stroke="#5B6661" />
         <g className="ticks" fill="#9AA39E" fontSize="13">
-          <text x="0" y="16">
+          <text x="0" y="24">
             {e.zero}
           </text>
         </g>
@@ -144,20 +190,20 @@ function Drawdown({ e }: { e: Evidence["drawdown"] }) {
           className="bar"
           data-ax="y"
           x1="60"
-          y1="26"
+          y1="34"
           x2="60"
-          y2="178"
+          y2="186"
           stroke="#FFA62B"
           strokeWidth="5"
           strokeLinecap="round"
-          style={{ transformOrigin: "60px 26px" }}
+          style={{ transformOrigin: "60px 34px" }}
         />
-        <circle cx="60" cy="178" r="7" fill="#FFA62B" />
-        <text className="tb" x="76" y="186" fill="#FFA62B" fontSize="30">
+        <circle cx="60" cy="186" r="7" fill="#FFA62B" />
+        <text className="tb" x="76" y="194" fill="#FFA62B" fontSize="30">
           {e.value}
         </text>
       </svg>
-    </div>
+    </figure>
   );
 }
 
@@ -167,17 +213,57 @@ export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boole
   /** Bumped by every click, so a reopened claim replays its bars too. */
   const [clicks, setClicks] = useState(0);
   const root = useRef<HTMLDivElement>(null);
+  /** The clicked claim and its viewport top before the click, held until the layout settles. */
+  const pinned = useRef<{ i: number; top: number } | null>(null);
 
   useEffect(() => {
     if (root.current) root.current.dataset.ready = "";
   }, []);
 
+  // The open figure dissolves as one unit on its way under the top bar (see the header note).
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(() => {
+        raf = 0;
+        fadeAtBar(root.current);
+      });
+    };
+    fadeAtBar(root.current);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   useLayoutEffect(() => {
     if (!clicks) return;
-    redraw(root.current?.querySelector<HTMLElement>(".ev.on") ?? null);
+    const el = root.current;
+    // Hold the clicked claim where it was: the figure that closed above it may have been taller.
+    const keep = () => {
+      const p = pinned.current;
+      const b = p && el?.querySelectorAll<HTMLElement>("button.claim")[p.i];
+      if (!p || !b) return;
+      const d = b.getBoundingClientRect().top - p.top;
+      if (Math.abs(d) > 0.5) window.scrollTo({ top: window.scrollY + d, behavior: "instant" });
+    };
+    keep();
+    redraw(el?.querySelector<HTMLElement>(".ev.on") ?? null);
+    fadeAtBar(el);
+    // Once more on the next frame, in case the browser's own scroll anchoring moved the page too.
+    const raf = requestAnimationFrame(() => {
+      keep();
+      pinned.current = null;
+      fadeAtBar(el);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [clicks]);
 
-  const choose = (i: number) => {
+  const choose = (i: number, btn: HTMLElement) => {
+    pinned.current = { i, top: btn.getBoundingClientRect().top };
     setOpen(i);
     setOpened((o) => (o[i] ? o : o.map((v, k) => v || k === i)));
     setClicks((n) => n + 1);
@@ -185,18 +271,12 @@ export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boole
 
   const ev = copy.evidence;
   const body = (kind: Claim["evidenceKind"]) => {
-    if (kind === "sharpe")
-      return (
-        <>
-          <Sharpe e={ev.sharpe} />
-          <p className="src">{ev.sharpe.source}</p>
-        </>
-      );
+    if (kind === "sharpe") return <Sharpe e={ev.sharpe} />;
     if (kind === "drawdown") return <Drawdown e={ev.drawdown} />;
     const def = ev.identity.definition;
     return (
-      <>
-        <p className="ident">
+      <figure className="fig">
+        <p className="ident" data-fade="">
           {identity}
           <span className="def">
             {def.startsWith("b ") ? (
@@ -209,8 +289,8 @@ export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boole
             )}
           </span>
         </p>
-        <p>{ev.identity.body}</p>
-      </>
+        <figcaption className="note">{ev.identity.body}</figcaption>
+      </figure>
     );
   };
 
@@ -222,7 +302,7 @@ export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boole
           c={c}
           on={open === i}
           drawn={play || opened[i]}
-          onChoose={() => choose(i)}
+          onChoose={(btn) => choose(i, btn)}
         >
           {body(c.evidenceKind)}
         </ClaimRow>
@@ -241,7 +321,7 @@ function ClaimRow({
   c: Claim;
   on: boolean;
   drawn: boolean;
-  onChoose: () => void;
+  onChoose: (btn: HTMLElement) => void;
   children: ReactNode;
 }) {
   const btn = `cl-${c.id}`;
@@ -249,7 +329,7 @@ function ClaimRow({
   return (
     <>
       <h3 className="claim-h">
-        <button type="button" className="claim" id={btn} aria-expanded={on} aria-controls={region} onClick={onChoose}>
+        <button type="button" className="claim" id={btn} aria-expanded={on} aria-controls={region} onClick={(e) => onChoose(e.currentTarget)}>
           <small>{c.context}</small>
           <span className="ct">{highlight(c.text)}</span>
         </button>
