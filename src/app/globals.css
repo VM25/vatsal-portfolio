@@ -163,12 +163,15 @@ main:focus, .sec:focus { outline: none; }
 .ex .note { font-size: 14px; color: var(--fog-mid); max-width: 52ch; margin-top: 12px; }
 .viz { display: grid; gap: 12px; }
 .viz canvas { width: 100%; display: block; }
+/* CSS sets the drawn height, so the canvas never jumps when its backing store is sized. */
+#dwTree { height: 300px; }
+#dwChart { height: 230px; }
 .cap { font-size: 14px; color: var(--fog-mid); }
 .ctrls { display: grid; gap: 14px; }
 .ctrl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; }
 .ctrl label { font-size: 15px; color: #CDD4D0; }
 .ctrl output { font-family: var(--font-num); font-size: 15px; color: var(--fog-hi); }
-.ctrl input { grid-column: 1 / -1; width: 100%; height: 40px; accent-color: var(--sodium); margin: 0; }
+.ctrl input { grid-column: 1 / -1; width: 100%; height: 44px; accent-color: var(--sodium); margin: 0; }
 .read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid rgba(195,203,198,0.14); }
 .read div { min-width: 0; }
 .read b { display: block; font-family: var(--font-num); font-weight: 500; font-size: clamp(1.05rem, 3cqi, 1.5rem); color: var(--fog-hi); font-variant-numeric: tabular-nums; }
@@ -189,15 +192,22 @@ main:focus, .sec:focus { outline: none; }
 .figs b { display: block; font-family: var(--font-num); font-weight: 500; font-size: 22px; color: var(--fog-hi); }
 .figs span { font-size: 14px; color: var(--fog-mid); }
 .ex-links { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 6px; }
-.ex-links a { color: var(--sodium); min-height: 44px; display: inline-flex; align-items: center; }
-.left { display: grid; gap: 26px; }
-.ex-math .left { display: contents; }
-.ex-math .intro { order: 1; } .ex-math .ctrls { order: 2; } .ex-math .viz { order: 3; } .ex-math .read { order: 4; } .ex-math .formula { order: 5; } .ex-math .result { order: 6; }
+.ex-links a { color: var(--sodium); min-height: 44px; display: inline-flex; align-items: center; text-decoration: underline; text-underline-offset: 0.15em; }
+/*
+  DiffusionWorks: the blocks are in phone order in the source (intro, controls, visual,
+  readouts, formulas, result). Wide screens place them in two columns by grid area, as
+  the prototype's two stacks: intro, controls, readouts and result on the left; the
+  visual with the formulas straight under it on the right. The 1fr row absorbs the
+  difference in height between the visual and the left column, so neither stack gaps.
+*/
 @container site (min-width: 980px) {
-  .ex-math { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 56px; align-items: start; }
-  .ex.ex-math .left { grid-column: 1; grid-row: 1 / span 3; display: grid; gap: 28px; align-content: start; }
-  .ex-math .viz { grid-column: 2; grid-row: 1; }
-  .ex-math .formula { grid-column: 2; grid-row: 2; }
+  .ex-math { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "intro viz" "ctrls viz" "read viz" "read formula" "result formula"; column-gap: 56px; row-gap: 28px; align-items: start; }
+  .ex-math .intro { grid-area: intro; }
+  .ex-math .ctrls { grid-area: ctrls; }
+  .ex-math .read { grid-area: read; }
+  .ex-math .result { grid-area: result; }
+  .ex-math .viz { grid-area: viz; }
+  .ex-math .formula { grid-area: formula; }
 }
 
 /* the fast moment: market making */
