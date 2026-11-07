@@ -53,8 +53,11 @@ export const metadata: Metadata = {
     "derivatives",
     "Stevens Institute of Technology",
   ],
+  // The production address is the canonical one, on previews too.
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
+    url: "/",
     title: "Vatsal Maniar",
     description,
     siteName: "Vatsal Maniar",

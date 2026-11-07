@@ -281,3 +281,23 @@ Each item is either published as below, or changed after your answer. The source
 | d | DiffusionWorks: "resolved as wrong at 23 of 24 up-barrier cells" | "Wrong", the source's word (BARRIER-MONITORING-METHODOLOGY.md line 397). Spec §6.1 says "off (over-predicting)". | Wording: "wrong" or "off" |
 | e | Lending Decisions: "models marked Monitor" | "Marked Monitor", the README's verdict label. The prototype said "marked for monitoring". | Wording |
 | f | Spec §13 author calls | No phone number shown; metadata, Open Graph image and description rewritten to the copy rules; old sections, instruments and data deleted on this branch; fallback stills checked into `public/scene/`; the prototype's controls panel is not part of the site. | Each call |
+
+## 7. Production release (authorized in writing by Vatsal, 2026-11-07)
+
+**Pre-merge verification on `v2-clearing`:**
+- `tsc` clean, `eslint` clean.
+- vitest 49/49.
+- `next build` passes; every route is static.
+- Playwright on Chromium and WebKit: 348 passed, 4 skipped (Chromium-only checks), 0 failed.
+- Firefox is pending; it cannot launch in the build sandbox. Vatsal completed the real-device checks.
+
+**Release-only change.** A canonical link and `og:url` now point to https://maniar-portfolio.netlify.app. V1 had neither. There is no visible change.
+
+**Production configuration:**
+- The `maniar-portfolio` project (site `29f2bbb5-b290-41a6-9dd3-e848321f757c`) builds from GitHub `main` through Netlify CI with `npm run build` and the Next.js runtime.
+- It has no environment variables, so `CLEARING_NOINDEX` is unset and production renders `index, follow`.
+- robots.txt allows crawling and points to the production sitemap.
+
+**V1 preserved:**
+- Git tag `v1-final` at `c99b13a`, pushed to GitHub.
+- Netlify production deploy `6aee4adcdba4fc908b4d3ee0`, published 2026-11-06 21:47:49 UTC, stays in the deploy history as a rollback point.
