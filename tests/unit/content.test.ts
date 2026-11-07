@@ -154,6 +154,29 @@ describe("content", () => {
     expect(research.ask).toMatch(/and measures why the hedge failed\.$/);
   });
 
+  it("keeps the adverse-selection wording non-absolute and connects the Allocation result (refinement R6)", () => {
+    const { liquidity, rail } = projectsMod.projects;
+    expect(liquidity.question).toContain("and tends to lose when the trader on the other side knows where the price is going.");
+    expect(liquidity.question).not.toMatch(/every time/i);
+    expect(liquidity.caption).toBe(
+      "A stylized view of adverse selection: a market maker quotes one tick either side of a price that moves two ticks per trade; 55% of trades come from informed flow (amber).",
+    );
+    const alloc = rail.find((p) => p.title === "Allocation Study")!;
+    expect(alloc.result).toContain(
+      "Over 2007–2026, with costs and limits, the regime-aware rule did not beat a static 60/40 on a risk-adjusted basis: Sharpe 0.48 against 0.66, as reported in the research memo.",
+    );
+    // The same figures as the Research claim, which the spec's register sources.
+    const claim = researchMod.research.claims[0].text;
+    expect(claim).toContain("Sharpe 0.48 vs 0.66");
+    const sources = readFileSync("docs/superpowers/specs/clearing-sources.md", "utf8");
+    expect(sources).toContain("Sharpe 0.48 against 0.66");
+  });
+
+  it("has a footer of the name only: no location in the profile (refinement R6)", () => {
+    expect(profileMod.profile).not.toHaveProperty("location");
+    for (const { s } of all) expect(s, s).not.toContain("across from Manhattan");
+  });
+
   it("has six rail projects with three figures each", () => {
     const { rail } = projectsMod.projects;
     expect(rail).toHaveLength(6);

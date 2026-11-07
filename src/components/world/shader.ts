@@ -9,6 +9,11 @@
   - facades, pier and rail stay near night-dark, and fewer windows go out;
   - a lit window fades out over a short band instead of switching off at a threshold,
     so nothing steps as dawn rises.
+  And, in refinement R6, the foreground below the railing (y < uPier) is a boardwalk deck,
+  not one flat colour: boards running along the waterfront, foreshortened (about four
+  across, narrower toward the rail), staggered end joints that pan with the rail, a tone
+  per board and grain along it, a lit lip under the rail posts, and the lamp's and the
+  dawn's warm spill. The flat slab was the strip at the bottom of every chapter.
   Uniform names equal the keys sceneState() returns; tests/unit/shader.test.ts
   holds them together.
 */
@@ -64,7 +69,18 @@ export const FRAGMENT_SRC = [
   "  float pxp=mod(t*0.022,asp+0.5)-0.25; float pyp=hz+0.40+0.025*sin(pxp*2.);",
   "  float pl=length(vec2(x-pxp,y-pyp)); float blink=step(0.82,fract(t*0.9));",
   "  col+=uPlane*(vec3(1.)*exp(-pl*420.)*(0.5+1.6*blink)+vec3(1.,.25,.2)*exp(-length(vec2(x-pxp+0.006,y-pyp))*700.)*0.9);",
-  "  if(y<uPier){ col=mix(vec3(0.012,0.014,0.015),vec3(.04,.032,.026),uDawn); }",
+  "  if(y<uPier){ float d=clamp((uPier-y)/uPier,0.,1.); float dk=d+1.;",
+  "    float z=8./dk; float bi=floor(z); float fz=fract(z); float bpx=uPier*uRes.y*dk*dk/8.;",
+  "    float seam=1.-smoothstep(.6,1.6,min(fz,1.-fz)*bpx);",
+  "    float wx=(x-asp*.5)/dk+uPar*1.4; float u=wx/.18+h1(bi)*3.1; float si=floor(u); float fu=fract(u);",
+  "    float joint=1.-smoothstep(.6,1.6,min(fu,1.-fu)*.18*dk*uRes.y);",
+  "    float tone=(.55+.9*hash(vec2(si,bi)))*(.65+.7*noise(vec2(wx*38.,z*6.)))*(.7+.6*noise(vec2(wx*9.,bi*3.7)));",
+  "    vec3 dc=mix(vec3(.034,.036,.037),vec3(.066,.05,.037),uDawn)*tone*mix(1.3,.95,d);",
+  "    dc+=vec3(.09,.05,.02)*uDawn*(1.-d*.6);",
+  "    dc+=vec3(1.,.64,.2)*exp(-pow((x-uLampX)/(.06+.22*d),2.))*(1.-d*.5)*.04*uLamp*(1.-uDawn*.97);",
+  "    dc*=1.-.55*max(seam,joint);",
+  "    dc+=vec3(.035,.038,.038)*exp(-(uPier-y)*uRes.y/1.2);",
+  "    col=dc; }",
   "  float rail=smoothstep(0.0025,0.0,abs(y-(uPier+0.05)))+step(y,uPier+0.05)*step(uPier,y)*step(fract((x+uPar*1.4)*8.),0.03);",
   "  col=mix(col,mix(vec3(0.008),vec3(.03,.024,.018),uDawn),clamp(rail,0.,1.)*0.95);",
   "  vec2 vq=uv-0.5; col*=1.-dot(vq,vq)*0.5;",

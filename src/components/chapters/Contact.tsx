@@ -3,19 +3,24 @@ import { profile } from "@/data/profile";
 
 const handle = (url: string) => url.replace(/\/$/, "").split("/").pop() ?? url;
 
-/** Contact (#contact). Its key is where its anchor lands: on most layouts, the end of the page. */
+/**
+ * Contact (#contact). Its key is where its anchor lands: on most layouts, the end of the page.
+ * The footer is the page's last element: the document ends at its bottom (see .contact in globals.css).
+ */
 export function Contact() {
   const { links } = profile;
   return (
     <section id="contact" className="sec contact g" data-sec="contact" tabIndex={-1} aria-labelledby="contact-h">
       <div className="veil" />
-      <div className="inner" style={{ width: "100%" }}>
+      <div className="inner body" style={{ width: "100%" }}>
         <h2 id="contact-h">Let&apos;s talk</h2>
         <p className="st">{profile.status}</p>
         <div className="chan">
-          <div>
+          <div className="mail">
             <span className="k">Email</span>
-            <CopyEmail email={profile.email} />
+            <div className="v">
+              <CopyEmail email={profile.email} />
+            </div>
           </div>
           <div>
             <span className="k">LinkedIn</span>
@@ -42,8 +47,10 @@ export function Contact() {
             <span />
           </div>
         </div>
-        <p className="foot">© 2026 · {profile.location}</p>
       </div>
+      <footer className="inner foot" style={{ width: "100%" }}>
+        <p>© 2026 {profile.name}</p>
+      </footer>
     </section>
   );
 }

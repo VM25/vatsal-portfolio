@@ -62,6 +62,24 @@ test.describe("copy guard", () => {
     });
   }
 
+  test("Liquidity's adverse-selection lines are not absolute, and Allocation shows its result (refinement R6)", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute("data-hydrated", /.*/);
+    const liq = page.locator("#liquidity");
+    await expect(liq).toContainText("and tends to lose when the trader on the other side knows where the price is going.");
+    await expect(liq).not.toContainText("every time");
+    await expect(liq.locator(".mm-stage .cap")).toHaveText(
+      "A stylized view of adverse selection: a market maker quotes one tick either side of a price that moves two ticks per trade; 55% of trades come from informed flow (amber).",
+    );
+    await expect(page.locator("#more .rail[data-ready]")).toHaveCount(1);
+    await page.locator("#more-tab-4").click();
+    await expect(page.locator("#more-tab-4")).toHaveText(/Allocation Study/);
+    await expect(page.locator("#more-stage")).toContainText(
+      "Over 2007–2026, with costs and limits, the regime-aware rule did not beat a static 60/40 on a risk-adjusted basis: Sharpe 0.48 against 0.66",
+    );
+  });
+
   test("the guard catches the old lines it replaced", () => {
     for (const old of [
       "Try the simplest case: a binomial tree closing in on Black–Scholes.",

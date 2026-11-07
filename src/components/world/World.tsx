@@ -235,6 +235,12 @@ export function World() {
     };
     resize();
     window.addEventListener("resize", resize);
+    // The layer's own size, observed: ResizeObserver runs after layout and before paint
+    // in the same frame, so the backing store and its repaint follow the layer on the
+    // frame it changes. WebKit can dispatch the window's resize event a frame after its
+    // layout changed, which would show one frame of the old picture stretched (R6).
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => resize()) : null;
+    ro?.observe(bg);
 
     const onPointer = (e: PointerEvent) => {
       mx = e.clientX / window.innerWidth - 0.5;
@@ -247,6 +253,7 @@ export function World() {
       return () => {
         canvas.removeEventListener("webglcontextlost", onContextLost);
         window.removeEventListener("resize", resize);
+        ro?.disconnect();
         window.removeEventListener("pointermove", onPointer);
       };
     }
@@ -319,6 +326,7 @@ export function World() {
       cancelAnimationFrame(raf);
       canvas.removeEventListener("webglcontextlost", onContextLost);
       window.removeEventListener("resize", resize);
+      ro?.disconnect();
       window.removeEventListener("pointermove", onPointer);
       document.removeEventListener("visibilitychange", onVisibility);
     };

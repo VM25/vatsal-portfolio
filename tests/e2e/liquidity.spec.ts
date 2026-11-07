@@ -175,7 +175,8 @@ test.describe("Liquidity Paradox exhibit", () => {
     const cap = ex(page).locator(".mm-stage .cap");
     // One line on the mechanism (refinement R2); the study's figures are in the cut.
     await expect(cap).toHaveText(projects.liquidity.caption);
-    await expect(cap).toContainText("How adverse selection works");
+    await expect(cap).toContainText("A stylized view of adverse selection");
+    await expect(cap).not.toContainText("How adverse selection works");
     await expect(page.locator("#mmEq")).toContainText("−");
     const c = page.locator("#mmCanvas");
     await expect(c).toHaveAttribute("role", "img");

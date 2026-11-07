@@ -1,6 +1,5 @@
 export const profile = {
   name: "Vatsal Maniar",
-  location: "Jersey City, across from Manhattan",
   lede: "Financial engineer. I build models for markets, risk, and portfolios.",
   availability: "Graduating December 2026 · open to full-time quantitative roles",
   status:

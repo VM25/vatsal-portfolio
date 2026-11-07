@@ -55,6 +55,7 @@ The repository paths are Vatsal's project repos (README and docs files). "Kept" 
 | 13 assets; equal weight, minimum variance, maximum Sharpe, SPY, 60/40; 5 bps costs; 35% per-asset cap; crisis windows 2008–09, 2020, 2022 | README, "What this is" | Kept |
 | 2007–2026 sample | The data starts April 2007; the end follows the §9 register | Kept |
 | "3 crises analysed" | "Three dedicated crisis windows" | Label changed to "crisis windows" |
+| Result (R6): "Over 2007–2026, with costs and limits, the regime-aware rule did not beat a static 60/40 on a risk-adjusted basis: Sharpe 0.48 against 0.66, as reported in the research memo." | Spec §9, the same register lines as the Research claim: `FE800/Writing Sample/Writing_Sample_Final/writing_sample.tex`, abstract (lines 58–61), and the prospectus's "Completed prior work" (13 assets, 2007–2026, costs and limits) | Added in R6, in the stage's result text. No new figure: the stage keeps its three (13 assets, 2007–2026, 3 crisis windows) |
 
 ## ApexGP (ApexGP/README.md and docs/v2/README.md)
 
@@ -112,3 +113,13 @@ The facts are unchanged. Only the wording moved, and each line still traces to t
 | Research, limit line | "Measurement and attribution, not prediction or causal identification." | removed at Vatsal's request; the register row is marked removed | Spec §9 |
 | Research, question | "… and then measures why the hedge failed. Three findings, each with its evidence:" | "… and measures why the hedge failed." | Writing sample abstract |
 | Hero | the reflection caption ("averages n = … ripples; wobble shrinks like σ/√n") | removed; the shader still averages 512 ripples | Spec §5.3 |
+
+## Refinement R6 (2026-11-07): non-absolute wording, the Allocation result, the footer
+
+| Where | Old | New | Source |
+|---|---|---|---|
+| Liquidity question | "… and loses every time the trader on the other side knows where the price is going." | "… and tends to lose when the trader on the other side knows where the price is going." | No figure. Made non-absolute at Vatsal's review: "every time" overstated the mechanism |
+| Liquidity animation caption | "How adverse selection works: a market maker quotes one tick either side of a price that moves two ticks per trade, and 55% of trades come from informed flow (amber)." | "A stylized view of adverse selection: a market maker quotes one tick either side of a price that moves two ticks per trade; 55% of trades come from informed flow (amber)." | The toy's own parameters, `src/lib/mmToy.ts` (HALF = 1, MOVE = 2, ALPHA = 0.55); spec §6.2. The toy is one stylized case, not the definitive mechanism |
+| Liquidity, rest of the exhibit | Checked for absolutes ("always", "every time", "never", "entirely") | Unchanged: "positive in each" (5 of 5 held-out sessions) is the finding as the register states it | Spec §9 |
+| Allocation Study result | Setup only | Adds the result sentence above | Allocation row above; spec §9 |
+| Footer | "© 2026 · Jersey City, across from Manhattan" | "© 2026 Vatsal Maniar" | `profile.location` removed (its only use). The Open Graph image keeps its own place line, unchanged |

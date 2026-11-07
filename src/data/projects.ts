@@ -77,7 +77,7 @@ const liquidity = {
   field: "Market making",
   title: "The Liquidity Paradox",
   question:
-    "A market maker earns the gap between its buy and sell quotes, and loses every time the trader on the other side knows where the price is going. Can a five-second forecast tip that balance?",
+    "A market maker earns the gap between its buy and sell quotes, and tends to lose when the trader on the other side knows where the price is going. Can a five-second forecast tip that balance?",
   canvasLabel: "A simulated market maker's quotes and fills, speeding up",
   counters: {
     trades: "trades",
@@ -87,7 +87,7 @@ const liquidity = {
     net: "net, in ticks",
   },
   caption:
-    "How adverse selection works: a market maker quotes one tick either side of a price that moves two ticks per trade, and 55% of trades come from informed flow (amber).",
+    "A stylized view of adverse selection: a market maker quotes one tick either side of a price that moves two ticks per trade; 55% of trades come from informed flow (amber).",
   replay: "Replay",
   /** Drawn on the canvas beside the quote rails. */
   rails: { ask: "ask", bid: "bid" },
@@ -177,7 +177,7 @@ const rail: RailProject[] = [
     question:
       "Can a portfolio adapt when stocks and Treasuries fall together, and does adapting actually help?",
     result:
-      "A regime-aware allocation across 13 assets, tested against equal weight, minimum variance, maximum Sharpe, SPY and a static 60/40, with transaction costs, position limits and crisis analysis for 2008, 2020 and 2022.",
+      "A regime-aware allocation across 13 assets, tested against equal weight, minimum variance, maximum Sharpe, SPY and a static 60/40, with transaction costs, position limits and crisis analysis for 2008, 2020 and 2022. Over 2007–2026, with costs and limits, the regime-aware rule did not beat a static 60/40 on a risk-adjusted basis: Sharpe 0.48 against 0.66, as reported in the research memo.",
     figures: [
       ["13", "assets"],
       ["2007–2026", "sample"],
