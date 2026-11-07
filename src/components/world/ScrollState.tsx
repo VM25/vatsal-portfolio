@@ -59,6 +59,7 @@ type Actions = Pick<ScrollState, "requestBeat" | "setRush">;
 const StateCtx = createContext<StateValue | null>(null);
 const ActionsCtx = createContext<Actions | null>(null);
 const BusCtx = createContext<SceneBusApi | null>(null);
+const ChapterCtx = createContext<Chapter | null>(null);
 
 const RM_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -254,7 +255,9 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
   return (
     <BusCtx.Provider value={api}>
       <ActionsCtx.Provider value={actions}>
-        <StateCtx.Provider value={state}>{children}</StateCtx.Provider>
+        <ChapterCtx.Provider value={chapter}>
+          <StateCtx.Provider value={state}>{children}</StateCtx.Provider>
+        </ChapterCtx.Provider>
       </ActionsCtx.Provider>
     </BusCtx.Provider>
   );
@@ -265,6 +268,16 @@ export function useScrollState(): ScrollState {
   const actions = useContext(ActionsCtx);
   if (!state || !actions) throw new Error("useScrollState must be used inside <ScrollStateProvider>");
   return { ...state, ...actions };
+}
+
+/**
+ * Only the active chapter. A string, so a consumer re-renders when the chapter
+ * changes and not on every scroll (the top bar uses this for aria-current).
+ */
+export function useChapter(): Chapter {
+  const chapter = useContext(ChapterCtx);
+  if (!chapter) throw new Error("useChapter must be used inside <ScrollStateProvider>");
+  return chapter;
 }
 
 /**

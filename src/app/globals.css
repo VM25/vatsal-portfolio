@@ -104,10 +104,22 @@ html.morning .top .res { color: #8A5000; }
 .menu-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px 0 12px; font-size: 15px; }
 .menu-btn .bars { display: grid; gap: 4px; }
 .menu-btn .bars i { display: block; width: 18px; height: 1.5px; background: currentColor; }
+/*
+  html has scroll-padding-top so focused content and anchor jumps clear this
+  bar. The bar's own controls must not count as "under" it, or focusing one
+  (a Tab press, or the Menu button) scrolls the page up to make room.
+*/
+.top :is(a, button) { scroll-margin-top: -80px; }
+/* The sodium ring is for the dark bar; on the pale morning bar it would be under 2:1. */
+html.morning .top :focus-visible:not(.skip) { outline-color: var(--ink); }
+/* Skip link: off-screen until it takes focus, then a solid pill with a 3:1 ring. */
+.top .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.top .skip:focus { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 8px); left: max(12px, env(safe-area-inset-left, 0px)); display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: var(--ink); color: var(--fog-hi); font-size: 15px; text-decoration: none; outline: 3px solid var(--sodium); outline-offset: 2px; }
+main:focus { outline: none; }
 @container site (min-width: 760px) { .top .links, .top .clock { display: flex; } .top .res { display: inline-flex; } .menu-btn { display: none; } }
 
 /* mobile menu sheet */
-.sheet { position: fixed; inset: 0; z-index: 40; display: grid; align-content: start; gap: 4px; padding: calc(env(safe-area-inset-top, 0px) + 12px) max(20px, env(safe-area-inset-right, 0px)) 30px max(20px, env(safe-area-inset-left, 0px)); background: #080C0D; color: var(--fog-hi); overflow-y: auto; }
+.sheet { position: fixed; inset: 0; z-index: 40; display: grid; align-content: start; gap: 4px; padding: calc(env(safe-area-inset-top, 0px) + 12px) max(20px, env(safe-area-inset-right, 0px)) 30px max(20px, env(safe-area-inset-left, 0px)); background: #080C0D; color: var(--fog-hi); overflow-y: auto; overscroll-behavior: contain; }
 .sheet[hidden] { display: none; }
 .sheet .row1 { display: flex; justify-content: space-between; align-items: center; min-height: 48px; margin-bottom: 18px; }
 .sheet .row1 span { font-size: 14px; color: var(--fog-mid); }
