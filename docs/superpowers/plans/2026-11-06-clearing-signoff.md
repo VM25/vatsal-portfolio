@@ -340,3 +340,21 @@ Each item is either published as below, or changed after your answer. The source
   1. **React hydration error #418 on every production load.** Netlify injects an HTML comment into `<head>` on published production deploys ("This site is hosted on Netlify … utm_source=ai-legible"), on every site in the account. React finds a node it did not render, logs #418 and re-renders the page on the client. The preview alias and local builds don't get the comment and show no error. The page renders and every functional check passes. There is no code cause, and Netlify documents no setting to disable it. Raising it with Netlify support is the clean fix.
   2. **SSRN link:** SSRN answers automated browsers with 403 "Content Blocked", so this link can't be verified automatically. It is the same URL V1 used.
   3. **Firefox** was not run in the build sandbox. Vatsal's real-device checks cover the rest.
+
+## 9. Post-release: self-hosted fonts (2026-11-07)
+
+At Vatsal's request, Geist, Geist Mono and STIX Two Text are bundled in `src/app/fonts` and loaded with `next/font/local`, so builds no longer download from Google Fonts.
+
+**The fonts:**
+- Each family's variable font, limited to the weights the site already used (Geist 200–500; Geist Mono and STIX 400–500).
+- Subset to Latin, Latin Extended, Greek, punctuation and math. Geist omits arrows, so ↗ uses the system font as before.
+- Total 288 KB. Licences: SIL OFL 1.1, included.
+
+**Release:** commits `846158e` and `41f0621`, fast-forwarded to `main`. Netlify production deploy `6aef9ed495e27733af382205` was published 2026-11-07T21:58:11Z. The first build succeeded with the cache restored.
+
+**Verified on the live site:**
+- Chromium and WebKit load fonts only from maniar-portfolio.netlify.app, with no Google requests.
+- All 413 text elements at 1440 and 390 lay out identically to the approved preview, within 0.5px.
+- `index, follow` is unchanged.
+- Builds pass clean and over an existing `.next`.
+- Unit tests: 49/49. Browser suite: 348 passed, 0 failed.
