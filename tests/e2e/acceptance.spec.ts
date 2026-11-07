@@ -66,6 +66,8 @@ test.describe("acceptance", () => {
     { width: 375, height: 812 },
   ]) {
     test(`(a) pacing: no band over 40% of the viewport without content, every 60px, at ${vp.width}x${vp.height}`, async ({ page }) => {
+      // Two full-page scroll sweeps; under full-suite load they can exceed the 30 s default.
+      test.setTimeout(90_000);
       await page.setViewportSize(vp);
       await settled(page);
       const t = await measurePacing(page, "top", "contact", 20, false, 60);
