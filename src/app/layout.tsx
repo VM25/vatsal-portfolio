@@ -1,35 +1,30 @@
-import type { Metadata } from "next";
-import { Big_Shoulders, B612, B612_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono, STIX_Two_Text } from "next/font/google";
 import "./globals.css";
 
-// Chapter titles and the name. Extremely condensed and very tall — at
-// full-screen sizes it reads as architecture rather than as text.
-const display = Big_Shoulders({
+// Display and UI: 200 for the name and titles, 300 for the lede, 400 for UI.
+const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--ff-geist",
   display: "swap",
 });
 
-// Reading text. Drawn by Airbus for cockpit displays, so it was designed to
-// stay legible on a lit surface that is moving — which is this whole page.
-const body = B612({
+// Only for numbers the page computes or counts.
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  variable: "--ff-geist-mono",
+  display: "swap",
+});
+
+// Research prose and all mathematics.
+const stix = STIX_Two_Text({
+  subsets: ["latin"],
   style: ["normal", "italic"],
-  variable: "--font-body",
+  variable: "--ff-stix",
   display: "swap",
 });
 
-// Readouts, coordinates, figures.
-const mono = B612_Mono({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-mono",
-  display: "swap",
-});
-
-const description =
-  "Vatsal Maniar builds systems that measure risk — across interest rates, currencies, credit and portfolios.";
+const description = "Financial engineer in Jersey City. Models for markets, risk and portfolios.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://maniar-portfolio.netlify.app"),
@@ -53,14 +48,15 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export const viewport: Viewport = {
+  themeColor: "#0B1214",
+  colorScheme: "dark",
+  viewportFit: "cover",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
-    >
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${stix.variable}`}>
       <body>{children}</body>
     </html>
   );

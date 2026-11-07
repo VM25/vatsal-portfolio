@@ -1,0 +1,270 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { CHAPTERS, KEYS, clockAt, isMorning, type Chapter } from "@/lib/scene";
+
+/*
+  Scroll state for the whole page: progress p (0 at the top, 1 at the bottom),
+  the active chapter, the chapter key positions measured from the live layout,
+  and the OS reduced-motion setting.
+
+  Static labels rendered by server components are kept current imperatively, as
+  the prototype does: every [data-clock] shows clockAt(p), every [data-time]
+  inside a chapter has its leading time replaced by that chapter's key time, and
+  every [data-tsec="chapter"] shows the key time without "a.m.". <html> carries
+  .morning, .rm and data-beats (the count of requestBeat calls).
+*/
+
+export type ScrollState = {
+  p: number;
+  chapter: Chapter;
+  keys: number[];
+  reducedMotion: boolean;
+  requestBeat(): void;
+  setRush(v: number): void;
+};
+
+/** Mutable values the scene reads every frame without re-rendering React. */
+export type SceneBus = {
+  p: number;
+  keys: number[];
+  rush: number;
+  flash: number;
+  gust: number;
+  dirty: boolean;
+  reducedMotion: boolean;
+};
+
+/** What World gets: read the values, and the two writes a frame needs. */
+export type SceneBusApi = {
+  read(): Readonly<SceneBus>;
+  markDirty(): void;
+  /** Once per drawn frame: fade the flash and gust a step, clear dirty. */
+  frameDone(): void;
+};
+
+type StateValue = Pick<ScrollState, "p" | "chapter" | "keys" | "reducedMotion">;
+type Actions = Pick<ScrollState, "requestBeat" | "setRush">;
+
+const StateCtx = createContext<StateValue | null>(null);
+const ActionsCtx = createContext<Actions | null>(null);
+const BusCtx = createContext<SceneBusApi | null>(null);
+
+const RM_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeRM(cb: () => void) {
+  const mq = window.matchMedia(RM_QUERY);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+const getRM = () => window.matchMedia(RM_QUERY).matches;
+const getRMServer = () => false;
+
+function progress(): number {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+}
+
+/** Key positions come from where each chapter actually sits on the page. */
+function measureKeys(prev: number[]): number[] {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  if (max <= 0) return prev;
+  const ks = CHAPTERS.map((id, i) => {
+    if (i === 0) return 0;
+    if (i === CHAPTERS.length - 1) return 1;
+    const s = document.querySelector<HTMLElement>(`[data-sec="${id}"]`);
+    if (!s) return prev[i];
+    const top = s.getBoundingClientRect().top + window.scrollY;
+    return Math.min(0.97, Math.max(0.03, (top - window.innerHeight * 0.25) / max));
+  });
+  for (let i = 1; i < ks.length; i++) if (ks[i] <= ks[i - 1]) ks[i] = ks[i - 1] + 0.01;
+  return ks;
+}
+
+function sameKeys(a: number[], b: number[]) {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+function relabel(keys: number[]) {
+  document.querySelectorAll<HTMLElement>("[data-time]").forEach((e) => {
+    const sec = e.closest<HTMLElement>("[data-sec]");
+    const i = sec ? CHAPTERS.indexOf(sec.dataset.sec as Chapter) : -1;
+    if (i < 0) return;
+    const next = (e.textContent ?? "").replace(/^\d+:\d\d a\.m\./, clockAt(keys[i]));
+    if (next !== e.textContent) e.textContent = next;
+  });
+  document.querySelectorAll<HTMLElement>("[data-tsec]").forEach((e) => {
+    const i = CHAPTERS.indexOf(e.dataset.tsec as Chapter);
+    if (i < 0) return;
+    const next = clockAt(keys[i]).replace(" a.m.", "");
+    if (next !== e.textContent) e.textContent = next;
+  });
+}
+
+export function ScrollStateProvider({ children }: { children: ReactNode }) {
+  const [p, setP] = useState(0);
+  const [chapter, setChapter] = useState<Chapter>("home");
+  const [keys, setKeys] = useState<number[]>(KEYS);
+  const reducedMotion = useSyncExternalStore(subscribeRM, getRM, getRMServer);
+
+  const bus = useRef<SceneBus>({
+    p: 0,
+    keys: KEYS,
+    rush: 0,
+    flash: 0,
+    gust: 0,
+    dirty: true,
+    reducedMotion: false,
+  });
+  const beats = useRef(0);
+
+  // Reduced motion: a class for CSS, a flag for the scene.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("rm", reducedMotion);
+    bus.current.reducedMotion = reducedMotion;
+    bus.current.dirty = true;
+    if (reducedMotion) {
+      bus.current.flash = 0;
+      bus.current.gust = 0;
+    }
+  }, [reducedMotion]);
+
+  // Scroll, measurement and labels.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-beats", String(beats.current));
+    let lastClock = "";
+
+    const onScroll = () => {
+      const np = progress();
+      bus.current.p = np;
+      bus.current.dirty = true;
+      const c = clockAt(np);
+      if (c !== lastClock) {
+        lastClock = c;
+        document.querySelectorAll<HTMLElement>("[data-clock]").forEach((e) => {
+          if (e.textContent !== c) e.textContent = c;
+        });
+      }
+      root.classList.toggle("morning", isMorning(np));
+      setP(np);
+    };
+
+    const measure = () => {
+      const ks = measureKeys(bus.current.keys);
+      if (!sameKeys(ks, bus.current.keys)) {
+        bus.current.keys = ks;
+        bus.current.dirty = true;
+        setKeys(ks);
+      }
+      relabel(bus.current.keys);
+    };
+
+    const refresh = () => {
+      measure();
+      onScroll();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", refresh);
+    window.addEventListener("load", refresh);
+    // Content below can change height (fonts, exhibits opening); keys follow it.
+    const ro = new ResizeObserver(refresh);
+    ro.observe(document.body);
+    let live = true;
+    document.fonts?.ready.then(() => {
+      if (live) refresh();
+    });
+    refresh();
+
+    return () => {
+      live = false;
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", refresh);
+      window.removeEventListener("load", refresh);
+      ro.disconnect();
+    };
+  }, []);
+
+  // Active chapter: the one crossing the band just above the middle of the viewport.
+  useEffect(() => {
+    let current: Chapter = "home";
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const id = (e.target as HTMLElement).dataset.sec as Chapter;
+          if (id === current) return;
+          current = id;
+          if (!bus.current.reducedMotion) bus.current.gust = 1;
+          setChapter(id);
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    document.querySelectorAll("[data-sec]").forEach((s) => io.observe(s));
+    return () => io.disconnect();
+  }, []);
+
+  const requestBeat = useCallback(() => {
+    beats.current += 1;
+    document.documentElement.setAttribute("data-beats", String(beats.current));
+    if (!bus.current.reducedMotion) bus.current.flash = 1;
+  }, []);
+
+  const setRush = useCallback((v: number) => {
+    bus.current.rush = Math.max(0, Math.min(1, v));
+    bus.current.dirty = true;
+  }, []);
+
+  const state = useMemo(() => ({ p, chapter, keys, reducedMotion }), [p, chapter, keys, reducedMotion]);
+  const actions = useMemo(() => ({ requestBeat, setRush }), [requestBeat, setRush]);
+  const api = useMemo<SceneBusApi>(
+    () => ({
+      read: () => bus.current,
+      markDirty: () => {
+        bus.current.dirty = true;
+      },
+      frameDone: () => {
+        const b = bus.current;
+        b.flash = Math.max(0, b.flash - 0.012);
+        b.gust = Math.max(0, b.gust - 0.02);
+        b.dirty = false;
+      },
+    }),
+    [],
+  );
+
+  return (
+    <BusCtx.Provider value={api}>
+      <ActionsCtx.Provider value={actions}>
+        <StateCtx.Provider value={state}>{children}</StateCtx.Provider>
+      </ActionsCtx.Provider>
+    </BusCtx.Provider>
+  );
+}
+
+export function useScrollState(): ScrollState {
+  const state = useContext(StateCtx);
+  const actions = useContext(ActionsCtx);
+  if (!state || !actions) throw new Error("useScrollState must be used inside <ScrollStateProvider>");
+  return { ...state, ...actions };
+}
+
+/** For World only: the per-frame values, read without re-rendering. */
+export function useSceneBus(): SceneBusApi {
+  const bus = useContext(BusCtx);
+  if (!bus) throw new Error("useSceneBus must be used inside <ScrollStateProvider>");
+  return bus;
+}
