@@ -4,7 +4,10 @@ import { NewTab } from "@/components/site/NewTab";
 
 const copy: ClaimsCopy = { claims: research.claims, evidence: research.evidence };
 
-/** Research (#research). */
+/**
+ * Research (#research). Refinement R7: the premise sits beside the paper (its title,
+ * question and SSRN link), then three findings, each a row with its figure.
+ */
 export function Research() {
   return (
     <section id="research" className="sec research g" data-sec="research" tabIndex={-1} aria-labelledby="research-h">
@@ -15,9 +18,11 @@ export function Research() {
         </div>
         <ResearchBeat
           premise={research.premise}
-          ask={
+          paper={
+            /* The paper's link ends its own description, as a citation would. */
             <p className="ask">
-              <i>{research.paperTitle}</i> {research.ask}
+              <i>{research.paperTitle}</i> {research.ask}{" "}
+              <NewTab href={research.links.ssrn.href}>{research.links.ssrn.label}</NewTab>
             </p>
           }
           copy={copy}
@@ -35,16 +40,6 @@ export function Research() {
             </>
           }
         />
-        <div className="now">
-          <b>{research.now.label}</b>
-          <p>{research.now.body}</p>
-        </div>
-        <div className="ex-links">
-          <NewTab href={research.links.ssrn.href}>{research.links.ssrn.label}</NewTab>
-          <NewTab href={research.links.prospectus.href} pdf>
-            {research.links.prospectus.label}
-          </NewTab>
-        </div>
       </div>
     </section>
   );

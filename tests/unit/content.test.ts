@@ -172,6 +172,29 @@ describe("content", () => {
     expect(sources).toContain("Sharpe 0.48 against 0.66");
   });
 
+  it("keeps Research to the paper, its findings and the SSRN link (refinement R7)", () => {
+    const { research } = researchMod;
+    expect(research).not.toHaveProperty("now");
+    expect(Object.keys(research.links)).toEqual(["ssrn"]);
+    for (const { s } of all) {
+      expect(s, s).not.toMatch(/prospectus/i);
+      expect(s, s).not.toContain("Now ·");
+    }
+    expect(research.ask).toContain("lagged, observable signals, realistic costs and position limits");
+    const body = research.evidence.identity.body;
+    expect(research.evidence.identity).not.toHaveProperty("definition");
+    expect(body).toContain("not a pure measure of expected inflation");
+    expect(body).toContain("inflation risk premium");
+    expect(body).toContain("TIPS liquidity effects");
+    expect(body.split(/[.!?](\s|$)/).filter((x) => x && x.trim())).toHaveLength(1);
+    // The figures the charts draw.
+    expect(research.evidence.sharpe.bars.map((b) => b.value)).toEqual([0.66, 0.48]);
+    expect(research.evidence.sharpe.scaleMax).toBe(0.8);
+    expect(research.evidence.drawdown.value).toBe("≈ −19%");
+    const sources = readFileSync("docs/superpowers/specs/clearing-sources.md", "utf8");
+    expect(sources).toContain(body);
+  });
+
   it("has a footer of the name only: no location in the profile (refinement R6)", () => {
     expect(profileMod.profile).not.toHaveProperty("location");
     for (const { s } of all) expect(s, s).not.toContain("across from Manhattan");

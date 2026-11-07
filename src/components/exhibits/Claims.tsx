@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { fixed } from "@/lib/format";
 import { useSceneActions } from "@/components/world/ScrollState";
 import type { Claim } from "@/data/research";
 
 /*
-  The research claims and their evidence, ported from the prototype.
+  The research findings and their evidence.
 
-  - Claims are buttons (aria-expanded, aria-controls); each evidence block is a
-    region labelled by its claim. One is open at a time; claim 1 is open by default.
-    The server renders that state, and under html.js the closed ones are hidden from
-    the first paint. Without JavaScript every claim shows its evidence (globals.css).
+  - Refinement R7: no accordion. Each finding is one row in normal flow: its context
+    line and the claim (a plain level-3 heading) and, beside it on wide screens or
+    directly under it on phones, its evidence as one <figure> with a <figcaption>.
+    All three show at once, with or without JavaScript, so the research reads without
+    operating anything. Nothing here is sticky or fixed.
   - The Sharpe bars and the 2022 drop animate with transform: scaleX / scaleY about
     origins given in viewBox units, with transform-box: view-box (never fill-box: it
     fails silently in Safari).
@@ -21,21 +22,18 @@ import type { Claim } from "@/data/research";
     full from the start. If the observer never fires, a geometry check on scroll and
     on short timers does its job, and bars that are on screen for a moment without the
     premise being in view are drawn anyway, so a bar never stays at zero.
+  - Scrolling (refinement R4, kept in R7): the pieces of a figure marked data-fade (a
+    chart's caption, the chart as a whole, the formula) dissolve as they rise toward
+    the sticky top bar and are fully transparent before the bar reaches them, so no
+    piece is ever seen cut by the bar while the rest of its figure shows. The figure
+    leaves top-down as one unbroken run, its chart last, straight before the next
+    finding. Only plain text that ends a figure (the identity's sentence) passes under
+    the bar as all other text does.
+  - Each chart's figcaption comes first: the title, then (Sharpe) the benchmark note, so
+    no part of the figure is left on its own under a dissolved chart.
 
-  - Layout (refinement R4): at every width the open claim's evidence is one <figure>
-    directly under its claim, nothing in another column or scroll layer, and nothing
-    sticky. Each figure reads top to bottom as caption (title, and the Sharpe note),
-    then the chart; the identity is the formula, then its explanation. The pieces
-    marked data-fade (the caption, the chart as a whole, the formula) dissolve as they
-    rise toward the sticky top bar and are fully transparent before the bar reaches
-    them, so no piece is ever seen cut by the bar while the rest of its figure shows,
-    and the chart always leaves last, straight before the next claim. Only plain text
-    that ends a figure (the identity's explanation) passes under the bar as text does.
-    Opening another claim keeps the clicked claim where it was on screen, however much
-    the figure above it shrinks.
-
-  Test hooks: .claims has data-ready once hydrated and data-play; each .ev has
-  data-drawn; ResearchBeat marks the premise data-beat-done once it has fired.
+  Test hooks: .claims has data-ready once hydrated and data-play; each figure (.ev)
+  has data-drawn; ResearchBeat marks the premise data-beat-done once it has fired.
 */
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
@@ -57,7 +55,7 @@ type Evidence = {
     source: string;
   };
   drawdown: { label: string; zero: string; chartTitle: string; value: string };
-  identity: { definition: string; body: string };
+  identity: { body: string };
 };
 
 export type ClaimsCopy = { claims: Claim[]; evidence: Evidence };
@@ -67,36 +65,19 @@ function highlight(text: string) {
   return text.split(/(\d+\.\d+|\d+%|real yields)/).map((part, i) => (i % 2 === 1 ? <b key={i}>{part}</b> : part));
 }
 
-/** Replay the bars of one evidence block from zero (the prototype's drawBars). */
-function redraw(ev: HTMLElement | null) {
-  if (!ev || window.matchMedia(REDUCED).matches) return;
-  const bars = [...ev.querySelectorAll<SVGElement>(".bar")];
-  if (!bars.length) return;
-  for (const b of bars) {
-    b.style.transition = "none";
-    b.style.transform = b.dataset.ax === "y" ? "scaleY(0)" : "scaleX(0)";
-  }
-  void ev.getBoundingClientRect();
-  window.setTimeout(() => {
-    for (const b of bars) {
-      b.style.transition = "";
-      b.style.transform = "";
-    }
-  }, 60);
+/** The variable b set in italic, as in the identity above it. */
+function italicB(text: string) {
+  return text.split(" b ").flatMap((part, i) => (i ? [" ", <i key={i}>b</i>, " ", part] : [part]));
 }
 
 /**
- * Opacity of each piece of the open figure from its distance to the sticky top bar:
- * full until its top is FADE_GAP + FADE_PX below the bar's bottom edge, zero from
- * FADE_GAP below it, so a piece is gone before the bar covers any part of it. Pieces
- * of closed figures are reset, so a reopened one starts from its own position.
+ * Opacity of each figure piece from its distance to the sticky top bar: full until its
+ * top is FADE_GAP + FADE_PX below the bar's bottom edge, zero from FADE_GAP below it,
+ * so a piece is gone before the bar covers any part of it.
  */
 function fadeAtBar(root: HTMLElement | null) {
   if (!root) return;
-  for (const f of root.querySelectorAll<HTMLElement | SVGElement>(".ev:not(.on) [data-fade][style]")) {
-    f.style.opacity = "";
-  }
-  const pieces = root.querySelectorAll<HTMLElement | SVGElement>(".ev.on [data-fade]");
+  const pieces = root.querySelectorAll<HTMLElement | SVGElement>("[data-fade]");
   if (!pieces.length) return;
   const bar = document.querySelector("header.top")?.getBoundingClientRect().bottom ?? 0;
   for (const f of pieces) {
@@ -108,28 +89,26 @@ function fadeAtBar(root: HTMLElement | null) {
 
 /*
   The chart titles are HTML captions above the SVG, not SVG text: at 320px a title on one
-  line inside the scaled viewBox cannot render at 14px. Everything below the title keeps
-  the prototype's geometry, moved up by the title's band (30 units for the bars, 24 for the
-  drop), with every transform origin given in those same viewBox units. Refinement R4 set
-  the caption (title, then the Sharpe note) as the figure's figcaption over the chart, and
-  sized each viewBox so every label's text box stays inside it at every width (the SVG
-  clips at its edge): the bars' viewBox ends at 194, below the ticks; the drop sits
-  8 units lower in a 208-unit box, its length unchanged.
+  line inside the scaled viewBox cannot render at 14px. Refinement R7 made both charts
+  shorter so a figure is about as tall as its finding: the Sharpe rows sit 54 units apart
+  (were 70) in a 520 x 156 box (was 194); the drop is 60 units long (was 152) in a
+  520 x 116 box (was 208). Every label's text box stays inside the viewBox at every width
+  (the SVG clips at its edge), and every transform origin is in viewBox units.
 */
-function Sharpe({ e }: { e: Evidence["sharpe"] }) {
+function Sharpe({ e, drawn }: { e: Evidence["sharpe"]; drawn: boolean }) {
   const x = (v: number) => (v / e.scaleMax) * SCALE_W;
   const ticks: number[] = [];
   for (let t = 0; t <= e.scaleMax + 1e-9; t += 0.2) ticks.push(Math.round(t * 10) / 10);
   const colors = ["#FFA62B", "#C3CBC6"];
   return (
-    <figure className="fig chart">
+    <figure className="ev chart" id="ev-sharpe" data-drawn={String(drawn)}>
       <figcaption data-fade="">
         <span className="ctitle">{e.chartTitle}</span>
         <span className="src">{e.source}</span>
       </figcaption>
-      <svg viewBox="0 0 520 194" role="img" aria-label={e.label} data-fade="">
+      <svg viewBox="0 0 520 156" role="img" aria-label={e.label} data-fade="">
         {e.bars.map((b, k) => {
-          const y = 46 + k * 70;
+          const y = 46 + k * 54;
           const end = x(b.value);
           const c = colors[k % colors.length];
           return (
@@ -155,13 +134,13 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
             </g>
           );
         })}
-        <line x1="0" y1="160" x2={SCALE_W} y2="160" stroke="#5B6661" />
+        <line x1="0" y1="122" x2={SCALE_W} y2="122" stroke="#5B6661" />
         <g className="ticks" fill="#9AA39E" fontSize="13">
           {ticks.map((t, i) => (
             <text
               key={t}
               x={x(t)}
-              y="182"
+              y="144"
               textAnchor={i === 0 ? undefined : i === ticks.length - 1 ? "end" : "middle"}
             >
               {t === 0 ? "0" : fixed(t, 1)}
@@ -173,13 +152,13 @@ function Sharpe({ e }: { e: Evidence["sharpe"] }) {
   );
 }
 
-function Drawdown({ e }: { e: Evidence["drawdown"] }) {
+function Drawdown({ e, drawn }: { e: Evidence["drawdown"]; drawn: boolean }) {
   return (
-    <figure className="fig chart">
+    <figure className="ev chart" id="ev-drawdown" data-drawn={String(drawn)}>
       <figcaption data-fade="">
         <span className="ctitle">{e.chartTitle}</span>
       </figcaption>
-      <svg viewBox="0 0 520 208" role="img" aria-label={e.label} data-fade="">
+      <svg viewBox="0 0 520 116" role="img" aria-label={e.label} data-fade="">
         <line x1="0" y1="34" x2="520" y2="34" stroke="#5B6661" />
         <g className="ticks" fill="#9AA39E" fontSize="13">
           <text x="0" y="24">
@@ -192,14 +171,14 @@ function Drawdown({ e }: { e: Evidence["drawdown"] }) {
           x1="60"
           y1="34"
           x2="60"
-          y2="186"
+          y2="94"
           stroke="#FFA62B"
           strokeWidth="5"
           strokeLinecap="round"
           style={{ transformOrigin: "60px 34px" }}
         />
-        <circle cx="60" cy="186" r="7" fill="#FFA62B" />
-        <text className="tb" x="76" y="194" fill="#FFA62B" fontSize="30">
+        <circle cx="60" cy="94" r="7" fill="#FFA62B" />
+        <text className="tb" x="76" y="102" fill="#FFA62B" fontSize="30">
           {e.value}
         </text>
       </svg>
@@ -208,26 +187,21 @@ function Drawdown({ e }: { e: Evidence["drawdown"] }) {
 }
 
 export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boolean; identity: ReactNode }) {
-  const [open, setOpen] = useState(0);
-  const [opened, setOpened] = useState<boolean[]>(() => copy.claims.map(() => false));
-  /** Bumped by every click, so a reopened claim replays its bars too. */
-  const [clicks, setClicks] = useState(0);
   const root = useRef<HTMLDivElement>(null);
-  /** The clicked claim and its viewport top before the click, held until the layout settles. */
-  const pinned = useRef<{ i: number; top: number } | null>(null);
 
   useEffect(() => {
     if (root.current) root.current.dataset.ready = "";
   }, []);
 
-  // The open figure dissolves as one unit on its way under the top bar (see the header note).
+  // Each figure dissolves top-down on its way under the top bar (see the header note).
   useEffect(() => {
     let raf = 0;
     const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(() => {
-        raf = 0;
-        fadeAtBar(root.current);
-      });
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          fadeAtBar(root.current);
+        });
     };
     fadeAtBar(root.current);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -239,105 +213,32 @@ export function Claims({ copy, play, identity }: { copy: ClaimsCopy; play: boole
     };
   }, []);
 
-  useLayoutEffect(() => {
-    if (!clicks) return;
-    const el = root.current;
-    // Hold the clicked claim where it was: the figure that closed above it may have been taller.
-    const keep = () => {
-      const p = pinned.current;
-      const b = p && el?.querySelectorAll<HTMLElement>("button.claim")[p.i];
-      if (!p || !b) return;
-      const d = b.getBoundingClientRect().top - p.top;
-      if (Math.abs(d) > 0.5) window.scrollTo({ top: window.scrollY + d, behavior: "instant" });
-    };
-    keep();
-    redraw(el?.querySelector<HTMLElement>(".ev.on") ?? null);
-    fadeAtBar(el);
-    // Once more on the next frame, in case the browser's own scroll anchoring moved the page too.
-    const raf = requestAnimationFrame(() => {
-      keep();
-      pinned.current = null;
-      fadeAtBar(el);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [clicks]);
-
-  const choose = (i: number, btn: HTMLElement) => {
-    pinned.current = { i, top: btn.getBoundingClientRect().top };
-    setOpen(i);
-    setOpened((o) => (o[i] ? o : o.map((v, k) => v || k === i)));
-    setClicks((n) => n + 1);
-  };
-
   const ev = copy.evidence;
-  const body = (kind: Claim["evidenceKind"]) => {
-    if (kind === "sharpe") return <Sharpe e={ev.sharpe} />;
-    if (kind === "drawdown") return <Drawdown e={ev.drawdown} />;
-    const def = ev.identity.definition;
+  const figure = (kind: Claim["evidenceKind"]) => {
+    if (kind === "sharpe") return <Sharpe e={ev.sharpe} drawn={play} />;
+    if (kind === "drawdown") return <Drawdown e={ev.drawdown} drawn={play} />;
     return (
-      <figure className="fig">
+      <figure className="ev" id="ev-identity">
         <p className="ident" data-fade="">
           {identity}
-          <span className="def">
-            {def.startsWith("b ") ? (
-              <>
-                <i>b</i>
-                {def.slice(1)}
-              </>
-            ) : (
-              def
-            )}
-          </span>
         </p>
-        <figcaption className="note">{ev.identity.body}</figcaption>
+        <figcaption className="note">{italicB(ev.identity.body)}</figcaption>
       </figure>
     );
   };
 
   return (
     <div className="claims" ref={root} data-play={String(play)}>
-      {copy.claims.map((c, i) => (
-        <ClaimRow
-          key={c.id}
-          c={c}
-          on={open === i}
-          drawn={play || opened[i]}
-          onChoose={(btn) => choose(i, btn)}
-        >
-          {body(c.evidenceKind)}
-        </ClaimRow>
+      {copy.claims.map((c) => (
+        <div className="finding" key={c.id} id={`finding-${c.id}`}>
+          <div className="ftext">
+            <p className="ctx">{c.context}</p>
+            <h3 className="claim">{highlight(c.text)}</h3>
+          </div>
+          {figure(c.evidenceKind)}
+        </div>
       ))}
     </div>
-  );
-}
-
-function ClaimRow({
-  c,
-  on,
-  drawn,
-  onChoose,
-  children,
-}: {
-  c: Claim;
-  on: boolean;
-  drawn: boolean;
-  onChoose: (btn: HTMLElement) => void;
-  children: ReactNode;
-}) {
-  const btn = `cl-${c.id}`;
-  const region = `ev-${c.evidenceKind}`;
-  return (
-    <>
-      <h3 className="claim-h">
-        <button type="button" className="claim" id={btn} aria-expanded={on} aria-controls={region} onClick={(e) => onChoose(e.currentTarget)}>
-          <small>{c.context}</small>
-          <span className="ct">{highlight(c.text)}</span>
-        </button>
-      </h3>
-      <div className={on ? "ev on" : "ev"} id={region} role="region" aria-labelledby={btn} data-drawn={String(drawn)}>
-        {children}
-      </div>
-    </>
   );
 }
 
@@ -350,17 +251,18 @@ function shown(el: Element): number {
 }
 
 /**
- * The premise, the question and the claims. Owns the premise's beat: requestBeat()
- * once, the first time the premise is at least half in view, and `play` for the bars.
+ * The premise beside the paper, then the findings. Owns the premise's beat:
+ * requestBeat() once, the first time the premise is at least half in view, and `play`
+ * for the bars.
  */
 export function ResearchBeat({
   premise,
-  ask,
+  paper,
   copy,
   identity,
 }: {
   premise: string;
-  ask: ReactNode;
+  paper: ReactNode;
   copy: ClaimsCopy;
   identity: ReactNode;
 }) {
@@ -373,9 +275,9 @@ export function ResearchBeat({
   useEffect(() => {
     const el = premiseRef.current;
     if (!el || fired.current) return;
-    /** Any bar of the open evidence on screen (a bar at zero length still has its place). */
+    /** Any bar on screen (a bar at zero length still has its place). */
     const barsOnScreen = () =>
-      [...(el.parentElement?.querySelectorAll<SVGElement>(".claims .ev.on .bar") ?? [])].some((b) => {
+      [...(el.closest(".paper")?.querySelectorAll<SVGElement>(".claims .bar") ?? [])].some((b) => {
         const r = b.getBoundingClientRect();
         return r.bottom >= 0 && r.top <= window.innerHeight;
       });
@@ -443,10 +345,12 @@ export function ResearchBeat({
 
   return (
     <>
-      <p className="premise" data-beat-fog="" ref={premiseRef}>
-        {premise}
-      </p>
-      {ask}
+      <div className="lead">
+        <p className="premise" data-beat-fog="" ref={premiseRef}>
+          {premise}
+        </p>
+        {paper}
+      </div>
       <Claims copy={copy} play={play} identity={identity} />
     </>
   );

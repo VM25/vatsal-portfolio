@@ -123,3 +123,14 @@ The facts are unchanged. Only the wording moved, and each line still traces to t
 | Liquidity, rest of the exhibit | Checked for absolutes ("always", "every time", "never", "entirely") | Unchanged: "positive in each" (5 of 5 held-out sessions) is the finding as the register states it | Spec §9 |
 | Allocation Study result | Setup only | Adds the result sentence above | Allocation row above; spec §9 |
 | Footer | "© 2026 · Jersey City, across from Manhattan" | "© 2026 Vatsal Maniar" | `profile.location` removed (its only use). The Open Graph image keeps its own place line, unchanged |
+
+## Refinement R7 (2026-11-07): a compact Research chapter
+
+The findings and their figures are unchanged: Sharpe 0.48 vs 0.66 on the 0 to 0.8 scale, the 2022 drop of roughly 19%, and the breakeven identity. The premise and the three claims keep their locked §9 wording.
+
+| Where | Old | New | Source |
+|---|---|---|---|
+| Research, question | "… asks whether acting on that helps in practice, using only lagged, observable signals with realistic trading costs and position limits, and measures why the hedge failed." | "… asks whether acting on that helps in practice, using lagged, observable signals, realistic costs and position limits, and measures why the hedge failed." The method is kept word for word | Writing sample abstract |
+| Research, identity explanation | Definition line "b ≈ expected inflation + inflation risk premium + TIPS liquidity effects" and two sentences: "A breakeven is inflation compensation read off nominal minus TIPS yields. It is not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects." | One sentence under the identity: "The breakeven b is inflation compensation, not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects." The identity itself shows b = nominal − TIPS | Spec §9, breakeven row: `FE800/10:13/FE800_Week3_Research_Memo.tex` line 226 |
+| Research, "Now" | "Now · FE800, Fall 2026" and "Testing whether real-rate dominance is a general feature of Treasury hedge failures or specific to 2022, …" | Removed at Vatsal's request; no closing line replaces it. The register row is marked removed | Spec §9 |
+| Research, links | "Read on SSRN" and "FE800 prospectus (PDF)" | "Read on SSRN" only, at the end of the paper's description. The PDF file stays in `public/research/` but nothing links to it | — |

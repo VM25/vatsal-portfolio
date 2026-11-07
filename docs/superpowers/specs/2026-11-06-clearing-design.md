@@ -87,7 +87,7 @@ One page, five chapters, in this order. Each chapter has an anchor and a scene c
 |---|---|---|
 | Home | `#top` | Name, one-line role, availability, two actions |
 | Projects | `#projects` | DiffusionWorks exhibit, The Liquidity Paradox exhibit, "More projects" rail of six |
-| Research | `#research` | "The hedge that stopped working": premise, question, three claims with evidence, FE800 "Now", links |
+| Research | `#research` | "The hedge that stopped working": premise, question with the SSRN link, three findings each beside its evidence (refinement R7) |
 | Path | `#path` | Mumbai → Arizona → New Jersey, degrees, FRM Part 1 (shown only here), experience list |
 | Contact | `#contact` | "Let's talk", availability, email (link + copy), LinkedIn, GitHub, résumé |
 
@@ -184,7 +184,11 @@ the prototype.
   the note "Historical order-book replay with modeled executions under stated queue, latency and fee assumptions."
 
 ### 6.3 The hedge that stopped working (evidence-led research)
-Claims are buttons; each opens its evidence (beside it on wide screens, under it on phones).
+Refinement R7: no accordion. The premise sits beside the paper (title, question and the SSRN
+link). Each of the three findings is one row: its context line and claim (a plain heading) on
+the left, its evidence as one figure on the right from a 900px page, directly under it on
+phones. All three figures show at once, in normal flow, with nothing sticky. The FE800
+prospectus link and the dated "Now" line were removed.
 Copy is locked to the claims register (§9).
 
 ### 6.4 More projects
@@ -231,8 +235,9 @@ directly under the selected item and scrolls into view. Arrow keys move between 
   main content.
 - Mobile menu is a modal dialog: focus moves in on open, is trapped while open, returns to the
   Menu button on close; Escape closes; body scroll locked.
-- Rail uses the tabs pattern (roles, `aria-selected`, arrow keys); claims use
-  `aria-expanded`/`aria-controls`.
+- Rail uses the tabs pattern (roles, `aria-selected`, arrow keys). Research findings are plain
+  headings, each followed by its evidence as a `<figure>` with a `<figcaption>` (refinement R7:
+  the claims' accordion was removed).
 - Canvases and charts have text equivalents: the numbers they show are also in the DOM.
 - Touch targets ≥ 44×44px; secondary text ≥ 14px; no horizontal scroll at 320px.
 - Reduced motion (see 8.6) honoured automatically from the OS setting.
@@ -280,8 +285,8 @@ directly under the selected item and scrolls into view. Arrow keys move between 
 | Also benchmarked against equal weight, minimum variance, maximum Sharpe and SPY | prospectus, "13-asset regime-aware allocation study…" |
 | A long-duration Treasury hedge book lost roughly 19% in the modeled 2022 replay | abstract (line 62); prospectus |
 | That loss came primarily from rising real yields, not breakevens, under the memo's attribution framework, for this one episode | abstract (lines 62–63); prospectus ("under a stated portfolio-level attribution framework and for that single episode") |
-| Breakeven = nominal − TIPS yield; inflation compensation including an inflation risk premium and TIPS liquidity effects, not pure expected inflation | `FE800/10:13/FE800_Week3_Research_Memo.tex` line 226; `Research_Progress_Summary_10-13.md` |
-| FE800 (Fall 2026) tests whether real-rate dominance generalizes across stress episodes | prospectus, "Core FE800 question" |
+| Breakeven = nominal − TIPS yield; inflation compensation including an inflation risk premium and TIPS liquidity effects, not pure expected inflation. On the site since refinement R7 as the identity plus one sentence: "The breakeven b is inflation compensation, not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects." | `FE800/10:13/FE800_Week3_Research_Memo.tex` line 226; `Research_Progress_Summary_10-13.md` |
+| (Removed from the site in refinement R7, at Vatsal's request, with the "Now · FE800, Fall 2026" label and the prospectus link.) FE800 (Fall 2026) tests whether real-rate dominance generalizes across stress episodes | prospectus, "Core FE800 question" |
 | (Removed from the site in refinement R2, at Vatsal's request.) Measurement and attribution, not prediction or causal identification | prospectus, "Expected contribution" |
 | DiffusionWorks: 15 studies, 10 clean, 5 caveats, none failed; BGK 16/18 down, 23/24 up | `stochastic-lab/README.md`; `docs/BARRIER-MONITORING-METHODOLOGY.md` §6–6.2 |
 | Liquidity Paradox: 20 sessions SOL/USDT; held-out R² 4.2% at 5 s, 5 of 5 positive; −1 to −2 bp before fees; −11 to −12 bp at default fee tier; modeled replay. The question says the maker "tends to lose" to informed flow, and the animation is captioned "a stylized view of adverse selection" (refinement R6: no absolute wording) | `liquidity-lab/README.md`; `results/closeout/CLOSEOUT_report.md` (H1-F); `results/e002/E002_report.md` |

@@ -161,7 +161,11 @@ test.describe("page shell and world", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator(".bg")).toHaveAttribute("data-orientation", "port");
     // Wait for the reflow to settle into different keys, then the scene must use them.
-    await expect.poll(async () => Math.abs((await measuredKeys(page))[2] - wide[2])).toBeGreaterThan(0.005);
+    // (Any key: since refinement R7 Research's own key moves by under 0.005 between these
+    // two layouts, while Projects' moves by about 0.05.)
+    await expect
+      .poll(async () => Math.max(...(await measuredKeys(page)).map((k, i) => Math.abs(k - wide[i]))))
+      .toBeGreaterThan(0.005);
     await expect.poll(async () => near((await hook(page)).keys, await measuredKeys(page))).toBe(true);
     // The scene follows the scroll position after the reflow.
     await expect.poll(async () => Math.abs(((await hook(page)).p ?? -1) - (await progress(page)))).toBeLessThan(1e-6);

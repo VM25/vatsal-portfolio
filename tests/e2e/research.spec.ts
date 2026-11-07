@@ -4,12 +4,15 @@ import { research } from "../../src/data/research";
 import { projects } from "../../src/data/projects";
 
 /*
-  Research: the premise, three claims as an accordion of buttons with their evidence,
-  the Now line and the links. The premise is the page's third and last beat;
-  the Sharpe bars draw on it.
+  Research: the premise beside the paper (its title, question and SSRN link), then the
+  three findings. Refinement R7: no accordion. Each finding is one row in normal flow,
+  its text (context line and claim heading) on the left and its figure on the right from
+  a 900px page, the figure directly under the text on phones. All three figures show at
+  once, with or without JavaScript. The premise is the page's third and last beat; the
+  bars draw on it.
 
   Test hooks: .claims carries data-ready once hydrated and data-play ("true" once the
-  bars have been released); each .ev carries data-drawn.
+  bars have been released); each chart figure (.ev) carries data-drawn.
 */
 
 async function noWatchdog(page: Page) {
@@ -30,11 +33,12 @@ async function ticks(page: Page, n: number) {
 }
 
 const sec = (page: Page) => page.locator("#research");
-const claim = (page: Page, i: number) => sec(page).locator("button.claim").nth(i);
+const finding = (page: Page, i: number) => sec(page).locator(".finding").nth(i);
 const beats = (page: Page) => page.evaluate(() => Number(document.documentElement.getAttribute("data-beats")));
 /** Computed transforms of the Sharpe bars. */
 const sharpeBars = (page: Page) =>
   sec(page).locator("#ev-sharpe .bar").evaluateAll((els) => els.map((e) => getComputedStyle(e).transform));
+const dropBar = (page: Page) => page.locator("#ev-drawdown .bar").evaluate((e) => getComputedStyle(e).transform);
 
 /** Pixels between Research's top and its anchor landing (the computed scroll-padding-top). */
 const offAnchor = (page: Page) =>
@@ -43,64 +47,76 @@ const offAnchor = (page: Page) =>
     return Math.abs(document.getElementById("research")!.getBoundingClientRect().top - pad);
   });
 
+/** Research's height: its top to the next chapter's top. */
+const sectionHeight = (page: Page) =>
+  page.evaluate(() => {
+    const s = document.getElementById("research")!;
+    return Math.round(s.nextElementSibling!.getBoundingClientRect().top - s.getBoundingClientRect().top);
+  });
+
+/** The figures, in finding order. */
+const figs = ["#ev-sharpe", "#ev-drawdown", "#ev-identity"];
+
+/** Any part of a figure drawn outside its box (empty when the figure is one closed unit). */
+const outside = (page: Page, id: string) =>
+  page.locator(id).evaluate((el) => {
+    const b = el.getBoundingClientRect();
+    return [...el.querySelectorAll("*")]
+      .map((n) => ({ n: `${n.tagName}.${n.getAttribute("class") ?? ""}`, r: n.getBoundingClientRect() }))
+      .filter(({ r }) => r.width > 0 && (r.top < b.top - 1 || r.bottom > b.bottom + 1 || r.left < b.left - 1 || r.right > b.right + 1))
+      .map(({ n }) => n);
+  });
+
+/** Nothing in Research is sticky or fixed. */
+const stuck = (page: Page) =>
+  sec(page).evaluate((s) => [...s.querySelectorAll("*")].filter((n) => /sticky|fixed/.test(getComputedStyle(n).position)).length);
+
+/*
+  Research's height at commit 13a192b (R6, before this refinement), measured from its top
+  to Path's top with the first claim open: 1363px at 1440x900 and 1280x800 (and 1024x768),
+  1566px at 390x844 and 1561px at 375x812.
+*/
+const BEFORE: Record<string, number> = { "1440x900": 1363, "1280x800": 1363 };
+
 test.describe("Research chapter", () => {
   test.beforeEach(async ({ page }) => {
     await noWatchdog(page);
   });
 
-  test("premise, question and three claims come from the data", async ({ page }) => {
+  test("premise, paper and three findings come from the data; no accordion, no dated note, one link", async ({ page }) => {
     await open(page);
     await expect(sec(page).locator(".premise")).toHaveText(research.premise);
     await expect(sec(page).locator(".premise")).toHaveAttribute("data-beat-fog", "");
     await expect(sec(page).locator(".ask")).toContainText(research.paperTitle);
     await expect(sec(page).locator(".ask")).toContainText(research.ask);
-    await expect(sec(page).locator("button.claim")).toHaveCount(3);
+    // The method stays in the question (refinement R7 shortened the rest).
+    expect(research.ask).toContain("lagged, observable signals, realistic costs and position limits");
+    expect(research.ask.endsWith("and measures why the hedge failed.")).toBe(true);
+    await expect(sec(page).locator(".finding")).toHaveCount(3);
+    await expect(sec(page).getByRole("heading", { level: 3 })).toHaveCount(3);
     for (let i = 0; i < 3; i++) {
       const c = research.claims[i];
-      const b = claim(page, i);
-      await expect(b).toContainText(c.context);
-      await expect(b.locator(".ct")).toHaveText(c.text);
-      const ctrl = await b.getAttribute("aria-controls");
-      const region = page.locator(`#${ctrl}`);
-      await expect(region).toHaveAttribute("role", "region");
-      await expect(region).toHaveAttribute("aria-labelledby", (await b.getAttribute("id"))!);
-      await expect(b).toHaveAttribute("aria-expanded", i === 0 ? "true" : "false");
-      const box = (await b.boundingBox())!;
-      expect(box.height).toBeGreaterThanOrEqual(44);
+      await expect(finding(page, i).locator(".ctx")).toHaveText(c.context);
+      await expect(finding(page, i).getByRole("heading", { level: 3 })).toHaveText(c.text);
+      await expect(finding(page, i).locator(figs[i])).toBeVisible();
     }
-    await expect(sec(page).locator(".now")).toContainText(research.now.label);
-    await expect(sec(page).locator(".now")).toContainText(research.now.body);
-    // The limit line was removed in refinement R2; the question ends after the method.
-    await expect(sec(page).locator(".lim")).toHaveCount(0);
-    expect(research.ask.endsWith("and measures why the hedge failed.")).toBe(true);
+    // Plain headings and text: nothing to operate.
+    await expect(sec(page).locator("button, [aria-expanded], [aria-controls], [role=region]")).toHaveCount(0);
+    // The claim keeps the prototype's type.
+    await expect(sec(page).locator("h3.claim").first()).toHaveCSS("font-weight", "400");
+    await expect(sec(page).locator("h3.claim").first()).toHaveCSS("font-size", "18.4px");
+    // No "Now" block and no FE800 label, prospectus or PDF link (refinement R7).
+    await expect(sec(page).locator(".now, .lim")).toHaveCount(0);
     const all = (await sec(page).textContent()) ?? "";
+    expect(all).not.toContain("FE800");
+    expect(all).not.toContain("Now ·");
+    expect(all).not.toMatch(/prospectus/i);
     expect(all).not.toContain("—");
+    expect(research).not.toHaveProperty("now");
+    expect(research.links).not.toHaveProperty("prospectus");
   });
 
-  test("clicking claim 3 shows the identity and hides claim 1's evidence", async ({ page }) => {
-    await open(page);
-    await expect(page.locator("#ev-sharpe")).toBeVisible();
-    await expect(page.locator("#ev-identity")).toBeHidden();
-    await claim(page, 2).click();
-    await expect(claim(page, 2)).toHaveAttribute("aria-expanded", "true");
-    await expect(claim(page, 0)).toHaveAttribute("aria-expanded", "false");
-    await expect(claim(page, 1)).toHaveAttribute("aria-expanded", "false");
-    const ident = page.locator("#ev-identity");
-    await expect(ident).toBeVisible();
-    await expect(ident).toContainText("Δy");
-    await expect(ident).toContainText("not a pure measure of expected inflation");
-    await expect(ident).toContainText(research.evidence.identity.body);
-    await expect(ident.locator(".def")).toHaveText(research.evidence.identity.definition);
-    await expect(ident.locator(".ident")).toHaveCSS("font-family", /STIX/);
-    await expect(page.locator("#ev-sharpe")).toBeHidden();
-    // One open at a time.
-    await claim(page, 1).click();
-    await expect(page.locator("#ev-drawdown")).toBeVisible();
-    await expect(ident).toBeHidden();
-    await expect(page.locator("#ev-sharpe")).toBeHidden();
-  });
-
-  test("the evidence graphics carry their labels and the scale is 0 to 0.8", async ({ page }) => {
+  test("the evidence: Sharpe 0.66 and 0.48 on a 0 to 0.8 scale, the 2022 drop, and the identity", async ({ page }) => {
     await open(page);
     const sharpe = page.locator("#ev-sharpe svg");
     await expect(sharpe).toHaveAttribute("role", "img");
@@ -116,15 +132,21 @@ test.describe("Research chapter", () => {
     await expect(sharpe).toContainText("0.66");
     await expect(sharpe).toContainText("0.48");
     await expect(sharpe).toContainText("Static 60/40");
-    await expect(page.locator("#ev-sharpe .ctitle")).toHaveText(research.evidence.sharpe.chartTitle);
-    await expect(page.locator("#ev-drawdown .ctitle")).toHaveText(research.evidence.drawdown.chartTitle);
     await expect(sharpe).toContainText("Regime-aware rule");
-    await expect(page.locator("#ev-sharpe .src")).toHaveText(research.evidence.sharpe.source);
+    // The axis and its five ticks.
+    await expect(sharpe.locator(".ticks text")).toHaveText(["0", "0.2", "0.4", "0.6", "0.8"]);
+    // Sodium for the static 60/40, grey for the regime-aware rule.
+    expect(await sharpe.locator(".bar").evaluateAll((els) => els.map((e) => e.getAttribute("stroke")))).toEqual([
+      "#FFA62B",
+      "#C3CBC6",
+    ]);
+    // Title and note in the figure's own caption.
+    await expect(page.locator("#ev-sharpe > figcaption .ctitle")).toHaveText(research.evidence.sharpe.chartTitle);
+    await expect(page.locator("#ev-sharpe > figcaption .src")).toHaveText(research.evidence.sharpe.source);
     for (const b of await sharpe.locator(".bar").all()) {
       await expect(b).toHaveCSS("transform-box", "view-box");
     }
 
-    await claim(page, 1).click();
     const drop = page.locator("#ev-drawdown svg");
     await expect(drop).toHaveAttribute("role", "img");
     await expect(drop).toHaveAttribute(
@@ -133,16 +155,40 @@ test.describe("Research chapter", () => {
     );
     await expect(drop).toContainText("≈ −19%");
     // The chart title carries "modeled 2022 replay"; there is no extra note (refinement R2).
-    await expect(page.locator("#ev-drawdown .ctitle")).toHaveText(research.evidence.drawdown.chartTitle);
+    await expect(page.locator("#ev-drawdown > figcaption .ctitle")).toHaveText(research.evidence.drawdown.chartTitle);
     await expect(drop.locator("text")).toHaveCount(2);
     await expect(drop.locator(".bar")).toHaveCSS("transform-box", "view-box");
     await expect(drop.locator(".bar")).toHaveAttribute("data-ax", "y");
+
+    // The identity in STIX and one sentence naming what else a breakeven carries.
+    const ident = page.locator("#ev-identity");
+    await expect(ident).toContainText("Δy");
+    await expect(ident).toContainText("where b = y");
+    await expect(ident.locator(".ident")).toHaveCSS("font-family", /STIX/);
+    await expect(ident.locator("> figcaption")).toHaveText(research.evidence.identity.body);
+    const body = research.evidence.identity.body;
+    expect(body).toContain("not a pure measure of expected inflation");
+    expect(body).toContain("inflation risk premium");
+    expect(body).toContain("TIPS liquidity effects");
+    expect(body.split(/[.!?](\s|$)/).filter((x) => x && x.trim())).toHaveLength(1);
+  });
+
+  test("each figure is a <figure> with a <figcaption>, and nothing in Research uses fill-box", async ({ page }) => {
+    await open(page);
+    for (const id of figs) {
+      await expect(page.locator(id)).toHaveJSProperty("tagName", "FIGURE");
+      await expect(page.locator(`${id} > figcaption`)).toHaveCount(1);
+    }
+    const fillBox = await sec(page).evaluate((s) =>
+      [...s.querySelectorAll("*")].filter((n) => getComputedStyle(n).transformBox === "fill-box").length,
+    );
+    expect(fillBox).toBe(0);
   });
 
   test("each claim's text is at most three lines at 1440", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await open(page);
-    const lines = await sec(page).locator("button.claim .ct").evaluateAll((els) =>
+    const lines = await sec(page).locator("h3.claim").evaluateAll((els) =>
       els.map((el) => {
         const r = document.createRange();
         r.selectNodeContents(el);
@@ -159,94 +205,128 @@ test.describe("Research chapter", () => {
   });
 
   /*
-    Refinement R4: each piece of evidence is one <figure> (caption, chart, or formula and
-    its explanation) directly under its claim at every width, anchored to it, with
-    nothing sticky. Pieces marked data-fade dissolve before the sticky top bar reaches them.
+    Two columns from a 900px page: for each finding the figure is to the right of the text
+    and clear of it, and its top is within 8px of the finding's top. Every part of each
+    figure lies inside its box, and nothing is sticky.
   */
-  const figs = [{ id: "#ev-sharpe" }, { id: "#ev-drawdown" }, { id: "#ev-identity" }];
-
   for (const vp of [
     { width: 1440, height: 900 },
+    { width: 1280, height: 800 },
     { width: 1024, height: 768 },
-    { width: 390, height: 844 },
-    { width: 375, height: 812 },
   ]) {
-    test(`each figure is one unit directly under its claim, at ${vp.width}x${vp.height}`, async ({ page }) => {
+    test(`two columns: each figure beside its finding, top-aligned, at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await open(page);
+      await page.evaluate(() => document.fonts.ready);
       for (let i = 0; i < 3; i++) {
-        if (i) await claim(page, i).click();
-        const fig = page.locator(`${figs[i].id} figure`);
-        await expect(fig).toHaveCount(1);
-        // The caption is the figure's own: first child for the charts, last for the identity.
-        await expect(fig.locator("> figcaption")).toHaveCount(1);
-        const c = (await claim(page, i).boundingBox())!;
-        const f = (await fig.boundingBox())!;
-        // Anchored: the figure's top within 24px under the open claim's bottom, same left edge.
-        expect(f.y - (c.y + c.height)).toBeGreaterThanOrEqual(-1);
-        expect(f.y - (c.y + c.height)).toBeLessThanOrEqual(24);
-        expect(Math.abs(f.x - c.x)).toBeLessThanOrEqual(1);
-        expect(f.x + f.width).toBeLessThanOrEqual(c.x + c.width + 1);
-        // And before the next claim (or the Now line).
-        const next = i < 2 ? (await claim(page, i + 1).boundingBox())! : (await sec(page).locator(".now").boundingBox())!;
-        expect(f.y + f.height).toBeLessThanOrEqual(next.y + 1);
-        // Every part of the unit lies inside the figure's box.
-        const out = await fig.evaluate((el) => {
-          const b = el.getBoundingClientRect();
-          return [...el.querySelectorAll("*")]
-            .map((n) => ({ n: `${n.tagName}.${n.getAttribute("class") ?? ""}`, r: n.getBoundingClientRect() }))
-            .filter(({ r }) => r.width > 0 && (r.top < b.top - 1 || r.bottom > b.bottom + 1 || r.left < b.left - 1 || r.right > b.right + 1))
-            .map(({ n }) => n);
-        });
-        expect(out).toEqual([]);
-        // Nothing in Research is sticky or fixed.
-        const stuck = await sec(page).evaluate((s) =>
-          [...s.querySelectorAll("*")].filter((n) => /sticky|fixed/.test(getComputedStyle(n).position)).length,
-        );
-        expect(stuck).toBe(0);
+        const t = (await finding(page, i).locator(".ftext").boundingBox())!;
+        const h = (await finding(page, i).locator("h3").boundingBox())!;
+        const f = (await page.locator(figs[i]).boundingBox())!;
+        expect(f.x, `figure ${i + 1} right of its text`).toBeGreaterThanOrEqual(t.x + t.width);
+        expect(f.x).toBeGreaterThanOrEqual(h.x + h.width);
+        expect(Math.abs(f.y - t.y), `figure ${i + 1} top-aligned`).toBeLessThanOrEqual(8);
+        // Inside its own row.
+        const row = (await finding(page, i).boundingBox())!;
+        expect(f.y + f.height).toBeLessThanOrEqual(row.y + row.height + 1);
+        expect(await outside(page, figs[i])).toEqual([]);
       }
-      // The Sharpe note sits inside the Sharpe figure, in its caption.
-      await claim(page, 0).click();
-      await expect(page.locator("#ev-sharpe figure > figcaption .src")).toHaveText(research.evidence.sharpe.source);
+      expect(await stuck(page)).toBe(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(vp.width);
     });
   }
 
+  for (const vp of [
+    { width: 390, height: 844 },
+    { width: 375, height: 812 },
+  ]) {
+    test(`stacked: each figure directly under its finding, at ${vp.width}x${vp.height}`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await open(page);
+      await page.evaluate(() => document.fonts.ready);
+      for (let i = 0; i < 3; i++) {
+        const t = (await finding(page, i).locator(".ftext").boundingBox())!;
+        const f = (await page.locator(figs[i]).boundingBox())!;
+        const gap = f.y - (t.y + t.height);
+        expect(gap, `figure ${i + 1} under its finding`).toBeGreaterThanOrEqual(0);
+        expect(gap).toBeLessThanOrEqual(24);
+        expect(Math.abs(f.x - t.x)).toBeLessThanOrEqual(1);
+        // Before the next finding.
+        if (i < 2) expect(f.y + f.height).toBeLessThanOrEqual((await finding(page, i + 1).boundingBox())!.y + 1);
+        expect(await outside(page, figs[i])).toEqual([]);
+      }
+      expect(await stuck(page)).toBe(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(vp.width);
+    });
+  }
+
+  test("Research is at least 25% shorter on desktop than before refinement R7", async ({ page }) => {
+    for (const [key, before] of Object.entries(BEFORE)) {
+      const [width, height] = key.split("x").map(Number);
+      await page.setViewportSize({ width, height });
+      await open(page);
+      await page.evaluate(() => document.fonts.ready);
+      await ticks(page, 2);
+      const h = await sectionHeight(page);
+      console.log(`Research at ${key}: ${h}px (before ${before}px, ${Math.round((1 - h / before) * 100)}% shorter)`);
+      expect(h).toBeLessThan(before * 0.75);
+    }
+  });
+
+  test("without JavaScript the chapter is laid out exactly as with it", async ({ browser }) => {
+    for (const vp of [
+      { width: 1440, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      const js = await browser.newContext({ viewport: vp });
+      const jsPage = await js.newPage();
+      await noWatchdog(jsPage);
+      await open(jsPage);
+      await jsPage.evaluate(() => document.fonts.ready);
+      const no = await browser.newContext({ viewport: vp, javaScriptEnabled: false });
+      const noPage = await no.newPage();
+      await noPage.goto("/");
+      await noPage.evaluate(() => document.fonts.ready).catch(() => undefined);
+      expect(await sectionHeight(noPage)).toBe(await sectionHeight(jsPage));
+      expect((await sec(noPage).innerText()).trim()).toBe((await sec(jsPage).innerText()).trim());
+      await js.close();
+      await no.close();
+    }
+  });
+
   /*
-    The scroll sweep. Every 40px through Research with each claim open, each part of the
-    open figure (caption, title, note, svg, each bar, each value and label, the axis, each
-    tick; the formula and its explanation) is either fully below the top bar or out of
-    sight (under the bar, off screen, or dissolved to opacity 0): never seen cut by the bar
-    while another part of the figure shows. The parts that show form one unbroken run,
-    from the first one shown to the figure's end in view.
+    The scroll sweep. Every 40px through the findings, each part of each figure (caption,
+    title, note, svg, each bar, each value and label, the axis, each tick; the formula and
+    its explanation) is either fully below the top bar or out of sight (under the bar, off
+    screen, or dissolved to opacity 0): never seen cut by the bar while another part of the
+    same figure shows. The parts that show form one unbroken run, from the first one shown
+    to the figure's end in view.
   */
   for (const vp of [
     { width: 1440, height: 900 },
+    { width: 1280, height: 800 },
+    { width: 1024, height: 768 },
     { width: 390, height: 844 },
+    { width: 375, height: 812 },
   ]) {
     test(`scroll sweep: no figure part is cut by the top bar while the rest shows, at ${vp.width}x${vp.height}`, async ({ page }) => {
       test.setTimeout(120_000);
       await page.setViewportSize(vp);
       await open(page);
       await page.evaluate(() => document.fonts.ready);
-      for (let i = 0; i < 3; i++) {
-        await claim(page, i).evaluate((b) => (b as HTMLButtonElement).click());
-        await expect(claim(page, i)).toHaveAttribute("aria-expanded", "true");
-        const { from, to } = await sec(page).locator(".claims").evaluate((el) => {
-          const r = el.getBoundingClientRect();
-          return { from: Math.max(0, r.top + scrollY - innerHeight), to: r.bottom + scrollY };
-        });
-        let steps = 0;
-        for (let y = from; y <= to; y += 40) {
-          await page.evaluate((top) => window.scrollTo({ top, behavior: "instant" }), y);
-          await ticks(page, 2);
-          const s = await page.evaluate((id) => {
-            const bar = document.querySelector("header.top")!.getBoundingClientRect().bottom;
-            const fig = document.querySelector(`${id} figure`)!;
+      const { from, to } = await sec(page).locator(".claims").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { from: Math.max(0, r.top + scrollY - innerHeight), to: r.bottom + scrollY };
+      });
+      let steps = 0;
+      for (let y = from; y <= to; y += 40) {
+        await page.evaluate((top) => window.scrollTo({ top, behavior: "instant" }), y);
+        await ticks(page, 2);
+        const all = await page.evaluate((ids) => {
+          const bar = document.querySelector("header.top")!.getBoundingClientRect().bottom;
+          return ids.map((id) => {
+            const fig = document.querySelector(id)!;
             const parts = [
-              ...fig.querySelectorAll(
-                "figcaption, .ctitle, .src, svg, .bar, svg text, svg line:not(.bar), .ident, .note",
-              ),
+              ...fig.querySelectorAll("figcaption, .ctitle, .src, svg, .bar, svg text, svg line:not(.bar), .ident, .note"),
             ];
             const seen = (el: Element) => {
               let o = 1;
@@ -259,63 +339,27 @@ test.describe("Research chapter", () => {
               const r = el.getBoundingClientRect();
               const onScreen = r.bottom > bar && r.top < innerHeight;
               return {
-                name: `${el.tagName}.${el.getAttribute("class") ?? ""} "${(el.textContent ?? "").slice(0, 16)}"`,
+                name: `${id} ${el.tagName}.${el.getAttribute("class") ?? ""} "${(el.textContent ?? "").slice(0, 16)}"`,
                 top: r.top,
                 cut: r.top < bar && r.bottom > bar,
                 shown: onScreen && seen(el) > 0,
               };
             });
-          }, figs[i].id);
+          });
+        }, figs);
+        for (const s of all) {
           const shown = s.filter((p) => p.shown);
-          const cutShown = shown.filter((p) => p.cut);
           if (shown.length > 1) {
-            expect(cutShown.map((p) => p.name), `claim ${i + 1} at scrollY ${Math.round(y)}`).toEqual([]);
+            expect(shown.filter((p) => p.cut).map((p) => p.name), `scrollY ${Math.round(y)}`).toEqual([]);
           }
           // One unbroken run: no hidden part on screen below a shown part.
           const firstShown = Math.min(...shown.map((p) => p.top));
           const gaps = s.filter((p) => !p.shown && !p.cut && p.top > firstShown && p.top < vp.height);
-          expect(gaps.map((p) => p.name), `claim ${i + 1} at scrollY ${Math.round(y)}`).toEqual([]);
-          steps++;
+          expect(gaps.map((p) => p.name), `scrollY ${Math.round(y)}`).toEqual([]);
         }
-        expect(steps).toBeGreaterThan(20);
+        steps++;
       }
-    });
-  }
-
-  for (const vp of [
-    { width: 1440, height: 900 },
-    { width: 390, height: 844 },
-  ]) {
-    test(`opening another claim keeps it where it was on screen, at ${vp.width}x${vp.height}`, async ({ page }) => {
-      await page.setViewportSize(vp);
-      await open(page);
-      // Claim 1 open, its figure on screen above claim 2.
-      await claim(page, 0).evaluate((b) => {
-        window.scrollTo({ top: b.getBoundingClientRect().top + window.scrollY - 120, behavior: "instant" });
-      });
-      await ticks(page, 3);
-      for (const [from, to] of [
-        [0, 1],
-        [1, 2],
-        [2, 0],
-        [0, 2],
-      ]) {
-        await expect(claim(page, from)).toHaveAttribute("aria-expanded", "true");
-        // Where a reader can click it (a click scrolls a claim that is cut by the viewport into view first).
-        await claim(page, to).scrollIntoViewIfNeeded();
-        await ticks(page, 2);
-        const before = (await claim(page, to).boundingBox())!.y;
-        const scrollBefore = await page.evaluate(() => window.scrollY);
-        await claim(page, to).click();
-        await expect(claim(page, to)).toHaveAttribute("aria-expanded", "true");
-        await ticks(page, 3);
-        const after = (await claim(page, to).boundingBox())!.y;
-        const fig = (await page.locator(`${figs[to].id} figure`).boundingBox())!;
-        const inView = fig.y >= 0 && fig.y + fig.height <= vp.height;
-        expect(Math.abs(after - before) <= 4 || inView, `claim ${from + 1} to ${to + 1}: moved ${after - before}px`).toBe(true);
-        // A figure that closed above the clicked claim was compensated for by scrolling.
-        if (to > from) expect(await page.evaluate(() => window.scrollY)).toBeLessThan(scrollBefore);
-      }
+      expect(steps).toBeGreaterThan(20);
     });
   }
 
@@ -323,9 +367,8 @@ test.describe("Research chapter", () => {
     test(`chart text renders at 14px or more, tick labels at 12px or more, inside the chart, at ${width}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await open(page);
-      for (const i of [0, 1]) {
-        await claim(page, i).click();
-        const ev = sec(page).locator(".ev.on");
+      for (const id of ["#ev-sharpe", "#ev-drawdown"]) {
+        const ev = page.locator(id);
         await expect(ev.locator(".ctitle")).toHaveCSS("font-size", "14px");
         const sizes = await ev.locator("svg").evaluate((svg) => {
           const box = svg.getBoundingClientRect();
@@ -341,7 +384,7 @@ test.describe("Research chapter", () => {
         expect(sizes.length).toBeGreaterThanOrEqual(2);
         for (const s of sizes) {
           expect(s.px, `${s.text}`).toBeGreaterThanOrEqual(s.tick ? 12 : 14);
-          // Each label's whole text box inside the chart (refinement R4: the SVG clips at its edge).
+          // Each label's whole text box inside the chart (the SVG clips at its edge).
           expect(s.r.right, `${s.text} overflows the chart`).toBeLessThanOrEqual(s.box.right + 1);
           expect(s.r.left, `${s.text} overflows the chart`).toBeGreaterThanOrEqual(s.box.left - 1);
           expect(s.r.top, `${s.text} overflows the chart`).toBeGreaterThanOrEqual(s.box.top - 1);
@@ -353,21 +396,18 @@ test.describe("Research chapter", () => {
     });
   }
 
-  test("links: SSRN and the prospectus, each announced as opening a new tab", async ({ page, request }) => {
+  test("links: SSRN only, announced as opening a new tab; no prospectus link anywhere", async ({ page }) => {
     await open(page);
-    const links = sec(page).locator(".ex-links a");
-    await expect(links).toHaveCount(2);
+    const links = sec(page).locator("a");
+    await expect(links).toHaveCount(1);
     const ssrn = sec(page).getByRole("link", { name: /Read on SSRN/ });
-    const pros = sec(page).getByRole("link", { name: /FE800 prospectus/ });
     await expect(ssrn).toHaveAttribute("href", research.links.ssrn.href);
-    await expect(pros).toHaveAttribute("href", "/research/Maniar-Research-Prospectus.pdf");
-    for (const a of [ssrn, pros]) {
-      await expect(a).toHaveAccessibleName(/, opens in a new tab$/);
-      await expect(a).toHaveAttribute("target", "_blank");
-    }
-    await expect(pros).toHaveAccessibleName(/^FE800 prospectus ?\(PDF\), opens in a new tab$/);
+    await expect(ssrn).toHaveAccessibleName(/, opens in a new tab$/);
+    await expect(ssrn).toHaveAttribute("target", "_blank");
     await expect(ssrn).not.toHaveAccessibleName(/PDF/);
-    expect((await request.get("/research/Maniar-Research-Prospectus.pdf")).status()).toBe(200);
+    // The link closes the paper's description.
+    await expect(sec(page).locator(".ask a")).toHaveCount(1);
+    await expect(page.locator('a[href*="Prospectus"]')).toHaveCount(0);
   });
 
   test("the premise is the third beat: bars wait at zero, then draw on it, once", async ({ page }) => {
@@ -377,6 +417,7 @@ test.describe("Research chapter", () => {
     await expect(sec(page).locator(".claims")).toHaveAttribute("data-play", "false");
     // With motion and JavaScript, the bars start at zero length.
     for (const t of await sharpeBars(page)) expect(t).toMatch(/^matrix\(0, 0, 0, 1, 0, 0\)$/);
+    expect(await dropBar(page)).toMatch(/^matrix\(1, 0, 0, 0, 0, 0\)$/);
     await sec(page).locator(".premise").evaluate((p) => {
       const y = p.getBoundingClientRect().top + window.scrollY - 200;
       window.scrollTo({ top: y, behavior: "instant" });
@@ -385,6 +426,8 @@ test.describe("Research chapter", () => {
     await expect(sec(page).locator(".claims")).toHaveAttribute("data-play", "true");
     await expect(sec(page).locator(".premise")).toHaveClass(/landed/);
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
+    await expect.poll(() => dropBar(page), { timeout: 4000 }).toBe("none");
+    for (const id of ["#ev-sharpe", "#ev-drawdown"]) await expect(page.locator(id)).toHaveAttribute("data-drawn", "true");
     // Leaving and coming back does not beat again.
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await ticks(page, 6);
@@ -393,20 +436,13 @@ test.describe("Research chapter", () => {
     expect(await beats(page)).toBe(1);
   });
 
-  test("opening a claim before the beat still draws its bar", async ({ page }) => {
-    await open(page);
-    await claim(page, 1).evaluate((b) => (b as HTMLButtonElement).click());
-    await expect
-      .poll(() => page.locator("#ev-drawdown .bar").evaluate((e) => getComputedStyle(e).transform), { timeout: 4000 })
-      .toBe("none");
-  });
-
   test("under reduced motion the bars are full from the start", async ({ browser }) => {
     const ctx = await browser.newContext({ reducedMotion: "reduce" });
     const page = await ctx.newPage();
     await noWatchdog(page);
     await open(page);
     expect(await sharpeBars(page)).toEqual(["none", "none"]);
+    expect(await dropBar(page)).toBe("none");
     await sec(page).locator(".premise").scrollIntoViewIfNeeded();
     await expect.poll(() => beats(page)).toBeGreaterThanOrEqual(1);
     await expect(sec(page).locator(".premise")).not.toHaveClass(/landed/);
@@ -436,11 +472,11 @@ test.describe("Research chapter", () => {
   });
 
   test("bars in view never stay at zero, even when the premise is not", async ({ page }) => {
-    // Short enough that the evidence can be in view with the premise above the fold.
+    // Short enough that a chart can be in view with the premise above the fold.
     await page.setViewportSize({ width: 375, height: 480 });
     await open(page);
-    // Come up from below: the evidence is in view, the premise is above the viewport.
-    await page.locator("#ev-sharpe").evaluate((e) => {
+    // Come up from below: the 2022 drop is in view, the premise is above the viewport.
+    await page.locator("#ev-drawdown").evaluate((e) => {
       const y = e.getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 10;
       window.scrollTo({ top: y, behavior: "instant" });
     });
@@ -449,6 +485,7 @@ test.describe("Research chapter", () => {
       return Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height;
     });
     expect(premiseVisible).toBeLessThan(0.5);
+    await expect.poll(() => dropBar(page), { timeout: 4000 }).toBe("none");
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
   });
 
@@ -473,7 +510,7 @@ test.describe("Research chapter", () => {
     await expect(page.locator("html")).toHaveAttribute("data-beats", "3");
   });
 
-  test("Review Focus 4: /#research lands on Research's anchor with the nav and claims matching", async ({ page }) => {
+  test("Review Focus 4: /#research lands on Research's anchor with the nav and findings matching", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/#research");
     await expect(page.locator("#research .claims[data-ready]")).toHaveCount(1);
@@ -485,8 +522,8 @@ test.describe("Research chapter", () => {
     await expect.poll(() => offAnchor(page)).toBeLessThanOrEqual(2);
     await expect(sec(page).locator(".premise")).toBeInViewport();
     await expect(sec(page).locator(".premise")).toBeVisible();
-    for (let i = 0; i < 3; i++) await expect(claim(page, i)).toBeVisible();
-    await expect(page.locator("#ev-sharpe")).toBeVisible();
+    for (let i = 0; i < 3; i++) await expect(finding(page, i)).toBeVisible();
+    await expect(page.locator("#ev-sharpe")).toBeInViewport();
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
     // The landing holds once everything above has settled.
     await page.waitForLoadState("load");
@@ -496,26 +533,24 @@ test.describe("Research chapter", () => {
     await expect(nav.getByRole("link", { name: "Research" })).toHaveAttribute("aria-current", "true");
   });
 
-  test("without JavaScript every claim shows its evidence and every link is visible", async ({ browser }) => {
+  test("without JavaScript every finding shows its evidence and the link is visible", async ({ browser }) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false });
     const page = await ctx.newPage();
     await page.goto("/");
     await expect(sec(page).locator(".premise")).toBeVisible();
-    for (let i = 0; i < 3; i++) await expect(claim(page, i)).toBeVisible();
-    for (const id of ["#ev-sharpe", "#ev-drawdown", "#ev-identity"]) await expect(page.locator(id)).toBeVisible();
+    for (let i = 0; i < 3; i++) await expect(finding(page, i).getByRole("heading", { level: 3 })).toBeVisible();
+    for (const id of figs) await expect(page.locator(id)).toBeVisible();
     await expect(page.locator("#ev-identity")).toContainText("not a pure measure of expected inflation");
     expect(await sharpeBars(page)).toEqual(["none", "none"]);
     for (const a of await sec(page).locator("a").all()) await expect(a).toBeVisible();
     await ctx.close();
   });
 
-  test("before hydration, only the first claim's evidence shows", async ({ page }) => {
+  test("before hydration every finding's evidence already shows", async ({ page }) => {
     await page.route(/\/_next\/static\/chunks\/.*\.js/, (r) => r.abort());
     await page.goto("/");
     await expect(page.locator("html")).toHaveClass(/\bjs\b/);
-    await expect(page.locator("#ev-sharpe")).toBeVisible();
-    await expect(page.locator("#ev-drawdown")).toBeHidden();
-    await expect(page.locator("#ev-identity")).toBeHidden();
+    for (const id of figs) await expect(page.locator(id)).toBeVisible();
   });
 
   test("when the bundle never arrives, the page expands after five seconds", async ({ page }) => {
@@ -525,12 +560,10 @@ test.describe("Research chapter", () => {
     // The head script gives the bundle five seconds, then drops .js.
     await expect(page.locator("html")).not.toHaveClass(/\bjs\b/, { timeout: 7000 });
     await expect(page.locator("html")).not.toHaveAttribute("data-hydrated", /.*/);
-    for (const id of ["#ev-sharpe", "#ev-drawdown", "#ev-identity"]) await expect(page.locator(id)).toBeVisible();
+    for (const id of figs) await expect(page.locator(id)).toBeVisible();
     // The bars grow out from zero (their usual transition) to full length.
     await expect.poll(() => sharpeBars(page), { timeout: 4000 }).toEqual(["none", "none"]);
-    await expect
-      .poll(() => page.locator("#ev-drawdown .bar").evaluate((e) => getComputedStyle(e).transform), { timeout: 4000 })
-      .toBe("none");
+    await expect.poll(() => dropBar(page), { timeout: 4000 }).toBe("none");
     const more = page.locator("#more");
     for (const p of projects.rail) {
       await expect(more.getByRole("heading", { level: 4, name: p.title })).toBeVisible();
@@ -539,37 +572,19 @@ test.describe("Research chapter", () => {
     }
   });
 
-  test("claims are buttons inside level-3 headings (the accordion pattern)", async ({ page }) => {
-    await open(page);
-    for (let i = 0; i < 3; i++) {
-      const parent = await claim(page, i).evaluate((b) => b.parentElement!.tagName);
-      expect(parent).toBe("H3");
-    }
-    await expect(sec(page).getByRole("heading", { level: 3 })).toHaveCount(3);
-    // The heading adds no styling: the claim keeps its prototype type.
-    await expect(claim(page, 0)).toHaveCSS("font-weight", "400");
-    await expect(claim(page, 0)).toHaveCSS("font-size", "18.4px");
-  });
-
   for (const vp of [
     { width: 1280, height: 800 },
     { width: 375, height: 812 },
   ]) {
-    test(`axe: no serious or critical violations in Research at ${vp.width}, claim 1 then claim 3 open`, async ({ page }) => {
+    test(`axe: no serious or critical violations in Research at ${vp.width}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await open(page);
       await sec(page).locator(".premise").scrollIntoViewIfNeeded();
-      const serious = async () => {
-        const r = await new AxeBuilder({ page }).include("#research").analyze();
-        return r.violations
-          .filter((v) => v.impact === "serious" || v.impact === "critical")
-          .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
-      };
-      await expect(claim(page, 0)).toHaveAttribute("aria-expanded", "true");
-      expect(await serious()).toEqual([]);
-      await claim(page, 2).click();
-      await expect(claim(page, 2)).toHaveAttribute("aria-expanded", "true");
-      expect(await serious()).toEqual([]);
+      const r = await new AxeBuilder({ page }).include("#research").analyze();
+      const serious = r.violations
+        .filter((v) => v.impact === "serious" || v.impact === "critical")
+        .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
+      expect(serious).toEqual([]);
     });
   }
 });

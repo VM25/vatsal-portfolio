@@ -18,7 +18,7 @@ export const research = {
   premise:
     "For most of the period from the late 1990s through 2020, U.S. stocks and Treasuries did not fall together. In 2022 they did.",
 
-  ask: "asks whether acting on that helps in practice, using only lagged, observable signals with realistic trading costs and position limits, and measures why the hedge failed.",
+  ask: "asks whether acting on that helps in practice, using lagged, observable signals, realistic costs and position limits, and measures why the hedge failed.",
 
   claims: [
     {
@@ -62,18 +62,13 @@ export const research = {
       value: "≈ −19%",
     },
     identity: {
-      definition: "b ≈ expected inflation + inflation risk premium + TIPS liquidity effects",
-      body: "A breakeven is inflation compensation read off nominal minus TIPS yields. It is not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects.",
+      /** One sentence under the identity (refinement R7): what b is, and what else it carries. */
+      body: "The breakeven b is inflation compensation, not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects.",
     },
   },
 
-  now: {
-    label: "Now · FE800, Fall 2026",
-    body: "Testing whether real-rate dominance is a general feature of Treasury hedge failures or specific to 2022, by applying one standardized hedge book across other market-stress episodes.",
-  },
-
+  /** The paper's one public link. Refinement R7 removed the prospectus link and the dated "Now" line. */
   links: {
     ssrn: { label: "Read on SSRN", href: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7469079" },
-    prospectus: { label: "FE800 prospectus", href: "/research/Maniar-Research-Prospectus.pdf" },
   },
 };

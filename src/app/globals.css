@@ -328,33 +328,40 @@ html:not(.js) .more > .rail-all .stage { padding-top: 22px; border-top: 1px soli
 @container site (max-width: 899px) { .rail .stage.pre { display: grid; } .more > .stage.side { display: none; } }
 
 /* ---------- research ---------- */
-.research { padding-block: 96px 72px; }
+.research { padding-block: 64px 48px; }
 .research .veil { background: linear-gradient(90deg, rgba(11,18,20,0.9), rgba(11,18,20,0.76) 55%, rgba(11,18,20,0.66)); }
-.paper { display: grid; gap: 26px; }
+.paper { display: grid; gap: 20px; }
 .paper .premise { font-family: var(--font-argue); font-size: clamp(1.3rem, 3cqi, 1.65rem); line-height: 1.45; color: var(--fog-hi); max-width: 36ch; }
 .paper .ask { font-family: var(--font-argue); font-size: 1.12rem; line-height: 1.6; color: #CDD4D0; max-width: 58ch; }
 /*
-  One measured column at every width (refinement R4): each claim, then its evidence as
-  one figure directly under it, between the claim's hairline and the next one. The
-  open claim's hairline turns sodium, marking the pair. Nothing here is sticky.
+  Refinement R7: an editorial grid of two columns from a 900px page. The left column is
+  the argument (the premise, then each finding's claim); the right column is the paper
+  and its evidence (the question and the SSRN link, then each finding's figure). Each
+  finding is one row between hairlines, its text and its figure top-aligned; the row is
+  as tall as the taller of the two. On phones the figure follows its claim directly.
+  Everything is in normal flow: nothing is sticky, nothing opens or closes.
 */
-.claims { display: grid; align-items: start; max-width: 46rem; }
-/* Each claim button sits in an h3 (the accordion pattern); the heading adds no styling of its own. */
-.claim-h { margin: 0; font: inherit; letter-spacing: normal; text-wrap: wrap; }
-.claim { text-align: left; display: block; width: 100%; padding: 18px 0; border-top: 1px solid rgba(195,203,198,0.14); font-family: var(--font-argue); font-size: 1.15rem; line-height: 1.5; color: #CDD4D0; min-height: 44px; transition: color 200ms ease; }
-.claim small { display: block; margin-bottom: 4px; font-family: var(--font-world); font-size: 14px; color: var(--fog-mid); }
+.paper .lead { display: grid; gap: 20px; align-items: start; }
+/* The SSRN link closes the paper's description, inline, as a citation. */
+.paper .ask a { font-family: var(--font-world); font-size: 0.9em; color: var(--sodium); white-space: nowrap; text-decoration: underline; text-underline-offset: 0.15em; }
+.claims { display: grid; }
+.finding { display: grid; gap: 16px; align-items: start; padding-block: 20px 24px; border-top: 1px solid rgba(195,203,198,0.14); }
+/* The last finding ends the chapter: no hairline follows it, so neither does the row's bottom space. */
+.finding:last-child { padding-bottom: 0; }
+.finding .ctx { margin-bottom: 6px; font-size: 14px; color: var(--fog-mid); }
+.claim { font-family: var(--font-argue); font-size: 1.15rem; font-weight: 400; line-height: 1.5; letter-spacing: normal; color: var(--fog-hi); max-width: 34rem; text-wrap: pretty; }
 .claim b { font-weight: 500; color: var(--sodium); font-variant-numeric: tabular-nums; }
-.claim[aria-expanded="true"] { color: var(--fog-hi); }
-html.js .claim[aria-expanded="true"] { border-top-color: rgba(255,166,43,0.45); }
-/* Every claim's evidence shows without JavaScript; with it (html.js), only the open one. */
-.ev { display: block; padding: 6px 0 24px; }
+@container site (min-width: 900px) {
+  .paper .lead, .finding { grid-template-columns: minmax(0, 1fr) min(35rem, 50%); column-gap: clamp(40px, 5cqi, 72px); }
+  .finding { padding-block: 20px 24px; }
+  .finding:last-child { padding-bottom: 0; }
+}
 /*
   The figure is the unit: its caption (title, then any note) over the chart, in one box
   of a measured width, with nothing drawn outside it (the SVG clips at its viewBox).
 */
-.ev .fig { margin: 0; max-width: 32rem; }
-.ev .chart figcaption { display: grid; gap: 2px; margin-bottom: 12px; text-wrap: pretty; }
-html.js .ev:not(.on) { display: none; }
+.ev { margin: 0; min-width: 0; max-width: 35rem; }
+.ev.chart figcaption { display: grid; gap: 2px; margin-bottom: 10px; text-wrap: pretty; }
 .ev svg { width: 100%; height: auto; display: block; overflow: hidden; }
 .ev svg text { font-family: var(--font-world); }
 .ev .bar { transform-box: view-box; transition: transform 900ms var(--ease-out); }
@@ -375,19 +382,16 @@ html.rm .ev .bar { transition: none; }
   rendered minimum divided by the narrowest scale in the band (width / 520).
   The title is an HTML caption, so it wraps instead of shrinking.
 */
-.ev .chart { container-type: inline-size; container-name: chart; }
+.ev.chart { container-type: inline-size; container-name: chart; }
 .ev .ctitle { font-size: 14px; color: #CDD4D0; }
 @container chart (max-width: 519px) { .ev svg .tl { font-size: 18px; } .ev svg .tv { font-size: 23px; } .ev svg .tb { font-size: 34px; } .ev svg .ticks text { font-size: 14px; } }
 @container chart (max-width: 449px) { .ev svg .tl { font-size: 22px; } .ev svg .tv { font-size: 27px; } .ev svg .tb { font-size: 38px; } .ev svg .ticks text { font-size: 19px; } }
 @container chart (max-width: 334px) { .ev svg .tl { font-size: 27px; } .ev svg .tv { font-size: 31px; } .ev svg .tb { font-size: 40px; } .ev svg .ticks text { font-size: 23px; } }
-.ev .ident { font-family: var(--font-argue); font-size: clamp(1.2rem, 3cqi, 1.5rem); line-height: 1.7; color: var(--fog-hi); }
-.ev .ident .where { font-size: 0.8em; color: #CDD4D0; }
-.ev .ident .def { display: block; font-size: 0.8em; color: #CDD4D0; }
-.ev .note { color: #CDD4D0; margin-top: 10px; max-width: 48ch; }
+.ev .ident { font-family: var(--font-argue); font-size: clamp(1.2rem, 3cqi, 1.4rem); line-height: 1.6; color: var(--fog-hi); }
+.ev .ident .where { font-size: 0.8em; color: #CDD4D0; white-space: nowrap; }
+.ev .note { color: #CDD4D0; margin-top: 8px; max-width: 60ch; }
+.ev .note i { font-family: var(--font-argue); font-style: italic; }
 .ev .src { font-size: 14px; color: var(--fog-mid); }
-.now { padding: 18px 0; border-block: 1px solid rgba(255,166,43,0.35); display: grid; gap: 4px; }
-.now b { font-weight: 400; color: var(--sodium); font-size: 15px; }
-.now p { font-family: var(--font-argue); font-size: 1.1rem; color: var(--fog-hi); max-width: 62ch; }
 
 /* ---------- path ---------- */
 .path { padding-block: 88px 64px; }

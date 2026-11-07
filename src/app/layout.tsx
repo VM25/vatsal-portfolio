@@ -72,7 +72,7 @@ export const viewport: Viewport = {
 /*
   Runs while the HTML is parsed, before the first paint (see the Next guide
   "preventing flash before hydration"). It marks <html> with .js, so the rail's
-  tabs and the claims' accordion show collapsed from the first frame, and with
+  tabs show collapsed from the first frame, and with
   .rm under reduced motion, so the Sharpe bars never start at zero for those
   readers. Without JavaScript neither class is set and everything is expanded.
   ScrollState keeps .rm in sync afterwards; suppressHydrationWarning lets React
