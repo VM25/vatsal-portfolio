@@ -68,7 +68,7 @@ const liquidity = {
   result: {
     big: "4.2% skill",
     forecast:
-      "On twenty sessions of SOL/USDT order-book data, the five-second forecast worked: an out-of-sample R² of 4.2% on the held-out sessions, positive in all five.",
+      "Across twenty sessions of SOL/USDT order-book data, the five-second forecast worked: an out-of-sample R² of 4.2% on the five held-out sessions, positive in each.",
     losses:
       "Simple quoting rules still lost money in the modeled replay: about 1 to 2 bp of notional before fees, and about 11 to 12 bp at the exchange's default fee tier.",
     caveat:

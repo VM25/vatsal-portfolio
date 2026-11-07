@@ -81,7 +81,7 @@ describe("content", () => {
   });
 
   it("carries no phone number", () => {
-    const text = JSON.stringify(profileMod);
+    const text = JSON.stringify(modules);
     expect(text).not.toMatch(/\+?\d[\d ()-]{8,}\d/);
     expect(text).not.toMatch(/phone/i);
   });
