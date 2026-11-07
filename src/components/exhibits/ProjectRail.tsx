@@ -44,9 +44,7 @@ const panelId = (i: number) => `more-panel-${i}`;
 export function StageBody({ p, copy, heading = true }: { p: RailProject; copy: RailCopy; heading?: boolean }) {
   return (
     <>
-      <p className="fld">
-        {p.field} · {p.year}
-      </p>
+      <p className="fld">{p.field}</p>
       {heading ? <h4>{p.title}</h4> : null}
       <p className="q">{p.question}</p>
       <p className="r">{p.result}</p>

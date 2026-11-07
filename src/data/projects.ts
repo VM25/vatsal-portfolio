@@ -8,7 +8,7 @@ import type { RailProject } from "@/types";
 
 /** Exhibit 1: the slow moment. A binomial tree closing in on Black–Scholes. */
 const diffusion = {
-  field: "Options pricing · 2026",
+  field: "Options pricing",
   title: "DiffusionWorks",
   question:
     "A pricing engine is easy to write and hard to trust. DiffusionWorks prices equity derivatives several ways, then runs fifteen controlled studies of where the methods agree and where they quietly break down.",
@@ -70,7 +70,7 @@ const diffusion = {
 
 /** Exhibit 2: the fast moment. A clearly labelled toy market maker. */
 const liquidity = {
-  field: "Market making · 2026",
+  field: "Market making",
   title: "The Liquidity Paradox",
   question:
     "A market maker earns the gap between its buy and sell quotes, and loses every time the trader on the other side knows where the price is going. Can a five-second forecast tip that balance?",
@@ -110,7 +110,6 @@ const rail: RailProject[] = [
   {
     title: "YieldShock",
     field: "Interest rates",
-    year: "2026",
     question:
       "Pick an inflation-regime shock and a Treasury book: where does the loss actually come from?",
     result:
@@ -126,7 +125,6 @@ const rail: RailProject[] = [
   {
     title: "Signal Survival",
     field: "Trading strategy",
-    year: "2026",
     question:
       "Which simple trading signals survive costs, unseen years and changed settings?",
     result:
@@ -142,7 +140,6 @@ const rail: RailProject[] = [
   {
     title: "Currency Options Desk",
     field: "Foreign exchange",
-    year: "2026",
     question:
       "What does a sharp move cost a dollar–peso options book, and what does a hedge fix?",
     result:
@@ -158,7 +155,6 @@ const rail: RailProject[] = [
   {
     title: "Lending Decisions",
     field: "Credit risk",
-    year: "2026",
     question:
       "Can borrower and payment signals become decisions that hold up: approve, review, decline, block?",
     result:
@@ -174,7 +170,6 @@ const rail: RailProject[] = [
   {
     title: "Allocation Study",
     field: "Portfolios",
-    year: "2026",
     question: "The allocation side of the research memo below.",
     result:
       "A regime-aware allocation across 13 assets, tested against equal weight, minimum variance, maximum Sharpe, SPY and a static 60/40, with transaction costs, position limits and crisis analysis for 2008, 2020 and 2022.",
@@ -189,7 +184,6 @@ const rail: RailProject[] = [
   {
     title: "ApexGP",
     field: "Prediction markets",
-    year: "2025",
     question: "Can a full Formula 1 season be run as a market?",
     result:
       "The 2025 season replays lap by lap as event contracts on a simulated book, with trading halts on safety cars and retirements, an audit ledger and exposure limits.",

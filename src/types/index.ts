@@ -4,7 +4,6 @@ export type FigurePair = [string, string];
 export interface RailProject {
   title: string;
   field: string;
-  year: string;
   question: string;
   result: string;
   figures: FigurePair[];

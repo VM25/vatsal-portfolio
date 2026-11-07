@@ -90,6 +90,21 @@ describe("content", () => {
     expect(text).not.toMatch(/phone/i);
   });
 
+  it("names no fictional time, no publication month and no project year", () => {
+    for (const { s } of all) {
+      expect(s, s).not.toMatch(/\b\d{1,2}:\d{2}\s?(a\.m\.|p\.m\.)/i);
+      expect(s, s).not.toContain("June 2026");
+    }
+    const { diffusion, liquidity, rail } = projectsMod.projects;
+    expect(diffusion.field).toBe("Options pricing");
+    expect(liquidity.field).toBe("Market making");
+    for (const p of rail) {
+      expect(p).not.toHaveProperty("year");
+      expect(p.field, p.field).not.toMatch(/\b(19|20)\d\d\b/);
+    }
+    expect(researchMod.research).not.toHaveProperty("kicker");
+  });
+
   it("has six rail projects with three figures each", () => {
     const { rail } = projectsMod.projects;
     expect(rail).toHaveLength(6);

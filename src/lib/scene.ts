@@ -44,6 +44,18 @@ export const SHOTS: Record<Chapter, Shot> = {
   contact: { hz: 0.3, par: 0.95, amp: 1, ferry: 0.7, plane: 0, mist: 0, lamp: 0, lampx: -0.3 },
 };
 
+/*
+  The warm finish. Dawn never arrives: from DAWN_FROM (about where Research begins)
+  to the page end the scene warms by a smoothstep up to DAWN_MAX, a faint lift at the
+  horizon over the same night. DAWN_MAX is the largest value (in steps of 0.05) at
+  which Contact's night-coloured text still reads 4.5:1 or more against the scene
+  behind it at every tested width, in Chromium and WebKit, measured the way the
+  acceptance contrast test measures it; at 0.55 Contact's links drop to about 4.4:1
+  at 320px. The page's own colours never change.
+*/
+export const DAWN_FROM = 0.4;
+export const DAWN_MAX = 0.5;
+
 export type Uniforms = {
   uTime: number;
   uFog: number;
@@ -108,7 +120,7 @@ export function sceneState(p: number, aspect: number, t: number, keys: number[])
   return {
     uTime: t,
     uFog: 0.92 - 0.58 * smoothstep(0.04, 0.92, p),
-    uDawn: smoothstep(0.8, 0.98, p),
+    uDawn: DAWN_MAX * smoothstep(DAWN_FROM, 1, p),
     uN: 512,
     uFlash: 0,
     uHz: sh.hz + (land ? 0 : 0.06),
@@ -124,16 +136,4 @@ export function sceneState(p: number, aspect: number, t: number, keys: number[])
     uMist: sh.mist,
     uRush: 0,
   };
-}
-
-/** 124 + p * 248 minutes after midnight, as "h:mm a.m.". */
-export function clockAt(p: number): string {
-  const m = Math.round(124 + p * 248);
-  const h = Math.floor(m / 60);
-  const mm = m % 60;
-  return `${h}:${mm < 10 ? "0" : ""}${mm} a.m.`;
-}
-
-export function isMorning(p: number): boolean {
-  return smoothstep(0.8, 0.98, p) > 0.55;
 }

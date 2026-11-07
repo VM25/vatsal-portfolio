@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CHAPTERS, KEYS, KEY_GAP, SHOTS, clockAt, isMorning, keysFromLayout, sceneState, stillWeights } from "@/lib/scene";
+import * as scene from "@/lib/scene";
+import { CHAPTERS, DAWN_FROM, DAWN_MAX, KEYS, KEY_GAP, SHOTS, keysFromLayout, sceneState, stillWeights } from "@/lib/scene";
 
 const K = KEYS;
 
@@ -52,20 +53,37 @@ describe("scene", () => {
     expect(CHAPTERS).toEqual(["home", "projects", "research", "path", "contact"]);
   });
 
-  it("clockAt maps 124 + p*248 minutes", () => {
-    expect(clockAt(0)).toBe("2:04 a.m.");
-    expect(clockAt(0.5)).toBe("4:08 a.m.");
-    expect(clockAt(1)).toBe("6:12 a.m.");
-  });
-
   it("fog runs 0.92 to 0.34", () => {
     expect(sceneState(0, 1.6, 0, K).uFog).toBeCloseTo(0.92, 10);
     expect(sceneState(1, 1.6, 0, K).uFog).toBeCloseTo(0.34, 10);
   });
 
-  it("dawn is 0 at p=0.79 and 1 at p=0.98", () => {
-    expect(sceneState(0.79, 1.6, 0, K).uDawn).toBe(0);
-    expect(sceneState(0.98, 1.6, 0, K).uDawn).toBe(1);
+  it("the warm finish is capped and starts around Research", () => {
+    expect(DAWN_FROM).toBeGreaterThanOrEqual(0.35);
+    expect(DAWN_FROM).toBeLessThanOrEqual(0.5);
+    expect(DAWN_MAX).toBeGreaterThan(0);
+    expect(DAWN_MAX).toBeLessThan(1);
+    expect(sceneState(0, 1.6, 0, K).uDawn).toBe(0);
+    expect(sceneState(DAWN_FROM, 1.6, 0, K).uDawn).toBe(0);
+    expect(sceneState(1, 1.6, 0, K).uDawn).toBeCloseTo(DAWN_MAX, 12);
+  });
+
+  it("dawn rises continuously: no step bigger than a smoothstep's steepest slope allows", () => {
+    // smoothstep's slope peaks at 1.5 / width, so 0.1% of scroll moves dawn by at most this.
+    const dp = 0.001;
+    const bound = (1.5 * DAWN_MAX * dp) / (1 - DAWN_FROM) + 1e-12;
+    let prev = sceneState(0, 1.6, 0, K).uDawn;
+    for (let i = 1; i <= 1000; i++) {
+      const d = sceneState(i * dp, 1.6, 0, K).uDawn;
+      expect(d).toBeGreaterThanOrEqual(prev);
+      expect(d - prev).toBeLessThanOrEqual(bound);
+      prev = d;
+    }
+  });
+
+  it("has no clock and no morning switch", () => {
+    expect(Object.keys(scene)).not.toContain("clockAt");
+    expect(Object.keys(scene)).not.toContain("isMorning");
   });
 
   it("at a key the shot equals that chapter's shot exactly", () => {
@@ -101,11 +119,6 @@ describe("scene", () => {
         .split(" ")
         .sort(),
     );
-  });
-
-  it("isMorning flips with dawn", () => {
-    expect(isMorning(0.85)).toBe(false);
-    expect(isMorning(0.95)).toBe(true);
   });
 
   it("stillWeights puts a still fully on its key and cross-fades the adjacent pair", () => {

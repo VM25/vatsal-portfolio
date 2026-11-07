@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { CHAPTERS, KEYS, clockAt, isMorning, keysFromLayout, type Chapter } from "@/lib/scene";
+import { CHAPTERS, KEYS, keysFromLayout, type Chapter } from "@/lib/scene";
 
 /*
   Scroll state for the whole page: progress p (0 at the top, 1 at the bottom),
@@ -20,11 +20,8 @@ import { CHAPTERS, KEYS, clockAt, isMorning, keysFromLayout, type Chapter } from
   (read every frame by World), so scrolling never re-renders React; only a change
   of chapter does (useChapter, for aria-current).
 
-  Static labels rendered by server components are kept current imperatively, as
-  the prototype does: every [data-clock] shows clockAt(p), every [data-clocktime]
-  inside a chapter's [data-time] label shows that chapter's key time, and
-  every [data-tsec="chapter"] shows the key time without "a.m.". <html> carries
-  .morning, .rm and data-beats (the count of requestBeat calls).
+  Scroll changes the scene only: no class, colour or text in the page follows p.
+  <html> carries .rm and data-beats (the count of requestBeat calls).
 */
 
 /** The two scene actions exhibits can take. */
@@ -74,7 +71,7 @@ function progress(): number {
 /**
  * Key positions come from where each chapter actually sits on the page: the scroll
  * progress at which its anchor lands (keysFromLayout in scene.ts), so a nav or menu
- * jump reads exactly the chapter's own time.
+ * jump lands exactly on the chapter's own shot.
  */
 function measureKeys(prev: number[]): number[] {
   const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -99,27 +96,6 @@ function hashId(): string {
 
 function sameKeys(a: number[], b: number[]) {
   return a.length === b.length && a.every((v, i) => v === b[i]);
-}
-
-/*
-  Only the leaf spans are rewritten: [data-clocktime] inside a chapter's
-  [data-time] label holds nothing but the time, so no React-owned mixed
-  children are ever replaced.
-*/
-function relabel(keys: number[]) {
-  document.querySelectorAll<HTMLElement>("[data-time] [data-clocktime]").forEach((e) => {
-    const sec = e.closest<HTMLElement>("[data-sec]");
-    const i = sec ? CHAPTERS.indexOf(sec.dataset.sec as Chapter) : -1;
-    if (i < 0) return;
-    const next = clockAt(keys[i]);
-    if (next !== e.textContent) e.textContent = next;
-  });
-  document.querySelectorAll<HTMLElement>("[data-tsec]").forEach((e) => {
-    const i = CHAPTERS.indexOf(e.dataset.tsec as Chapter);
-    if (i < 0) return;
-    const next = clockAt(keys[i]).replace(" a.m.", "");
-    if (next !== e.textContent) e.textContent = next;
-  });
 }
 
 export function ScrollStateProvider({ children }: { children: ReactNode }) {
@@ -149,24 +125,13 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
     }
   }, [reducedMotion]);
 
-  // Scroll, measurement and labels.
+  // Scroll and measurement.
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute("data-beats", String(beats.current));
-    let lastClock = "";
+    document.documentElement.setAttribute("data-beats", String(beats.current));
 
     const onScroll = () => {
-      const np = progress();
-      bus.current.p = np;
+      bus.current.p = progress();
       bus.current.dirty = true;
-      const c = clockAt(np);
-      if (c !== lastClock) {
-        lastClock = c;
-        document.querySelectorAll<HTMLElement>("[data-clock]").forEach((e) => {
-          if (e.textContent !== c) e.textContent = c;
-        });
-      }
-      root.classList.toggle("morning", isMorning(np));
     };
 
     const measure = () => {
@@ -175,7 +140,6 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
         bus.current.keys = ks;
         bus.current.dirty = true;
       }
-      relabel(bus.current.keys);
     };
 
     const refresh = () => {

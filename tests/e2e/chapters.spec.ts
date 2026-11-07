@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { measurePacing } from "./helpers";
+import { projects } from "../../src/data/projects";
 
 const EMAIL = "vatsalmaniar2003@gmail.com";
 
@@ -153,13 +154,30 @@ test.describe("Home, Path and Contact", () => {
     expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(EMAIL);
   });
 
-  test("Contact text uses the dark ink on the morning backdrop", async ({ page }) => {
+  test("Contact keeps the night colours at the end of the page", async ({ page }) => {
     await page.goto("/");
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
-    await expect(page.locator("html")).toHaveClass(/morning/);
-    await expect
-      .poll(() => page.locator("#contact h2").evaluate((e) => getComputedStyle(e).color))
-      .toBe("rgb(19, 32, 31)");
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await expect(page.locator("html")).not.toHaveClass(/\bmorning\b/);
+    // --fog-hi, the body text colour, as everywhere else on the page.
+    await expect(page.locator("#contact h2")).toHaveCSS("color", "rgb(230, 235, 231)");
+  });
+
+  test("no clock, no time of day and no publication month anywhere on the page; rail items show no year", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#more .rail[data-ready]")).toHaveCount(1);
+    const text = await page.evaluate(() => document.body.textContent ?? "");
+    expect(text).not.toMatch(/\b\d{1,2}:\d{2}\s?(a\.m\.|p\.m\.)/i);
+    expect(text).not.toContain("June 2026");
+    await expect(page.locator("[data-clock], [data-time], [data-clocktime], [data-tsec], .clock, .place")).toHaveCount(0);
+    // The research memo keeps its SSRN link.
+    await expect(page.locator("#research").getByRole("link", { name: /Read on SSRN/ })).toHaveCount(1);
+    // Every rail item, in the rail, its stage and the no-JavaScript list, carries its field alone.
+    for (const p of projects.rail) {
+      await expect(page.locator(".rail button").filter({ hasText: p.title }).locator("> span")).toHaveText(p.field);
+      await expect(page.locator(".rail-all .stage").filter({ hasText: p.title }).locator(".fld")).toHaveText(p.field);
+    }
+    await expect(page.locator("#projects .ex .fld")).toHaveText(["Options pricing", "Market making"]);
   });
 
   for (const vp of [

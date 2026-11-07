@@ -144,7 +144,7 @@ test.describe("More projects rail", () => {
     test("the stage shows the project's field, figures and both links", async ({ page }) => {
       await open(page, false);
       const p = RAIL[0];
-      await expect(stage(page)).toContainText(`${p.field} · ${p.year}`);
+      await expect(stage(page).locator(".fld")).toHaveText(p.field);
       for (const [n, label] of p.figures) {
         await expect(stage(page).locator(".figs")).toContainText(n);
         await expect(stage(page).locator(".figs")).toContainText(label);

@@ -3,7 +3,7 @@ import { profile } from "@/data/profile";
 import { posts } from "@/data/posts";
 import { frm, route, study } from "@/data/study";
 
-/** Path (#path). ScrollState re-measures the time in [data-time] [data-clocktime]. */
+/** Path (#path). */
 export function Path() {
   const last = route.length - 1;
   return (
@@ -11,9 +11,6 @@ export function Path() {
       <div className="veil" />
       <div className="inner">
         <div className="shead">
-          <p className="t" data-time>
-            <span data-clocktime>5:40 a.m.</span> · along the river
-          </p>
           <h2 id="path-h">{route.map((r) => r.place).join(", ")}</h2>
         </div>
         <div className="who">

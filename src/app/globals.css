@@ -2,7 +2,8 @@
 
 /*
   Clearing. One continuous page over a fixed, scroll-driven scene: the Hudson
-  from Jersey City, 2 a.m. to morning. Tokens, base rules and chapter styles are
+  from Jersey City at night, warming faintly toward the end. The page's own
+  colours are the night palette at every scroll position. Tokens, base rules and chapter styles are
   ported from the approved prototype
   (docs/superpowers/specs/clearing-reference/prototype-source.html); the layout
   is mobile-first with container queries on .site.
@@ -89,20 +90,14 @@
 .inner { max-width: 1240px; margin-inline: auto; }
 
 /* top bar */
-.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 16px; min-height: 60px; padding-bottom: 14px; background: linear-gradient(rgba(11,18,20,0.95) 62%, rgba(11,18,20,0)); transition: background 600ms ease, color 600ms ease; }
-html.morning .top { background: linear-gradient(rgba(236,240,238,0.95) 62%, rgba(236,240,238,0)); color: var(--ink); }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 16px; min-height: 60px; padding-bottom: 14px; background: linear-gradient(rgba(11,18,20,0.95) 62%, rgba(11,18,20,0)); }
 .top .mk { font-weight: 500; text-decoration: none; margin-right: auto; min-height: 44px; display: inline-flex; align-items: center; }
 .top .links { display: none; gap: 26px; }
 .top .links a { text-decoration: none; color: var(--fog-mid); min-height: 44px; display: inline-flex; align-items: center; font-size: 15px; transition: color 200ms ease; }
 /* 44px-wide targets for short labels ("Path"): padding grows the hit area into the 26px gap, the negative margin keeps every label where it was. */
 .top .links a { padding-inline: 8px; margin-inline: -8px; }
-html.morning .top .links a { color: var(--ink-mid); }
 .top .links a[aria-current="true"] { color: var(--fog-hi); }
-html.morning .top .links a[aria-current="true"] { color: var(--ink); }
-.top .clock { display: none; font-size: 14px; color: var(--fog-mid); min-width: 6.5ch; text-align: right; }
-html.morning .top .clock { color: var(--ink-mid); }
 .top .res { display: none; color: var(--sodium); text-decoration: none; font-size: 15px; min-height: 44px; align-items: center; }
-html.morning .top .res { color: #8A5000; }
 .menu-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px 0 12px; font-size: 15px; }
 .menu-btn .bars { display: grid; gap: 4px; }
 .menu-btn .bars i { display: block; width: 18px; height: 1.5px; background: currentColor; }
@@ -114,21 +109,17 @@ html:not(.js) .menu-btn { display: none; }
   (a Tab press, or the Menu button) scrolls the page up to make room.
 */
 .top :is(a, button) { scroll-margin-top: -80px; }
-/* The sodium ring is for the dark bar; on the pale morning bar it would be under 2:1. */
-html.morning .top :focus-visible:not(.skip) { outline-color: var(--ink); }
 /* Skip link: off-screen until it takes focus, then a solid pill with a 3:1 ring. */
 .top .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .top .skip:focus { position: absolute; z-index: 60; top: 8px; left: max(12px, env(safe-area-inset-left, 0px)); display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: var(--ink); color: var(--fog-hi); font-size: 15px; text-decoration: none; outline: 3px solid var(--sodium); outline-offset: 2px; }
 main:focus, .sec:focus { outline: none; }
-@container site (min-width: 760px) { .top .links, .top .clock { display: flex; } .top .res { display: inline-flex; } .menu-btn { display: none; } }
+@container site (min-width: 760px) { .top .links { display: flex; } .top .res { display: inline-flex; } .menu-btn { display: none; } }
 
 /* mobile menu sheet */
 .sheet { position: fixed; inset: 0; z-index: 40; display: grid; align-content: start; gap: 4px; padding: calc(env(safe-area-inset-top, 0px) + 12px) max(20px, env(safe-area-inset-right, 0px)) 30px max(20px, env(safe-area-inset-left, 0px)); background: #080C0D; color: var(--fog-hi); overflow-y: auto; overscroll-behavior: contain; }
 .sheet[hidden] { display: none; }
-.sheet .row1 { display: flex; justify-content: space-between; align-items: center; min-height: 48px; margin-bottom: 18px; }
-.sheet .row1 span { font-size: 14px; color: var(--fog-mid); }
+.sheet .row1 { display: flex; justify-content: flex-end; align-items: center; min-height: 48px; margin-bottom: 18px; }
 .sheet a { display: flex; justify-content: space-between; align-items: baseline; min-height: 60px; padding: 12px 0; border-top: 1px solid rgba(195,203,198,0.15); text-decoration: none; font-weight: 200; font-size: 34px; letter-spacing: -0.02em; }
-.sheet a small { font-family: var(--font-num); font-size: 14px; color: var(--fog-mid); letter-spacing: 0; }
 .sheet .close { min-height: 44px; min-width: 44px; font-size: 15px; }
 .sheet a.res { font-size: 22px; color: var(--sodium); }
 
@@ -138,8 +129,7 @@ main:focus, .sec:focus { outline: none; }
 /* hero */
 .hero { min-height: 88svh; display: flex; flex-direction: column; justify-content: center; padding-block: 24px 64px; }
 .hero .veil { inset: 0 0 -40px; background: radial-gradient(70% 60% at 20% 50%, rgba(11,18,20,0.55), transparent 70%); }
-.place { font-size: 14px; color: var(--fog-mid); }
-.hero h1 { font-size: clamp(3.1rem, 13cqi, 6rem); letter-spacing: -0.04em; line-height: 0.98; margin-top: 10px; }
+.hero h1 { font-size: clamp(3.1rem, 13cqi, 6rem); letter-spacing: -0.04em; line-height: 0.98; }
 .lede { margin-top: 18px; max-width: 30ch; font-weight: 300; font-size: clamp(1.1rem, 2.4cqi, 1.35rem); line-height: 1.5; color: #D6DDD9; }
 .avail { margin-top: 20px; display: flex; gap: 10px; align-items: center; font-size: 15px; color: #C2CAC5; }
 .avail i { width: 8px; height: 8px; border-radius: 50%; background: var(--sodium); box-shadow: 0 0 12px var(--sodium); flex: none; }
@@ -161,10 +151,10 @@ html:not(.js) .refl .n-still { display: inline; }
   blur alone fades within a pixel of the stroke, so it also gets a 1px night-deep edge.
 */
 @container site (max-width: 759px) {
-  html:not(.morning) .hero :is(.place, .avail, .tlink, .refl) {
+  .hero :is(.avail, .tlink, .refl) {
     text-shadow: 0 0 3px rgba(6,10,11,0.9), 0 0 8px rgba(6,10,11,0.75), 0 0 16px rgba(6,10,11,0.6);
   }
-  html:not(.morning) .hero .refl b {
+  .hero .refl b {
     text-shadow:
       1px 0 1px #060A0B, -1px 0 1px #060A0B, 0 1px 1px #060A0B, 0 -1px 1px #060A0B,
       1px 1px 1px #060A0B, -1px 1px 1px #060A0B, 1px -1px 1px #060A0B, -1px -1px 1px #060A0B,
@@ -173,7 +163,6 @@ html:not(.js) .refl .n-still { display: inline; }
 }
 
 .shead { display: grid; gap: 10px; margin-bottom: 36px; }
-.shead .t { font-size: 14px; color: var(--fog-mid); }
 .shead h2 { font-size: clamp(2.4rem, 7cqi, 4rem); letter-spacing: -0.035em; line-height: 1; }
 .shead p.sub { max-width: 52ch; color: #CDD4D0; font-weight: 300; }
 
@@ -384,29 +373,25 @@ html.rm .ev .bar { transition: none; }
 .role { display: grid; grid-template-columns: 1fr; gap: 2px; padding: 12px 0; border-top: 1px solid rgba(195,203,198,0.12); }
 .role b { font-weight: 400; color: var(--fog-hi); }
 .role span { font-size: 14px; color: var(--fog-mid); }
-/* Under the morning sky the veil's light right edge leaves fog-mid at about 3.2:1; fog reads 5:1. */
-html.morning .role span { color: var(--fog); }
+/*
+  Path's small secondary lines (dates, places, the FRM sitting) sit on the lit skyline
+  where the veil thins to the right. The same soft night-deep halo as the opening
+  screen's keeps them at 4.5:1 or more without changing their colour.
+*/
+.path :is(.stop .d, .frm span, .role span) { text-shadow: 0 0 3px rgba(6,10,11,0.9), 0 0 8px rgba(6,10,11,0.75), 0 0 16px rgba(6,10,11,0.6); }
 @container site (min-width: 760px) { .role { grid-template-columns: 1.4fr 1fr auto; gap: 18px; align-items: baseline; } }
 
 /* ---------- contact ---------- */
 .contact { min-height: 78svh; padding-block: 96px 44px; display: flex; flex-direction: column; justify-content: center; }
-.contact .veil { inset: -40px 0 0; background: radial-gradient(80% 70% at 25% 50%, rgba(11,18,20,0.6), transparent 75%); transition: background 800ms ease; }
-html.morning .contact { color: var(--ink); }
-html.morning .contact .veil { background: linear-gradient(to top, rgba(240,243,241,0.8), rgba(240,243,241,0) 28%), radial-gradient(80% 70% at 25% 50%, rgba(240,243,241,0.8), rgba(240,243,241,0.25) 75%); }
+.contact .veil { inset: -40px 0 0; background: radial-gradient(80% 70% at 25% 50%, rgba(11,18,20,0.6), transparent 75%); }
 .contact h2 { font-size: clamp(3rem, 12cqi, 6rem); letter-spacing: -0.04em; line-height: 1; }
 .contact .st { margin-top: 18px; font-size: 1.15rem; font-weight: 300; max-width: 40ch; }
 .chan { margin-top: 30px; display: grid; max-width: 600px; }
 .chan > div { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 54px; border-top: 1px solid rgba(195,203,198,0.2); }
-html.morning .chan > div { border-color: rgba(19,32,31,0.18); }
 .chan .k { font-size: 14px; opacity: 0.8; }
-html.morning .chan .k { opacity: 0.9; } /* 0.8 measured 4.4:1 on the morning veil */
 .chan a { text-decoration: none; overflow-wrap: anywhere; min-height: 44px; display: inline-flex; align-items: center; border-bottom: 1px solid currentColor; border-color: rgba(195,203,198,0.3); align-self: center; }
-html.morning .chan a { border-color: rgba(19,32,31,0.75); }
-.copy { min-width: 7.5rem; min-height: 44px; padding: 0 12px; font-size: 14px; border: 1px solid rgba(195,203,198,0.35); }
-html.morning .copy { border-color: var(--ink); background: rgba(240,243,241,0.88); }
-html.morning .contact .place { color: var(--ink); opacity: 1; }
-html.morning .contact .foot { opacity: 1; }
-.contact .place { opacity: 0.85; }
+/* A night fill: on phones the button sits on the skyline, where a lit window behind "Copy" would leave it under 4.5:1. */
+.copy { min-width: 7.5rem; min-height: 44px; padding: 0 12px; font-size: 14px; border: 1px solid rgba(195,203,198,0.35); background: rgba(11,18,20,0.8); }
 .foot { margin-top: 48px; font-size: 14px; opacity: 0.8; }
 
 

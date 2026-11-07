@@ -1,6 +1,9 @@
 /*
-  The world: one full-screen fragment shader, ported verbatim from the approved
-  prototype (docs/superpowers/specs/clearing-reference/prototype-source.html).
+  The world: one full-screen fragment shader, ported from the approved prototype
+  (docs/superpowers/specs/clearing-reference/prototype-source.html). One change since:
+  as dawn rises, a lit window fades out over a short band instead of switching off at
+  a threshold, so the warm finish (scene.ts) has no steps. At dawn 0 the windows are
+  exactly the prototype's.
   Uniform names equal the keys sceneState() returns; tests/unit/shader.test.ts
   holds them together.
 */
@@ -21,7 +24,7 @@ export const FRAGMENT_SRC = [
   "  if(fx<0.07||fx>0.93||y<hz||y>hz+bh) return vec4(0.);",
   "  float ry=(y-hz)*230./amp; float rx=fx*7.; vec2 cell=vec2(floor(rx),floor(ry)); vec2 f=fract(vec2(rx,ry));",
   "  float win=step(0.2,f.x)*step(f.x,0.8)*step(0.25,f.y)*step(f.y,0.75);",
-  "  float on=step(0.64+uDawn*0.3*hash(cell+c),hash(cell+c*0.37+seed))*win*(1.-uDawn*0.9);",
+  "  float wh=hash(cell+c*0.37+seed)-0.64; float on=step(0.,wh)*smoothstep(-0.05,0.,wh-uDawn*0.3*hash(cell+c))*win*(1.-uDawn*0.9);",
   "  vec3 wc=mix(vec3(1.,.78,.48),vec3(.78,.86,1.),step(.8,hash(cell*1.9+c)))*(.45+.55*hash(cell+c+3.));",
   "  vec3 fac=mix(vec3(.018,.024,.027)+far*vec3(.012,.014,.014),vec3(.20,.22,.24)+far*vec3(.12,.12,.12),uDawn);",
   "  float gr=clamp((y-hz)/bh,0.,1.); fac*=mix(1.,0.78+0.4*gr,uDawn); fac+=vec3(.10,.07,.04)*uDawn*smoothstep(0.75,0.95,fx)*(1.-far);",

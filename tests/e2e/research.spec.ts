@@ -36,11 +36,12 @@ const beats = (page: Page) => page.evaluate(() => Number(document.documentElemen
 const sharpeBars = (page: Page) =>
   sec(page).locator("#ev-sharpe .bar").evaluateAll((els) => els.map((e) => getComputedStyle(e).transform));
 
-/** Minutes past midnight from "4:45 a.m.". */
-function minutes(s: string): number {
-  const m = /(\d+):(\d\d)/.exec(s)!;
-  return Number(m[1]) * 60 + Number(m[2]);
-}
+/** Pixels between Research's top and its anchor landing (the computed scroll-padding-top). */
+const offAnchor = (page: Page) =>
+  page.evaluate(() => {
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    return Math.abs(document.getElementById("research")!.getBoundingClientRect().top - pad);
+  });
 
 test.describe("Research chapter", () => {
   test.beforeEach(async ({ page }) => {
@@ -323,7 +324,7 @@ test.describe("Research chapter", () => {
     await expect(page.locator("html")).toHaveAttribute("data-beats", "3");
   });
 
-  test("Review Focus 4: /#research lands on Research with the nav, clock and claims matching", async ({ page }) => {
+  test("Review Focus 4: /#research lands on Research's anchor with the nav and claims matching", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/#research");
     await expect(page.locator("#research .claims[data-ready]")).toHaveCount(1);
@@ -332,10 +333,7 @@ test.describe("Research chapter", () => {
     await expect(page.getByRole("heading", { level: 2, name: research.title })).toBeInViewport();
     const nav = page.getByRole("navigation", { name: "Main" });
     await expect(nav.getByRole("link", { name: "Research" })).toHaveAttribute("aria-current", "true");
-    const key = (await sec(page).locator("[data-time] [data-clocktime]").textContent())!;
-    await expect
-      .poll(async () => Math.abs(minutes((await page.locator(".top .clock").textContent())!) - minutes(key)))
-      .toBeLessThanOrEqual(1);
+    await expect.poll(() => offAnchor(page)).toBeLessThanOrEqual(2);
     await expect(sec(page).locator(".premise")).toBeInViewport();
     await expect(sec(page).locator(".premise")).toBeVisible();
     for (let i = 0; i < 3; i++) await expect(claim(page, i)).toBeVisible();
@@ -345,6 +343,8 @@ test.describe("Research chapter", () => {
     await page.waitForLoadState("load");
     await ticks(page, 10);
     await expect(page.getByRole("heading", { level: 2, name: research.title })).toBeInViewport();
+    expect(await offAnchor(page)).toBeLessThanOrEqual(2);
+    await expect(nav.getByRole("link", { name: "Research" })).toHaveAttribute("aria-current", "true");
   });
 
   test("without JavaScript every claim shows its evidence and every link is visible", async ({ browser }) => {

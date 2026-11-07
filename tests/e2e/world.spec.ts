@@ -1,6 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clockAt } from "../../src/lib/scene";
+import { DAWN_MAX } from "../../src/lib/scene";
 import { measuredKeys } from "./helpers";
+
+type Hook = { frames?: number; p?: number; keys?: number[]; dawn?: number };
+const hook = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __CLEARING_TEST__: Hook }).__CLEARING_TEST__);
 
 /*
   Headless browsers render WebGL in software, so the frame-time watchdog would
@@ -69,6 +73,14 @@ async function scrollToSection(page: Page, id: string) {
   }, id);
 }
 
+/** Where a chapter sits against its anchor landing: its top minus the computed scroll-padding-top. */
+async function offAnchor(page: Page, id: string): Promise<number> {
+  return page.evaluate((id) => {
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    return Math.abs(document.getElementById(id)!.getBoundingClientRect().top - pad);
+  }, id);
+}
+
 test.describe("page shell and world", () => {
   test.beforeEach(async ({ page }) => {
     await noWatchdog(page);
@@ -103,15 +115,20 @@ test.describe("page shell and world", () => {
     expect(await canvasColours(page)).toBeGreaterThan(8);
   });
 
-  test("scrolling to the bottom reaches 6:12 a.m. and morning", async ({ page }) => {
+  test("scrolling to the bottom warms the scene and changes nothing on the page", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".top .clock")).toHaveText("2:04 a.m.");
-    await expect(page.locator("html")).not.toHaveClass(/\bmorning\b/);
+    test.skip(!(await hasWebGL(page)), "no WebGL in this browser build");
+    expect(await sceneMode(page)).toBe("gl");
+    await expect.poll(async () => (await hook(page)).dawn).toBe(0);
+    const before = await page.evaluate(() => document.documentElement.className);
     await page.evaluate(() =>
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }),
     );
-    await expect(page.locator(".top .clock")).toHaveText("6:12 a.m.");
-    await expect(page.locator("html")).toHaveClass(/\bmorning\b/);
+    await expect.poll(async () => (await hook(page)).p).toBe(1);
+    expect((await hook(page)).dawn).toBeCloseTo(DAWN_MAX, 6);
+    expect(await page.evaluate(() => document.documentElement.className)).toBe(before);
+    await expect(page.locator("html")).not.toHaveClass(/\bmorning\b/);
+    await expect(page.locator("[data-clock], [data-time], [data-clocktime], [data-tsec], .top .clock")).toHaveCount(0);
   });
 
   test("Review Focus 1: losing the WebGL context swaps to the stills within 500 ms", async ({ page }) => {
@@ -127,30 +144,34 @@ test.describe("page shell and world", () => {
     await expect(page.locator(".bg")).toHaveAttribute("data-fallback", "context-lost");
   });
 
-  test("Review Focus 2: resizing mid-scroll re-measures keys, labels and orientation", async ({ page }) => {
+  test("Review Focus 2: resizing mid-scroll re-measures the keys and the orientation", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    await sceneMode(page);
+    test.skip(!(await hasWebGL(page)), "no WebGL in this browser build");
+    expect(await sceneMode(page)).toBe("gl");
     await expect(page.locator(".bg")).toHaveAttribute("data-orientation", "land");
+    const near = (a: number[] | undefined, b: number[]) =>
+      !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < 1e-6);
 
-    const label = page.locator('[data-sec="research"] [data-time]');
     await scrollToSection(page, "research");
-    const wideKey = (await measuredKeys(page))[2];
-    await expect(label).toHaveText(new RegExp(`^${clockAt(wideKey)} · `));
-    const wideLabel = await label.textContent();
+    const wide = await measuredKeys(page);
+    // The scene draws with the keys measured from this layout.
+    await expect.poll(async () => near((await hook(page)).keys, wide)).toBe(true);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator(".bg")).toHaveAttribute("data-orientation", "port");
-    // Wait for the reflow to settle into a different key time before reading it.
-    await expect
-      .poll(async () => clockAt((await measuredKeys(page))[2]))
-      .not.toBe(clockAt(wideKey));
-    const narrowKey = (await measuredKeys(page))[2];
-    await expect(label).toHaveText(new RegExp(`^${clockAt(narrowKey)} · `));
-    expect(await label.textContent()).not.toBe(wideLabel);
+    // Wait for the reflow to settle into different keys, then the scene must use them.
+    await expect.poll(async () => Math.abs((await measuredKeys(page))[2] - wide[2])).toBeGreaterThan(0.005);
+    await expect.poll(async () => near((await hook(page)).keys, await measuredKeys(page))).toBe(true);
+    // The scene follows the scroll position after the reflow.
+    await expect.poll(async () => Math.abs(((await hook(page)).p ?? -1) - (await progress(page)))).toBeLessThan(1e-6);
 
-    // The clock still agrees with the scroll position after the reflow.
-    await expect(page.locator(".top .clock")).toHaveText(clockAt(await progress(page)));
+    // A jump to Research after the reflow lands on its anchor, on Research's key.
+    await page.getByRole("button", { name: "Menu" }).click();
+    await page.getByRole("dialog", { name: "Sections" }).getByRole("link", { name: "Research" }).click();
+    await expect.poll(() => offAnchor(page, "research")).toBeLessThanOrEqual(2);
+    const key = (await measuredKeys(page))[2];
+    await expect.poll(async () => Math.abs(((await hook(page)).p ?? -1) - key)).toBeLessThan(0.002);
   });
 
   test("no horizontal scroll at 320 px", async ({ page }) => {
@@ -163,7 +184,7 @@ test.describe("page shell and world", () => {
     expect(over).toBeLessThanOrEqual(0);
   });
 
-  test("without WebGL the stills stand in and the clock still runs", async ({ page }) => {
+  test("without WebGL the stills stand in and still follow the scroll", async ({ page }) => {
     await page.addInitScript(() => {
       const orig = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
@@ -179,7 +200,8 @@ test.describe("page shell and world", () => {
     await page.evaluate(() =>
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }),
     );
-    await expect(page.locator(".top .clock")).toHaveText("6:12 a.m.");
+    await expect(page.locator('.bg .stills img[src$="4.jpg"]')).toHaveCSS("opacity", "1");
+    await expect(page.locator("html")).not.toHaveClass(/\bmorning\b/);
   });
 
   test("reduced motion freezes time but the scene still follows scroll", async ({ browser }) => {

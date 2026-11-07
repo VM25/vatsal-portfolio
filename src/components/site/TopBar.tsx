@@ -2,7 +2,6 @@
 
 import { useSyncExternalStore } from "react";
 import { useChapter } from "@/components/world/ScrollState";
-import { Clock } from "@/components/site/Clock";
 import { onJumpClick } from "@/components/site/jump";
 import { getMenuOpen, getMenuOpenServer, setMenuOpen, subscribeMenu } from "@/components/site/menuStore";
 import { profile } from "@/data/profile";
@@ -17,10 +16,9 @@ const LINKS: { id: Exclude<Chapter, "home">; label: string }[] = [
 
 /*
   Sticky top bar. It re-renders only when the active chapter changes (for
-  aria-current) or the menu opens; the clock is rewritten imperatively by
-  ScrollState. Section links jump through jumpTo (see jump.ts). From 760px of
-  container width the links, clock and résumé show; below it, one Menu button
-  opens the dialog in MobileMenu.
+  aria-current) or the menu opens. Section links jump through jumpTo (see
+  jump.ts). From 760px of container width the links and résumé show; below it,
+  one Menu button opens the dialog in MobileMenu.
 */
 export function TopBar() {
   const chapter = useChapter();
@@ -52,7 +50,6 @@ export function TopBar() {
           </a>
         ))}
       </nav>
-      <Clock className="clock" />
       <a className="res" href={profile.links.resume} target="_blank" rel="noopener">
         Résumé<span className="sr-only"> (PDF), opens in a new tab</span>
       </a>

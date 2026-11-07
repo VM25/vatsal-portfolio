@@ -31,23 +31,28 @@ async function frames(page: Page, n: number) {
   }, n);
 }
 
-/** The three scene states §8.3 names: night (the top), research fog, morning (the bottom). */
-const POSITIONS = ["night", "research", "morning"] as const;
+/*
+  Scene states to check: night (the top), the research fog, late (90% down, Path's
+  experience list over the warming scene) and the end (the warm finish at its cap,
+  behind Contact). The page keeps its night colours at all of them; there is no
+  morning state (refinement R1).
+*/
+const POSITIONS = ["night", "research", "late", "end"] as const;
 type Position = (typeof POSITIONS)[number];
 
 async function scrollToPosition(page: Page, at: Position) {
   await page.evaluate((at) => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     let top = 0;
-    if (at === "morning") top = max;
+    if (at === "end") top = max;
+    if (at === "late") top = Math.round(max * 0.9);
     if (at === "research") {
       const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
       top = document.getElementById("research")!.getBoundingClientRect().top + window.scrollY - pad;
     }
     window.scrollTo({ top, behavior: "instant" });
   }, at);
-  if (at === "morning") await expect(page.locator("html")).toHaveClass(/\bmorning\b/);
-  else await expect(page.locator("html")).not.toHaveClass(/\bmorning\b/);
+  await expect(page.locator("html")).not.toHaveClass(/\bmorning\b/);
 }
 
 test.describe("acceptance", () => {
@@ -101,6 +106,8 @@ test.describe("acceptance", () => {
 
   /* (c) §8.3 Secondary text at 14px or more; SVG and canvas axis tick labels at 12px or more. */
   test("(c) text: every visible text at 14px or more; SVG and canvas axis ticks at 12px or more", async ({ browser }) => {
+    // Five widths, each waiting for a full market-making run (about 4 s, longer on a loaded machine).
+    test.setTimeout(120_000);
     const small: string[] = [];
     for (const width of [320, 375, 768, 1280, 1440]) {
       const ctx = await browser.newContext({ viewport: { width, height: 900 } });
@@ -218,12 +225,12 @@ test.describe("acceptance", () => {
     expect([...new Set(small)]).toEqual([]);
   });
 
-  /* (e) §8.3 axe-core over the whole page at the night, research and morning positions. */
+  /* (e) §8.3 axe-core over the whole page at the night, research, late and end positions. */
   for (const vp of [
     { width: 1280, height: 800 },
     { width: 375, height: 812 },
   ]) {
-    test(`(e) axe: no serious or critical violations at night, research and morning, at ${vp.width}`, async ({ page }) => {
+    test(`(e) axe: no serious or critical violations at night, research, late and end, at ${vp.width}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await settled(page);
       const found: string[] = [];
@@ -260,13 +267,14 @@ test.describe("acceptance", () => {
     { width: 360, height: 780 },
     { width: 320, height: 568 },
   ]) {
-    test(`(f) contrast: text against the scene behind it at night, research and morning, at ${vp.width}`, async ({ page }) => {
+    test(`(f) contrast: text against the scene behind it at night, research, late and end, at ${vp.width}`, async ({ page }) => {
+      test.setTimeout(90_000);
       await page.setViewportSize(vp);
       await settled(page);
       const fails: string[] = [];
       for (const at of POSITIONS) {
         await scrollToPosition(page, at);
-        // Let the scene, the morning colour change and any beat flash settle.
+        // Let the scene and any beat settle.
         await page.waitForTimeout(at === "night" ? 500 : 3200);
         const r = await contrastHere(page);
         console.log(
@@ -359,6 +367,10 @@ test.describe("acceptance", () => {
         return out;
       });
       expect(hidden, "text hidden without JavaScript").toEqual([]);
+      // No clock and no time of day in the served page either (refinement R1).
+      const served = (await main.textContent()) ?? "";
+      expect(served).not.toMatch(/\b\d{1,2}:\d{2}\s?(a\.m\.|p\.m\.)/i);
+      expect(served).not.toContain("June 2026");
       await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
       await expect(main.getByText(profile.name).first()).toBeVisible();
       // Research: premise, the three claims and all three evidence blocks.

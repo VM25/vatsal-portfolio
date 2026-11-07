@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { clockAt } from "../../src/lib/scene";
 
 async function noWatchdog(page: Page) {
   await page.addInitScript(() => {
@@ -40,22 +39,27 @@ async function tap(page: Page, locator: Locator) {
 }
 
 /**
- * Minutes between the top-bar clock and a chapter's label time ([data-clocktime] in its
- * [data-time] line; Home has none and its key is 0, the scene's first time).
+ * Pixels between where a chapter is and where its anchor lands: its top against the
+ * computed scroll-padding-top. Home ("top") lands at scroll 0. A chapter that cannot
+ * reach its anchor because the page ends first (Contact, on most layouts) has landed
+ * when the page is scrolled to the end with the chapter at or below the anchor.
  */
-async function clockGap(page: Page, id: string): Promise<number> {
+async function offAnchor(page: Page, id: string): Promise<number> {
+  return page.evaluate((id) => {
+    if (id === "top") return Math.abs(window.scrollY);
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const top = document.getElementById(id)!.getBoundingClientRect().top;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (window.scrollY >= max - 1 && top >= pad - 2) return 0;
+    return Math.abs(top - pad);
+  }, id);
+}
+
+/** The link marked aria-current in the given container, by href ("" when none is). */
+async function currentHref(page: Page, container: string): Promise<string> {
   return page.evaluate(
-    ({ id, home }) => {
-      const m = (s: string) => {
-        const r = /(\d+):(\d\d)/.exec(s)!;
-        return Number(r[1]) * 60 + Number(r[2]);
-      };
-      const clock = document.querySelector(".top .clock")!.textContent ?? "";
-      const label =
-        id === "top" ? home : (document.querySelector(`#${id} [data-time] [data-clocktime]`)!.textContent ?? "");
-      return Math.abs(m(clock) - m(label));
-    },
-    { id, home: clockAt(0) },
+    (sel) => document.querySelector(`${sel} a[aria-current="true"]`)?.getAttribute("href") ?? "",
+    container,
   );
 }
 
@@ -129,7 +133,9 @@ test.describe("top bar and menu", () => {
       await expect(dialog).toHaveAttribute("aria-modal", "true");
 
       await expect(dialog.getByRole("link", { name: /^Home/ })).toBeFocused();
-      await expect(dialog.getByRole("link", { name: /^Projects/ })).toContainText(/\d:\d\d/);
+      // The rows are the section names alone: no times.
+      await expect(dialog.getByRole("link", { name: /^Projects/ })).toHaveText("Projects");
+      await expect(dialog).not.toContainText(/\d:\d\d/);
       await expect(dialog.getByRole("link", { name: /^Résumé \(PDF\)/ })).toHaveAttribute(
         "href",
         "/resume/Maniar_Vatsal.pdf",
@@ -222,8 +228,8 @@ test.describe("top bar and menu", () => {
     });
   });
 
-  test.describe("jumps land on the chapter's own time", () => {
-    test("each top-bar link at 1280×800: the clock reads the chapter's label time", async ({ page }) => {
+  test.describe("jumps land on the chapter", () => {
+    test("each top-bar link at 1280×800 lands the chapter on its anchor and marks it current", async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
       await settled(page);
       const bar = page.locator("header.top");
@@ -236,7 +242,10 @@ test.describe("top bar and menu", () => {
         ["top", "Vatsal Maniar"],
       ]) {
         await bar.getByRole("link", { name, exact: true }).click();
-        await expect.poll(() => clockGap(page, id), { message: `${name}` }).toBeLessThanOrEqual(1);
+        await expect.poll(() => offAnchor(page, id), { message: `${name} lands on its anchor` }).toBeLessThanOrEqual(2);
+        await expect
+          .poll(() => currentHref(page, "header.top nav"), { message: `${name} is current` })
+          .toBe(id === "top" ? "" : `#${id}`);
       }
     });
 
@@ -280,13 +289,13 @@ test.describe("top bar and menu", () => {
             { message: `${name} lands at the top of the viewport` },
           )
           .toBeLessThanOrEqual(2);
-        await expect.poll(() => clockGap(page, id), { message: `${name} clock` }).toBeLessThanOrEqual(1);
+        await expect.poll(() => currentHref(page, "header.top nav"), { message: `${name} is current` }).toBe(`#${id}`);
         expect(await page.evaluate(() => location.hash)).toBe(`#${id}`);
         expect(await page.evaluate(() => document.activeElement?.id)).toBe(id);
       });
     }
 
-    test("each menu item at 390×844: the clock reads the chapter's label time", async ({ page }) => {
+    test("each menu item at 390×844 lands the chapter on its anchor and marks it current", async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await settled(page);
       for (const [id, name] of [
@@ -300,14 +309,10 @@ test.describe("top bar and menu", () => {
         await tap(page, page.getByRole("button", { name: "Menu" }));
         const dialog = page.getByRole("dialog", { name: "Sections" });
         const link = dialog.getByRole("link", { name: new RegExp(`^${name}`) });
-        // The menu shows the same time as the chapter's label.
-        if (id !== "top") {
-          const label = await page.locator(`#${id} [data-time] [data-clocktime]`).textContent();
-          await expect(link.locator("[data-tsec]")).toHaveText(label!.replace(" a.m.", ""));
-        }
         await link.click();
         await expect(dialog).toBeHidden();
-        await expect.poll(() => clockGap(page, id), { message: `${name}` }).toBeLessThanOrEqual(1);
+        await expect.poll(() => offAnchor(page, id), { message: `${name} lands on its anchor` }).toBeLessThanOrEqual(2);
+        await expect.poll(() => currentHref(page, "#menu"), { message: `${name} is current` }).toBe(`#${id}`);
       }
     });
   });

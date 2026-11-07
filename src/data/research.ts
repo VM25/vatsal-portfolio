@@ -13,7 +13,6 @@ export interface Claim {
 
 export const research = {
   title: "The hedge that stopped working",
-  kicker: "Research memo, June 2026 · on SSRN",
   paperTitle: "Stock–Bond Diversification in an Inflation-Driven Rates Regime",
 
   premise:

@@ -25,12 +25,20 @@ import { useSceneBus } from "./ScrollState";
   is fully converged, there are no gusts, flashes, rush or pointer drift, and
   the scene redraws only when scroll or size changes (still within the cap).
 
+  A beat (requestBeat) clears the fog for a moment, and a chapter change breathes a
+  little more in (the gust). Each moves the scene's mean luminance by under 4% of its
+  range at most (FLASH_PEAK, GUST_FOG), so neither reads as a flash.
+
   Tests may set window.__CLEARING_TEST__ = { watchdog: false } to switch off
   the watchdog only, or { watchdogMs: n } to change its threshold (-1 always
   trips it once enough samples exist). { preserve: true } keeps the drawing
   buffer after compositing so tests can read the canvas back (toDataURL);
-  production doesn't pay for that. When the hook object exists, World also counts
-  its drawn frames in it (hook.frames), so tests can see the scene stop and start.
+  production doesn't pay for that. { freeze: true } draws every frame as the
+  still scene reduced motion shows (time frozen, n = 512, no gust, beat, rush or
+  pointer drift), so the picture depends on scroll alone. When the hook object
+  exists, World also counts its drawn frames in it (hook.frames) and records the
+  progress, chapter keys and dawn of the last one (hook.p, hook.keys, hook.dawn), so tests can see the
+  scene stop and start and follow the scroll.
 */
 
 type Reason = "no-webgl" | "shader" | "context-lost" | "slow";
@@ -41,7 +49,16 @@ type Renderer = {
   /** Give the context back to the browser. */
   release(): void;
 };
-type TestHook = { watchdog?: boolean; watchdogMs?: number; preserve?: boolean; frames?: number };
+type TestHook = {
+  watchdog?: boolean;
+  watchdogMs?: number;
+  preserve?: boolean;
+  freeze?: boolean;
+  frames?: number;
+  p?: number;
+  keys?: number[];
+  dawn?: number;
+};
 
 const FRAME_MS = 1000 / 30;
 // Accept a frame a little early so a 60 Hz display holds 30 fps rather than
@@ -53,6 +70,12 @@ const WATCHDOG_EVERY = 5;
 const WATCHDOG_MIN_SAMPLES = 5;
 const SUSPENDED_MS = 250;
 const STILL_TIME = 11;
+// The beat's fog clearing at its peak: 1 cleared the fog entirely, moving mean
+// luminance by up to 8.5% of its range; 0.45 keeps it under 4%.
+const FLASH_PEAK = 0.45;
+// A chapter change breathes extra fog in (the gust). Under the warm finish the fog is
+// lighter, so the full 0.35 stepped mean luminance by up to 4.7%; 0.28 keeps it under 4%.
+const GUST_FOG = 0.28;
 const STILL_COUNT = 5;
 type Orientation = "land" | "port";
 
@@ -177,20 +200,25 @@ export function World() {
     /** Draw one frame of the scene at time `now`. */
     const paint = (r: Renderer, now: number) => {
       const b = bus.read();
-      const still = b.reducedMotion;
+      const still = b.reducedMotion || hook.freeze === true;
       const t = still ? STILL_TIME : (now - t0) / 1000;
       const k = still ? 9 : Math.min(9, Math.floor((now - t0) / 1000 / 1.1));
       const n = 2 ** k;
       writeN(n);
       const st = sceneState(b.p, w / h, t, b.keys);
       st.uN = n;
-      st.uFlash = still ? 0 : Math.min(1, b.flash * 1.6);
-      st.uFog = Math.min(0.97, st.uFog + (still ? 0 : b.gust * 0.35));
+      st.uFlash = still ? 0 : Math.min(1, b.flash * 1.6) * FLASH_PEAK;
+      st.uFog = Math.min(0.97, st.uFog + (still ? 0 : b.gust * GUST_FOG));
       st.uRush = still ? 0 : b.rush;
       st.uPar += still ? 0 : mx * 0.03;
       r.draw(st);
       bus.frameDone();
-      if (testHook) testHook.frames = (testHook.frames ?? 0) + 1;
+      if (testHook) {
+        testHook.frames = (testHook.frames ?? 0) + 1;
+        testHook.p = b.p;
+        testHook.keys = b.keys;
+        testHook.dawn = st.uDawn;
+      }
     };
 
     const resize = () => {

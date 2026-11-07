@@ -43,7 +43,6 @@ function counts(text: string) {
   return text.split(/(\d+ of \d+)/).map((part, i) => (i % 2 === 1 ? <b key={i}>{part}</b> : part));
 }
 
-
 const copy: DiffusionCopy = {
   controls: dw.controls,
   readouts: dw.readouts,
@@ -60,7 +59,7 @@ const copy: DiffusionCopy = {
   say: dw.say,
 };
 
-/** Projects (#projects). ScrollState re-measures the time in [data-time] [data-clocktime]. */
+/** Projects (#projects). */
 export function Projects() {
   const [stampNum, ...stampRest] = dw.result.big.split(" ");
   const [cutNum, ...cutRest] = lp.result.big.split(" ");
@@ -69,9 +68,6 @@ export function Projects() {
       <div className="veil" />
       <div className="inner">
         <div className="shead">
-          <p className="t" data-time>
-            <span data-clocktime>3:20 a.m.</span> · down at the waterline
-          </p>
           <h2 id="projects-h">Projects</h2>
           <p className="sub">{projects.intro}</p>
         </div>

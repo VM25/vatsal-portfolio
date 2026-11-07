@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
 import { useChapter } from "@/components/world/ScrollState";
-import { Clock } from "@/components/site/Clock";
 import { jumpTo } from "@/components/site/jump";
 import { getMenuOpen, getMenuOpenServer, setMenuOpen, subscribeMenu } from "@/components/site/menuStore";
 import { profile } from "@/data/profile";
-import { CHAPTERS, KEYS, clockAt, type Chapter } from "@/lib/scene";
+import type { Chapter } from "@/lib/scene";
 
 const ITEMS: { id: Chapter; href: string; label: string }[] = [
   { id: "home", href: "#top", label: "Home" },
@@ -120,7 +119,6 @@ export function MobileMenu() {
   return (
     <div ref={sheet} className="sheet" id="menu" role="dialog" aria-modal="true" aria-label="Sections" hidden={!open}>
       <div className="row1">
-        <Clock />
         <button className="close" type="button" onClick={() => setMenuOpen(false)}>
           Close
         </button>
@@ -132,8 +130,7 @@ export function MobileMenu() {
           aria-current={chapter === it.id ? "true" : undefined}
           onClick={(e) => choose(e, it.href)}
         >
-          {it.label}{" "}
-          <small data-tsec={it.id} aria-hidden="true">{clockAt(KEYS[CHAPTERS.indexOf(it.id)]).replace(" a.m.", "")}</small>
+          {it.label}
         </a>
       ))}
       <a className="res" href={profile.links.resume} target="_blank" rel="noopener">
