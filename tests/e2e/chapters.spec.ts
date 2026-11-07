@@ -71,7 +71,15 @@ test.describe("Home, Path and Contact", () => {
     await page.goto("/");
     await expect(page.locator("#contact a[href^='mailto:']")).toHaveAttribute("href", `mailto:${EMAIL}`);
     await expect(page.locator("form")).toHaveCount(0);
-    const text = await page.evaluate(() => document.body.innerText);
+    // Chart tick labels ("0 0.2 0.4 0.6 0.8") are not prose: read the page's text without the SVGs.
+    const text = await page.evaluate(() => {
+      const svgs = [...document.querySelectorAll<SVGElement>("svg")];
+      const was = svgs.map((s) => s.style.display);
+      svgs.forEach((s) => (s.style.display = "none"));
+      const t = document.body.innerText;
+      svgs.forEach((s, i) => (s.style.display = was[i]));
+      return t;
+    });
     expect(text).not.toMatch(/\+?\d[\d\s().-]{8,}\d/);
     await expect(page.locator("a[href^='tel:']")).toHaveCount(0);
     await expect(page.locator("#contact").getByRole("button", { name: "Copy" })).toHaveCount(1);
@@ -139,17 +147,19 @@ test.describe("Home, Path and Contact", () => {
     { width: 1280, height: 800 },
     { width: 390, height: 844 },
   ]) {
-    test(`pacing: no text-free step through Home, Path and Contact at ${vp.width}x${vp.height}`, async ({ page }) => {
+    test(`pacing: no text-free band over 40% of the viewport, top to contact, at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await page.goto("/");
-      // Projects and Research arrive in later tasks; scope to the chapters built here.
-      for (const [from, to] of [
-        ["top", "top"],
-        ["path", "contact"],
-      ]) {
-        const r = await measurePacing(page, from, to);
-        expect(r.largestGap, `${from}..${to} largest text-free band at scrollY ${r.gapAt}`).toBeLessThanOrEqual(r.viewport * 0.4);
-      }
+      // Text only, for the record: at 390 the tallest band without DOM text is the
+      // DiffusionWorks tree canvas (300px, its node labels drawn on the canvas) under the
+      // strike slider.
+      const t = await measurePacing(page, "top", "contact");
+      console.log(`pacing ${vp.width}x${vp.height} text only: largest gap ${t.largestGap}px of ${t.viewport}px at scrollY ${t.gapAt}`);
+      // The rule, with content as Task 13(a) defines it: text plus canvases and SVG images.
+      const r = await measurePacing(page, "top", "contact", 20, true);
+      console.log(`pacing ${vp.width}x${vp.height} with graphics: largest gap ${r.largestGap}px of ${r.viewport}px at scrollY ${r.gapAt}`);
+      expect(r.textFree, "scroll positions with no text in view").toEqual([]);
+      expect(r.largestGap, `largest text-free band at scrollY ${r.gapAt}`).toBeLessThanOrEqual(r.viewport * 0.4);
     });
   }
 });

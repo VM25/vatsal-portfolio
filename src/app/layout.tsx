@@ -63,9 +63,23 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/*
+  Runs while the HTML is parsed, before the first paint (see the Next guide
+  "preventing flash before hydration"). It marks <html> with .js, so the rail's
+  tabs and the claims' accordion show collapsed from the first frame, and with
+  .rm under reduced motion, so the Sharpe bars never start at zero for those
+  readers. Without JavaScript neither class is set and everything is expanded.
+  ScrollState keeps .rm in sync afterwards; suppressHydrationWarning lets React
+  accept the classes it did not render.
+*/
+const BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("rm")}catch(e){}})()`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${stix.variable}`}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${stix.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: BOOT }} />
+      </head>
       <body>{children}</body>
     </html>
   );

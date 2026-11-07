@@ -80,9 +80,8 @@ test.describe("top bar and menu", () => {
       const keys = tabKeys(browserName);
       await page.goto("/");
       await jumpTo(page, 3000);
-      // The page may be shorter than 3000px while chapters are still short; hold whatever it reached.
       const held = await page.evaluate(() => window.scrollY);
-      expect(held).toBeGreaterThan(1000);
+      expect(held).toBe(3000);
       const menu = page.getByRole("button", { name: "Menu" });
       await tap(page, menu);
       await expect(menu).toHaveAttribute("aria-expanded", "true");

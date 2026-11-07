@@ -17,15 +17,19 @@ export type PacingResult = {
  * the excluded containers. At each step it measures the largest vertical band of the viewport that
  * holds no qualifying text. Assert `largestGap <= 0.4 * viewport` (the spec's pacing rule).
  * Task 12 can call it with ("top", "contact") for the whole page.
+ *
+ * With `graphics` true, visible canvases and SVG images (role="img") also count as content,
+ * as in Task 13(a)'s pacing definition: a drawn tree or chart is not an empty band.
  */
 export async function measurePacing(
   page: Page,
   fromId: string,
   toId: string,
   minHeight = 20,
+  graphics = false,
 ): Promise<PacingResult> {
   return page.evaluate(
-    async ({ fromId, toId, minHeight }) => {
+    async ({ fromId, toId, minHeight, graphics }) => {
       const vh = window.innerHeight;
       const start = document.getElementById(fromId)!.getBoundingClientRect().top + window.scrollY;
       const last = document.getElementById(toId)!;
@@ -53,6 +57,16 @@ export async function measurePacing(
           if (Math.max(r.height, box.height) < minHeight || r.height === 0 || r.bottom <= 0 || r.top >= vh) continue;
           bands.push([Math.max(0, r.top), Math.min(vh, r.bottom)]);
         }
+        if (graphics) {
+          for (const g of document.querySelectorAll('canvas, svg[role="img"]')) {
+            if (g.closest('header.top, [role="dialog"], .bg')) continue;
+            const cs = getComputedStyle(g);
+            if (cs.display === "none" || cs.visibility !== "visible" || parseFloat(cs.opacity) <= 0) continue;
+            const r = g.getBoundingClientRect();
+            if (r.height === 0 || r.bottom <= 0 || r.top >= vh) continue;
+            bands.push([Math.max(0, r.top), Math.min(vh, r.bottom)]);
+          }
+        }
         if (!bands.length) textFree.push(Math.round(y));
         bands.sort((a, b) => a[0] - b[0]);
         let cursor = 0;
@@ -64,6 +78,6 @@ export async function measurePacing(
       }
       return { largestGap: Math.round(largestGap), viewport: vh, gapAt: Math.round(gapAt), textFree };
     },
-    { fromId, toId, minHeight },
+    { fromId, toId, minHeight, graphics },
   );
 }

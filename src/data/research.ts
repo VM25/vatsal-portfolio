@@ -45,7 +45,10 @@ export const research = {
   /** Evidence panels. */
   evidence: {
     sharpe: {
+      label: "Full-sample Sharpe ratio, 2007 to 2026: static 60/40 0.66, regime-aware rule 0.48",
       chartTitle: "Full-sample Sharpe ratio, 2007–2026",
+      /** The axis runs from 0 to this, with a tick every 0.2. */
+      scaleMax: 0.8,
       bars: [
         { label: "Static 60/40", value: 0.66 },
         { label: "Regime-aware rule", value: 0.48 },
@@ -54,6 +57,8 @@ export const research = {
         "Also benchmarked against equal weight, minimum variance, maximum Sharpe and SPY.",
     },
     drawdown: {
+      label: "Long-duration Treasury hedge book, modeled 2022 replay: a loss of roughly 19 percent",
+      zero: "0%",
       chartTitle: "Long-duration hedge book, modeled 2022 replay",
       value: "≈ −19%",
       note: "a modeled book, not a fund's return",

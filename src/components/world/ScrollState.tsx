@@ -203,6 +203,43 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  /*
+    Deep links (/#research): the browser jumps to the anchor while the page is still
+    settling (fonts swapping in, exhibits sizing). Once fonts are ready and the page has
+    loaded, put the target back at the top once, unless the reader has already moved.
+  */
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = id ? document.getElementById(id) : null;
+    if (!target) return;
+    let moved = false;
+    let live = true;
+    const intents = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
+    const mark = () => {
+      moved = true;
+    };
+    intents.forEach((e) => window.addEventListener(e, mark, { passive: true }));
+    const loaded =
+      document.readyState === "complete"
+        ? Promise.resolve()
+        : new Promise<void>((r) => window.addEventListener("load", () => r(), { once: true }));
+    Promise.all([document.fonts?.ready ?? Promise.resolve(), loaded]).then(() => {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (!live || moved) return;
+          const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+          if (Math.abs(target.getBoundingClientRect().top - pad) > 2) {
+            target.scrollIntoView({ block: "start", behavior: "instant" });
+          }
+        }),
+      );
+    });
+    return () => {
+      live = false;
+      intents.forEach((e) => window.removeEventListener(e, mark));
+    };
+  }, []);
+
   // Active chapter: the one crossing the band just above the middle of the viewport.
   useEffect(() => {
     let current: Chapter = "home";

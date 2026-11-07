@@ -201,6 +201,8 @@ export const projects = {
   intro:
     "Eight pieces of work across options, market making, rates, currencies, credit and portfolios. Two are open below; the rest are a tap away.",
   moreLabel: "More projects",
+  /** The two links on each rail project's stage. */
+  railLinks: { open: "Open the project", source: "Source" },
   diffusion,
   liquidity,
   rail,

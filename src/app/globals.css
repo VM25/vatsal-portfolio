@@ -185,7 +185,6 @@ main:focus, .sec:focus { outline: none; }
 .formula .fl { padding-left: 1.25em; text-indent: -1.25em; }
 .formula .fg { white-space: nowrap; }
 .formula .lp { margin-top: 4px; }
-@container site (max-width: 620px) { .ev svg text { font-size: 21px; } .ev svg text[font-size="20"] { font-size: 27px; } .ev svg text[font-size="30"] { font-size: 38px; } .ev svg text[font-size="13"] { font-size: 19px; } }
 .result { display: grid; gap: 10px; }
 .result .big, .cut .big { font-weight: 200; font-size: clamp(2.6rem, 9cqi, 4.4rem); letter-spacing: -0.04em; line-height: 1; color: var(--fog-hi); display: inline-block; transform-origin: 0 70%; }
 .result .big em, .cut .big em { font-style: normal; color: var(--sodium); }
@@ -247,9 +246,11 @@ html.rm .landed { animation: none; }
 .rail button { text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline; min-height: 54px; padding: 12px 0; border-bottom: 1px solid rgba(195,203,198,0.12); color: #CDD4D0; transition: color 200ms ease; }
 .rail button > span { font-size: 14px; color: var(--fog-mid); }
 .rail button[aria-selected="true"] { color: var(--fog-hi); }
+.rail button b { font-weight: 400; }
 .rail .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 12px; vertical-align: 2px; box-shadow: inset 0 0 0 1px var(--fog-lo); }
 .rail button[aria-selected="true"] .dot { background: var(--sodium); box-shadow: 0 0 10px var(--sodium); }
 .stage { display: grid; gap: 14px; align-content: start; }
+.stage .sw { display: grid; gap: 14px; }
 .rail .stage { padding: 6px 0 22px 19px; border-bottom: 1px solid rgba(195,203,198,0.12); }
 .stage .fld { font-size: 14px; color: var(--fog-mid); }
 .stage h4 { font-size: clamp(1.7rem, 4.4cqi, 2.4rem); letter-spacing: -0.03em; line-height: 1.05; }
@@ -260,6 +261,14 @@ html.rm .landed { animation: none; }
 @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 html.rm .swap { animation: none; }
 @container site (min-width: 900px) { .more { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); column-gap: 56px; } .more h3 { grid-column: 1 / -1; } }
+/*
+  Without JavaScript (no html.js, set by the inline head script) the tabs give way to
+  the <noscript> list: all six projects, each with its stage content under its title.
+  The noscript rule is scoped to html:not(.js) so its raw text never shows with scripting on.
+*/
+html:not(.js) .more > .rail, html:not(.js) .more > .stage { display: none; }
+html:not(.js) .more > noscript { display: grid; gap: 30px; grid-column: 1 / -1; }
+html:not(.js) .more > noscript .stage { padding-top: 22px; border-top: 1px solid rgba(195,203,198,0.12); }
 
 /* ---------- research ---------- */
 .research { padding-block: 96px 72px; }
@@ -272,13 +281,31 @@ html.rm .swap { animation: none; }
 .claim small { display: block; margin-bottom: 4px; font-family: var(--font-world); font-size: 14px; color: var(--fog-mid); }
 .claim b { font-weight: 500; color: var(--sodium); font-variant-numeric: tabular-nums; }
 .claim[aria-expanded="true"] { color: var(--fog-hi); }
-.ev { display: none; padding: 6px 0 24px; }
-.ev.on { display: block; }
+/* Every claim's evidence shows without JavaScript; with it (html.js), only the open one. */
+.ev { display: block; padding: 6px 0 24px; }
+html.js .ev:not(.on) { display: none; }
 .ev svg { width: 100%; height: auto; display: block; overflow: visible; }
 .ev svg text { font-family: var(--font-world); }
 .ev .bar { transform-box: view-box; transition: transform 900ms var(--ease-out); }
 html.rm .ev .bar { transition: none; }
+/*
+  Before the premise's beat, with JavaScript and motion, the bars wait at zero length
+  about the origins set inline in viewBox units. Reduced motion and no JavaScript skip
+  this rule, so the bars are full from the first paint.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  html.js:not(.rm) .ev[data-drawn="false"] .bar[data-ax="x"] { transform: scaleX(0); }
+  html.js:not(.rm) .ev[data-drawn="false"] .bar[data-ax="y"] { transform: scaleY(0); }
+}
+/*
+  The charts scale with their column (viewBox 520 wide), so their text is sized by the
+  chart's own width: rendered text stays at 14px or more, tick labels at 12px or more.
+*/
+.ev .chart { container-type: inline-size; container-name: chart; }
+@container chart (max-width: 519px) { .ev svg .tt { font-size: 17px; } .ev svg .tl { font-size: 18px; } .ev svg .tv { font-size: 23px; } .ev svg .tb { font-size: 34px; } .ev svg .ticks text { font-size: 14px; } }
+@container chart (max-width: 449px) { .ev svg .tt { font-size: 22px; } .ev svg .tl { font-size: 22px; } .ev svg .tv { font-size: 27px; } .ev svg .tb { font-size: 38px; } .ev svg .ticks text { font-size: 19px; } }
 .ev .ident { font-family: var(--font-argue); font-size: clamp(1.2rem, 3cqi, 1.5rem); line-height: 1.7; color: var(--fog-hi); }
+.ev .ident .where { font-size: 0.8em; color: #CDD4D0; }
 .ev .ident .def { display: block; font-size: 0.8em; color: #CDD4D0; }
 .ev p { color: #CDD4D0; margin-top: 10px; max-width: 48ch; }
 .ev .src { font-size: 14px; color: var(--fog-mid); margin-top: 8px; }
@@ -286,10 +313,11 @@ html.rm .ev .bar { transition: none; }
 .now b { font-weight: 400; color: var(--sodium); font-size: 15px; }
 .now p { font-family: var(--font-argue); font-size: 1.1rem; color: var(--fog-hi); max-width: 62ch; }
 .paper .lim { font-family: var(--font-argue); font-style: italic; color: var(--fog-mid); }
+/* Evidence beside the claims on wide screens; only with JavaScript, where one is open at a time. */
 @container site (min-width: 980px) {
-  .claims { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 64px; }
-  .claim { grid-column: 1; }
-  .ev { grid-column: 2; grid-row: 1 / span 8; padding-top: 18px; }
+  html.js .claims { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 64px; }
+  html.js .claim { grid-column: 1; }
+  html.js .ev { grid-column: 2; grid-row: 1 / span 8; padding-top: 18px; }
 }
 
 /* ---------- path ---------- */

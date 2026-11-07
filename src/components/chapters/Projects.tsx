@@ -1,9 +1,11 @@
 import { projects } from "@/data/projects";
 import { Diffusion, type DiffusionCopy } from "@/components/exhibits/Diffusion";
 import { Liquidity, type LiquidityCopy } from "@/components/exhibits/Liquidity";
+import { ProjectRail, StageBody, type RailCopy } from "@/components/exhibits/ProjectRail";
 
 const dw = projects.diffusion;
 const lp = projects.liquidity;
+const railCopy: RailCopy = { label: projects.moreLabel, ...projects.railLinks };
 
 /**
  * The cut's figures, as the prototype sets them: R in STIX italic, and the numbers
@@ -206,6 +208,19 @@ export function Projects() {
             </>
           }
         />
+
+        <div className="more" id="more">
+          <h3>{projects.moreLabel}</h3>
+          <ProjectRail items={projects.rail} copy={railCopy} />
+          {/* Without JavaScript: all six, each with its stage content under its title. */}
+          <noscript>
+            {projects.rail.map((p) => (
+              <div className="stage" key={p.title}>
+                <StageBody p={p} copy={railCopy} />
+              </div>
+            ))}
+          </noscript>
+        </div>
       </div>
     </section>
   );
