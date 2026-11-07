@@ -66,11 +66,13 @@ test.describe("stills fallback", () => {
   test("between two measured keys the adjacent pair cross-fades and sums to one", async ({ page }) => {
     await page.goto("/");
     await stillsMode(page);
+    // Keys as ScrollState measures them: where each chapter's anchor lands.
     const keys = await page.evaluate(() => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
       const top = (id: string) =>
         (document.querySelector(`[data-sec="${id}"]`) as HTMLElement).getBoundingClientRect().top + window.scrollY;
-      return ["projects", "research"].map((id) => Math.min(0.97, Math.max(0.03, (top(id) - window.innerHeight * 0.25) / max)));
+      return ["projects", "research"].map((id) => Math.min(1, Math.max(0, (top(id) - pad) / max)));
     });
     // Exactly on the projects key: land1 alone.
     await scrollToP(page, keys[0]);

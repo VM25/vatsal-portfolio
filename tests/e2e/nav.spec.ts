@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { clockAt } from "../../src/lib/scene";
 
 async function noWatchdog(page: Page) {
   await page.addInitScript(() => {
@@ -36,6 +37,26 @@ function tabKeys(browserName: string) {
 async function tap(page: Page, locator: Locator) {
   const box = (await locator.boundingBox())!;
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
+/**
+ * Minutes between the top-bar clock and a chapter's label time ([data-clocktime] in its
+ * [data-time] line; Home has none and its key is 0, the scene's first time).
+ */
+async function clockGap(page: Page, id: string): Promise<number> {
+  return page.evaluate(
+    ({ id, home }) => {
+      const m = (s: string) => {
+        const r = /(\d+):(\d\d)/.exec(s)!;
+        return Number(r[1]) * 60 + Number(r[2]);
+      };
+      const clock = document.querySelector(".top .clock")!.textContent ?? "";
+      const label =
+        id === "top" ? home : (document.querySelector(`#${id} [data-time] [data-clocktime]`)!.textContent ?? "");
+      return Math.abs(m(clock) - m(label));
+    },
+    { id, home: clockAt(0) },
+  );
 }
 
 /** True when the focused element lives inside the dialog. */
@@ -187,6 +208,50 @@ test.describe("top bar and menu", () => {
           timeout: 600,
         })
         .toBeLessThan(100);
+    });
+  });
+
+  test.describe("jumps land on the chapter's own time", () => {
+    test("each top-bar link at 1280×800: the clock reads the chapter's label time", async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.goto("/");
+      const bar = page.locator("header.top");
+      for (const [id, name] of [
+        ["projects", "Projects"],
+        ["research", "Research"],
+        ["path", "Path"],
+        ["contact", "Contact"],
+        ["projects", "Projects"],
+        ["top", "Vatsal Maniar"],
+      ]) {
+        await bar.getByRole("link", { name, exact: true }).click();
+        await expect.poll(() => clockGap(page, id), { message: `${name}` }).toBeLessThanOrEqual(1);
+      }
+    });
+
+    test("each menu item at 390×844: the clock reads the chapter's label time", async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/");
+      for (const [id, name] of [
+        ["projects", "Projects"],
+        ["research", "Research"],
+        ["path", "Path"],
+        ["contact", "Contact"],
+        ["research", "Research"],
+        ["top", "Home"],
+      ]) {
+        await tap(page, page.getByRole("button", { name: "Menu" }));
+        const dialog = page.getByRole("dialog", { name: "Sections" });
+        const link = dialog.getByRole("link", { name: new RegExp(`^${name}`) });
+        // The menu shows the same time as the chapter's label.
+        if (id !== "top") {
+          const label = await page.locator(`#${id} [data-time] [data-clocktime]`).textContent();
+          await expect(link.locator("[data-tsec]")).toHaveText(label!.replace(" a.m.", ""));
+        }
+        await link.click();
+        await expect(dialog).toBeHidden();
+        await expect.poll(() => clockGap(page, id), { message: `${name}` }).toBeLessThanOrEqual(1);
+      }
     });
   });
 

@@ -331,7 +331,7 @@ test.describe("Research chapter", () => {
     const key = (await sec(page).locator("[data-time] [data-clocktime]").textContent())!;
     await expect
       .poll(async () => Math.abs(minutes((await page.locator(".top .clock").textContent())!) - minutes(key)))
-      .toBeLessThanOrEqual(5);
+      .toBeLessThanOrEqual(1);
     await expect(sec(page).locator(".premise")).toBeInViewport();
     await expect(sec(page).locator(".premise")).toBeVisible();
     for (let i = 0; i < 3; i++) await expect(claim(page, i)).toBeVisible();

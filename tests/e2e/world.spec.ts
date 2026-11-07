@@ -55,15 +55,19 @@ async function canvasSnapshot(page: Page): Promise<string> {
 /** The key positions as the page should measure them from the live layout. */
 async function measuredKeys(page: Page): Promise<number[]> {
   return page.evaluate((order) => {
+    // Where each chapter's anchor lands: section top minus the computed scroll-padding-top.
     const max = document.documentElement.scrollHeight - window.innerHeight;
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
     const ks = order.map((id, i) => {
       if (i === 0) return 0;
-      if (i === order.length - 1) return 1;
       const s = document.querySelector(`[data-sec="${id}"]`) as HTMLElement;
       const top = s.getBoundingClientRect().top + window.scrollY;
-      return Math.min(0.97, Math.max(0.03, (top - window.innerHeight * 0.25) / max));
+      return Math.min(1, Math.max(0, (top - pad) / max));
     });
-    for (let i = 1; i < ks.length; i++) if (ks[i] <= ks[i - 1]) ks[i] = ks[i - 1] + 0.01;
+    const gap = 0.001;
+    for (let i = 1; i < ks.length; i++) ks[i] = Math.max(ks[i], ks[i - 1] + gap);
+    ks[ks.length - 1] = Math.min(1, ks[ks.length - 1]);
+    for (let i = ks.length - 2; i > 0; i--) ks[i] = Math.min(ks[i], ks[i + 1] - gap);
     return ks;
   }, CHAPTERS as string[]);
 }

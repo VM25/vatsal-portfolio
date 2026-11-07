@@ -76,20 +76,37 @@ function progress(): number {
   return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
 }
 
-/** Key positions come from where each chapter actually sits on the page. */
+/** Keeps neighbouring keys apart, so the smoothstep between them never divides by zero. */
+const KEY_GAP = 0.001;
+
+/**
+ * Key positions come from where each chapter actually sits on the page: the scroll
+ * progress at which its anchor lands (section top minus the computed
+ * scroll-padding-top), so a nav or menu jump reads exactly the chapter's own time.
+ * Home is 0; the rest clamp to [0, 1] (Contact usually clamps to 1 at the page end)
+ * and stay strictly increasing.
+ */
 function measureKeys(prev: number[]): number[] {
   const max = document.documentElement.scrollHeight - window.innerHeight;
   if (max <= 0) return prev;
+  const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
   const ks = CHAPTERS.map((id, i) => {
     if (i === 0) return 0;
-    if (i === CHAPTERS.length - 1) return 1;
     const s = document.querySelector<HTMLElement>(`[data-sec="${id}"]`);
     if (!s) return prev[i];
     const top = s.getBoundingClientRect().top + window.scrollY;
-    return Math.min(0.97, Math.max(0.03, (top - window.innerHeight * 0.25) / max));
+    return Math.min(1, Math.max(0, (top - pad) / max));
   });
-  for (let i = 1; i < ks.length; i++) if (ks[i] <= ks[i - 1]) ks[i] = ks[i - 1] + 0.01;
-  return ks;
+  return monotonic(ks);
+}
+
+/** Strictly increasing from 0, never above 1: push up going forward, then down from the end. */
+function monotonic(ks: number[]): number[] {
+  const out = ks.slice();
+  for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i], out[i - 1] + KEY_GAP);
+  out[out.length - 1] = Math.min(1, out[out.length - 1]);
+  for (let i = out.length - 2; i > 0; i--) out[i] = Math.min(out[i], out[i + 1] - KEY_GAP);
+  return out;
 }
 
 function sameKeys(a: number[], b: number[]) {
