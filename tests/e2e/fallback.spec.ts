@@ -123,19 +123,22 @@ test.describe("stills fallback", () => {
   });
 });
 
-test("real no-WebGL browser: Chromium launched with WebGL disabled", async ({ browserName }) => {
+test("real no-WebGL browser: Chromium launched with WebGL disabled", async ({ browserName, baseURL }) => {
   test.skip(browserName !== "chromium", "--disable-webgl is a Chromium flag; WebKit uses the stub above");
   const { chromium } = await import("@playwright/test");
   const browser = await chromium.launch({ args: ["--disable-webgl", "--disable-3d-apis"] });
-  const page = await browser.newPage({ baseURL: "http://localhost:3100" });
-  await page.goto("/");
-  await stillsMode(page);
-  await expect(page.locator(".bg .stills")).toBeVisible();
-  await expect(page.locator("canvas#world")).toBeHidden();
-  await expect.poll(async () => (await opacities(page)).land0).toBe(1);
-  await scrollToP(page, 1);
-  await expect.poll(async () => (await opacities(page)).land4).toBe(1);
-  await browser.close();
+  try {
+    const page = await browser.newPage({ baseURL });
+    await page.goto("/");
+    await stillsMode(page);
+    await expect(page.locator(".bg .stills")).toBeVisible();
+    await expect(page.locator("canvas#world")).toBeHidden();
+    await expect.poll(async () => (await opacities(page)).land0).toBe(1);
+    await scrollToP(page, 1);
+    await expect.poll(async () => (await opacities(page)).land4).toBe(1);
+  } finally {
+    await browser.close();
+  }
 });
 
 test("a normal launch with WebGL makes no request for the stills", async ({ page }) => {
