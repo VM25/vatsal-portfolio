@@ -1,36 +1,40 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, STIX_Two_Text } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 /*
-  Weights are listed explicitly. The docs' "200 500" range string is rejected
-  by this version's Google font validator (it checks each weight against the
-  font's listed values), so the ranges are spelled out.
+  Self-hosted fonts (src/app/fonts, SIL Open Font License, licence texts alongside).
+  The build no longer downloads from Google Fonts, so a flaky fetch can't fail a deploy.
+  Each file is the family's variable font limited to the weights the site used from
+  Google Fonts (Geist 200–500, Geist Mono and STIX 400–500), so text renders the same,
+  and subset to Latin, Latin Extended, Greek, punctuation, arrows and math operators.
+  Sources: Geist and Geist Mono from Vercel's `geist` npm package (1.9.2); STIX Two Text
+  from google/fonts (ofl/stixtwotext), the files Google Fonts serves.
 */
 
 // Display and UI: 200 for the name and titles, 300 for the lede, 400 for UI.
-const geist = Geist({
-  subsets: ["latin"],
-  weight: ["200", "300", "400", "500"],
+const geist = localFont({
+  src: [{ path: "./fonts/Geist-Variable.woff2", weight: "200 500", style: "normal" }],
   variable: "--ff-geist",
   display: "swap",
 });
 
 // Only for numbers the page computes or counts.
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
+const geistMono = localFont({
+  src: [{ path: "./fonts/GeistMono-Variable.woff2", weight: "400 500", style: "normal" }],
   variable: "--ff-geist-mono",
   display: "swap",
 });
 
-// Research prose and all mathematics.
-const stix = STIX_Two_Text({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
+// Research prose and all mathematics. Not preloaded: it first appears below the opening screen.
+const stix = localFont({
+  src: [
+    { path: "./fonts/STIXTwoText-Variable.woff2", weight: "400 500", style: "normal" },
+    { path: "./fonts/STIXTwoText-Italic-Variable.woff2", weight: "400 500", style: "italic" },
+  ],
   variable: "--ff-stix",
   display: "swap",
+  preload: false,
 });
 
 const description = "Financial Engineering · Quantitative Research. Models for markets, risk, and portfolios.";
