@@ -222,19 +222,35 @@ export function ScrollStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Active chapter: the one crossing the band just above the middle of the viewport.
+  /*
+    Active chapter: the one crossing the band just above the middle of the viewport.
+    While a boundary between two chapters is inside the band both intersect, and a fast
+    jump can carry the page past that point between two observations, so the choice is
+    made from the whole set of chapters in the band: the one holding the band's middle
+    line, else the last of them in page order.
+  */
   useEffect(() => {
     let current: Chapter = "home";
+    const inBand = new Set<Chapter>();
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (!e.isIntersecting) return;
           const id = (e.target as HTMLElement).dataset.sec as Chapter;
-          if (id === current) return;
-          current = id;
-          if (!bus.current.reducedMotion) bus.current.gust = 1;
-          setChapter(id);
+          if (e.isIntersecting) inBand.add(id);
+          else inBand.delete(id);
         });
+        const mid = window.innerHeight * 0.475;
+        let next: Chapter | null = null;
+        for (const id of CHAPTERS) {
+          if (!inBand.has(id)) continue;
+          next = id;
+          const r = document.querySelector(`[data-sec="${id}"]`)?.getBoundingClientRect();
+          if (r && r.top <= mid && r.bottom > mid) break;
+        }
+        if (!next || next === current) return;
+        current = next;
+        if (!bus.current.reducedMotion) bus.current.gust = 1;
+        setChapter(next);
       },
       { rootMargin: "-45% 0px -50% 0px" },
     );

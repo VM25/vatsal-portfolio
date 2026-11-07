@@ -46,15 +46,13 @@ export const SHOTS: Record<Chapter, Shot> = {
 
 /*
   The warm finish. Dawn never arrives: from DAWN_FROM (about where Research begins)
-  to the page end the scene warms by a smoothstep up to DAWN_MAX, a faint lift at the
-  horizon over the same night. DAWN_MAX is the largest value (in steps of 0.05) at
-  which Contact's night-coloured text still reads 4.5:1 or more against the scene
-  behind it at every tested width, in Chromium and WebKit, measured the way the
-  acceptance contrast test measures it; at 0.55 Contact's links drop to about 4.4:1
-  at 320px. The page's own colours never change.
+  to the page end the scene warms by a smoothstep up to DAWN_MAX: an amber glow low on
+  the horizon and on the water, over the same night (the shader's dawn terms). The upper
+  sky stays night-dark, and the end of the page is no brighter than its top (the fog
+  thins as the glow rises). The page's own colours never change.
 */
 export const DAWN_FROM = 0.4;
-export const DAWN_MAX = 0.5;
+export const DAWN_MAX = 0.3;
 
 export type Uniforms = {
   uTime: number;

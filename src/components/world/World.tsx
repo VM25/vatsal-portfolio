@@ -73,8 +73,8 @@ const STILL_TIME = 11;
 // The beat's fog clearing at its peak: 1 cleared the fog entirely, moving mean
 // luminance by up to 8.5% of its range; 0.45 keeps it under 4%.
 const FLASH_PEAK = 0.45;
-// A chapter change breathes extra fog in (the gust). Under the warm finish the fog is
-// lighter, so the full 0.35 stepped mean luminance by up to 4.7%; 0.28 keeps it under 4%.
+// A chapter change breathes extra fog in (the gust). At 0.28 it moves mean luminance by
+// 2.8% of its range at most (the prototype's 0.35: 3.5%).
 const GUST_FOG = 0.28;
 const STILL_COUNT = 5;
 type Orientation = "land" | "port";

@@ -124,11 +124,23 @@ main:focus, .sec:focus { outline: none; }
 .sheet a.res { font-size: 22px; color: var(--sodium); }
 
 .sec { position: relative; }
-.veil { position: absolute; inset: -40px 0; pointer-events: none; z-index: -1; }
+/*
+  Each chapter's veil feathers into the scene: it reaches 100px past the section's top
+  and bottom and fades out over the 200px around each edge (an eased ramp), so no veil
+  boundary reads as a line at any scroll position. Where neighbouring veils meet, each
+  is at about half strength. Content sits inside the sections' padding (56px or more),
+  where the veil is at or near full strength.
+*/
+.veil { position: absolute; inset: -100px 0; pointer-events: none; z-index: -1;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,0.1) 40px, rgba(0,0,0,0.5) 100px, rgba(0,0,0,0.9) 160px, #000 200px, #000 calc(100% - 200px), rgba(0,0,0,0.9) calc(100% - 160px), rgba(0,0,0,0.5) calc(100% - 100px), rgba(0,0,0,0.1) calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,0.1) 40px, rgba(0,0,0,0.5) 100px, rgba(0,0,0,0.9) 160px, #000 200px, #000 calc(100% - 200px), rgba(0,0,0,0.9) calc(100% - 160px), rgba(0,0,0,0.5) calc(100% - 100px), rgba(0,0,0,0.1) calc(100% - 40px), transparent 100%); }
 
 /* hero */
 .hero { min-height: 88svh; display: flex; flex-direction: column; justify-content: center; padding-block: 24px 64px; }
-.hero .veil { inset: 0 0 -40px; background: radial-gradient(70% 60% at 20% 50%, rgba(11,18,20,0.55), transparent 70%); }
+/* The page starts at the hero's top, so its veil feathers at the bottom only. */
+.hero .veil { inset: 0 0 -100px; background: radial-gradient(70% 60% at 20% 50%, rgba(11,18,20,0.55), transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 200px), rgba(0,0,0,0.9) calc(100% - 160px), rgba(0,0,0,0.5) calc(100% - 100px), rgba(0,0,0,0.1) calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 200px), rgba(0,0,0,0.9) calc(100% - 160px), rgba(0,0,0,0.5) calc(100% - 100px), rgba(0,0,0,0.1) calc(100% - 40px), transparent 100%); }
 .hero h1 { font-size: clamp(3.1rem, 13cqi, 6rem); letter-spacing: -0.04em; line-height: 0.98; }
 .lede { margin-top: 18px; max-width: 30ch; font-weight: 300; font-size: clamp(1.1rem, 2.4cqi, 1.35rem); line-height: 1.5; color: #D6DDD9; }
 .avail { margin-top: 20px; display: flex; gap: 10px; align-items: center; font-size: 15px; color: #C2CAC5; }
@@ -383,7 +395,10 @@ html.rm .ev .bar { transition: none; }
 
 /* ---------- contact ---------- */
 .contact { min-height: 78svh; padding-block: 96px 44px; display: flex; flex-direction: column; justify-content: center; }
-.contact .veil { inset: -40px 0 0; background: radial-gradient(80% 70% at 25% 50%, rgba(11,18,20,0.6), transparent 75%); }
+/* The page ends at Contact's bottom (a veil past it would lengthen the page), so it feathers at the top only. */
+.contact .veil { inset: -100px 0 0; background: radial-gradient(80% 70% at 25% 50%, rgba(11,18,20,0.6), transparent 75%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,0.1) 40px, rgba(0,0,0,0.5) 100px, rgba(0,0,0,0.9) 160px, #000 200px);
+  mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,0.1) 40px, rgba(0,0,0,0.5) 100px, rgba(0,0,0,0.9) 160px, #000 200px); }
 .contact h2 { font-size: clamp(3rem, 12cqi, 6rem); letter-spacing: -0.04em; line-height: 1; }
 .contact .st { margin-top: 18px; font-size: 1.15rem; font-weight: 300; max-width: 40ch; }
 .chan { margin-top: 30px; display: grid; max-width: 600px; }

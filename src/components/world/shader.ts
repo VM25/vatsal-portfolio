@@ -1,9 +1,14 @@
 /*
   The world: one full-screen fragment shader, ported from the approved prototype
-  (docs/superpowers/specs/clearing-reference/prototype-source.html). One change since:
-  as dawn rises, a lit window fades out over a short band instead of switching off at
-  a threshold, so the warm finish (scene.ts) has no steps. At dawn 0 the windows are
-  exactly the prototype's.
+  (docs/superpowers/specs/clearing-reference/prototype-source.html). Changed since, for
+  the warm finish (scene.ts; refinement R1), all at uDawn > 0 only, so the night at
+  dawn 0 is exactly the prototype's:
+  - dawn is an amber, sodium-leaning glow concentrated at the horizon band (sky, fog
+    near the horizon, and its reflection on the water), not a lift of the whole sky and
+    fog toward daylight grey;
+  - facades, pier and rail stay near night-dark, and fewer windows go out;
+  - a lit window fades out over a short band instead of switching off at a threshold,
+    so nothing steps as dawn rises.
   Uniform names equal the keys sceneState() returns; tests/unit/shader.test.ts
   holds them together.
 */
@@ -24,15 +29,15 @@ export const FRAGMENT_SRC = [
   "  if(fx<0.07||fx>0.93||y<hz||y>hz+bh) return vec4(0.);",
   "  float ry=(y-hz)*230./amp; float rx=fx*7.; vec2 cell=vec2(floor(rx),floor(ry)); vec2 f=fract(vec2(rx,ry));",
   "  float win=step(0.2,f.x)*step(f.x,0.8)*step(0.25,f.y)*step(f.y,0.75);",
-  "  float wh=hash(cell+c*0.37+seed)-0.64; float on=step(0.,wh)*smoothstep(-0.05,0.,wh-uDawn*0.3*hash(cell+c))*win*(1.-uDawn*0.9);",
+  "  float wh=hash(cell+c*0.37+seed)-0.64; float on=step(0.,wh)*smoothstep(-0.05,0.,wh-uDawn*0.3*hash(cell+c))*win*(1.-uDawn*0.6);",
   "  vec3 wc=mix(vec3(1.,.78,.48),vec3(.78,.86,1.),step(.8,hash(cell*1.9+c)))*(.45+.55*hash(cell+c+3.));",
-  "  vec3 fac=mix(vec3(.018,.024,.027)+far*vec3(.012,.014,.014),vec3(.20,.22,.24)+far*vec3(.12,.12,.12),uDawn);",
+  "  vec3 fac=mix(vec3(.018,.024,.027)+far*vec3(.012,.014,.014),vec3(.045,.038,.034)+far*vec3(.05,.035,.022),uDawn);",
   "  float gr=clamp((y-hz)/bh,0.,1.); fac*=mix(1.,0.78+0.4*gr,uDawn); fac+=vec3(.10,.07,.04)*uDawn*smoothstep(0.75,0.95,fx)*(1.-far);",
   "  float gl=step(0.86,hash(cell*2.3+c+seed))*win*uDawn;",
   "  return vec4(fac+wc*on*(1.-far*0.35)+vec3(1.,.84,.66)*gl*0.32*(1.-far*0.5),1.);",
   "}",
   "vec3 sky(float y,float hz){ float h=y-hz; vec3 n=mix(vec3(.05,.058,.06),vec3(.008,.014,.017),smoothstep(0.,.5,h)); n+=vec3(.10,.065,.035)*exp(-h*9.);",
-  "  vec3 d=mix(vec3(.88,.76,.64),vec3(.44,.54,.62),smoothstep(0.,.55,h)); return mix(n,d,uDawn); }",
+  "  return n+vec3(1.45,.72,.2)*exp(-max(h,0.)*12.)*uDawn; }",
   "vec3 scene(float x,float y,float hz){ vec3 c=sky(y,hz); vec4 a=layer(x+uPar*0.5,y,hz,34.,0.,0.78,1.); if(a.w>0.) c=a.rgb; vec4 b=layer(x+uPar,y,hz,17.,1.,1.,0.); if(b.w>0.) c=b.rgb;",
   "  float pr=step(abs(y-hz-0.004),0.0015)*step(0.55,hash(vec2(floor((x+uPar)*46.),3.)))*step(abs(fract((x+uPar)*46.)-0.5),0.12);",
   "  c+=vec3(1.,.62,.2)*pr*0.7*(1.-uDawn); return c; }",
@@ -41,7 +46,7 @@ export const FRAGMENT_SRC = [
   "  float fxp=mod(t*0.016+uRush*t*0.02,asp+0.6)-0.3; float fyp=hz-0.045;",
   "  if(y>=hz){ col=scene(x,y,hz); }",
   "  else { float dy=hz-y; float wob=(noise(vec2(x*7.,y*140.-tw*0.9))-.5)*0.022*(dy*4.+0.08);",
-  "    vec3 r=scene(x+wob,hz+dy*1.04,hz); col=r*0.30+vec3(.006,.01,.012)+mix(vec3(0.),vec3(.10,.12,.13),uDawn);",
+  "    vec3 r=scene(x+wob,hz+dy*1.04,hz); col=r*0.30+vec3(.006,.01,.012)+vec3(.06,.035,.012)*uDawn*exp(-dy*6.);",
   "    float jit=((noise(vec2(y*55.,tw*2.3))-.5)+(noise(vec2(y*130.,tw*3.1+5.))-.5)*.6)*0.11/sqrt(uN);",
   "    float d=x-(uLampX+jit); float w=0.003+dy*0.018; float colm=exp(-d*d/(w*w))*smoothstep(0.,0.015,dy);",
   "    col+=vec3(1.,.62,.17)*colm*0.95*(1.-uDawn*0.97)*uLamp;",
@@ -51,7 +56,7 @@ export const FRAGMENT_SRC = [
   "  float fn=fbm(vec2(x*1.4+tw*0.015,y*3.2-t*0.004)); float fn2=fbm(vec2(x*3.3-tw*0.02,y*7.+3.));",
   "  float band=0.5+0.75*exp(-abs(y-hz-0.05)*7.);",
   "  float fog=clamp((uFog+uMist*0.45*exp(-abs(y-hz-0.12)*4.))*(0.32+1.9*fn*fn2*1.6)*band,0.,0.96)*(1.-uFlash);",
-  "  vec3 fogc=mix(vec3(0.15,0.17,0.165),vec3(0.74,0.77,0.75),uDawn)+vec3(.12,.08,.04)*exp(-abs(y-hz)*5.)*(1.-uDawn);",
+  "  vec3 fogc=vec3(0.15,0.17,0.165)+(vec3(.12,.08,.04)+vec3(.26,.14,.04)*uDawn)*exp(-abs(y-hz)*5.);",
   "  col=mix(col,fogc,fog);",
   "  vec2 lp=vec2(uLampX,hz+0.012); float ld=length(vec2(x,y)-lp);",
   "  col+=vec3(1.,.64,.2)*(exp(-ld*110.)*1.5+exp(-ld*9.)*0.14*(0.4+uFog))*(1.-uDawn*0.97)*uLamp;",
@@ -59,9 +64,9 @@ export const FRAGMENT_SRC = [
   "  float pxp=mod(t*0.022,asp+0.5)-0.25; float pyp=hz+0.40+0.025*sin(pxp*2.);",
   "  float pl=length(vec2(x-pxp,y-pyp)); float blink=step(0.82,fract(t*0.9));",
   "  col+=uPlane*(vec3(1.)*exp(-pl*420.)*(0.5+1.6*blink)+vec3(1.,.25,.2)*exp(-length(vec2(x-pxp+0.006,y-pyp))*700.)*0.9);",
-  "  if(y<uPier){ col=mix(vec3(0.012,0.014,0.015),vec3(.18,.19,.2),uDawn); }",
+  "  if(y<uPier){ col=mix(vec3(0.012,0.014,0.015),vec3(.04,.032,.026),uDawn); }",
   "  float rail=smoothstep(0.0025,0.0,abs(y-(uPier+0.05)))+step(y,uPier+0.05)*step(uPier,y)*step(fract((x+uPar*1.4)*8.),0.03);",
-  "  col=mix(col,mix(vec3(0.008),vec3(.12,.13,.14),uDawn),clamp(rail,0.,1.)*0.95);",
+  "  col=mix(col,mix(vec3(0.008),vec3(.03,.024,.018),uDawn),clamp(rail,0.,1.)*0.95);",
   "  vec2 vq=uv-0.5; col*=1.-dot(vq,vq)*0.5;",
   "  col+=(hash(uv*uRes+fract(t*7.)*100.)-.5)*0.03;",
   "  gl_FragColor=vec4(col,1.);",

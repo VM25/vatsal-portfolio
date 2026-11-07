@@ -265,3 +265,142 @@ test.describe("fast movement", () => {
     for (const k of ["bar", "name", "résumé", "path paragraph", "contact heading", "copy button"]) expect(after[k], k).toBe(before[k]);
   });
 });
+
+/*
+  Veil edges (refinement R1 fix-up). Each chapter's veil feathers into the scene, so no
+  veil boundary reads as a line. The scene's own edges (the skyline, the pier) would
+  swamp a row measure, so behind the page the scene is swapped for a flat backdrop
+  lighter than any part of it (the strictest case for a veil edge), and everything but
+  the veils is hidden: text, borders, fills, images, canvases and the top bar. The page is screenshotted with its veils and
+  without them; the difference is the veils' own contribution. Its mean luminance per
+  pixel row must never step by more than 3 levels (of 255) from one row to the next.
+  A control run with the feather switched off shows the measure does catch a hard edge.
+*/
+const ROW_STEP_MAX = 3;
+const HIDE_TEXT =
+  "main * { color: transparent !important; -webkit-text-fill-color: transparent !important; text-decoration-color: transparent !important; caret-color: transparent !important; border-color: transparent !important; text-shadow: none !important; transition: none !important; animation: none !important; } main *:not(.veil) { background: transparent !important; box-shadow: none !important; } main img, main canvas, main svg { visibility: hidden !important; } header.top { visibility: hidden !important; } .bg canvas, .bg .stills { visibility: hidden !important; } .bg { background: #6B7275 !important; }";
+
+/** The largest row-to-row step in the veils' contribution to the screen, and where it is. */
+async function veilRowStep(page: Page): Promise<{ step: number; row: number }> {
+  await page.evaluate((css) => {
+    const s = document.createElement("style");
+    s.id = "__veil-hide-text";
+    s.textContent = css;
+    document.head.append(s);
+    // Hold animation frames, so the scene's canvas keeps one picture for both screenshots.
+    const w = window as unknown as { __hold?: { orig: typeof requestAnimationFrame; q: FrameRequestCallback[] } };
+    const hold = { orig: window.requestAnimationFrame, q: [] as FrameRequestCallback[] };
+    w.__hold = hold;
+    window.requestAnimationFrame = (cb) => {
+      hold.q.push(cb);
+      return 0;
+    };
+  }, HIDE_TEXT);
+  await page.waitForTimeout(100);
+  const withVeils = await page.screenshot({ scale: "css", caret: "hide" });
+  await page.evaluate(() => {
+    const s = document.createElement("style");
+    s.id = "__veil-off";
+    s.textContent = ".veil { visibility: hidden !important; }";
+    document.head.append(s);
+  });
+  await page.waitForTimeout(50);
+  const without = await page.screenshot({ scale: "css", caret: "hide" });
+  await page.evaluate(() => {
+    document.getElementById("__veil-off")?.remove();
+    document.getElementById("__veil-hide-text")?.remove();
+    const w = window as unknown as { __hold?: { orig: typeof requestAnimationFrame; q: FrameRequestCallback[] } };
+    const hold = w.__hold!;
+    window.requestAnimationFrame = hold.orig;
+    delete w.__hold;
+    hold.q.forEach((cb) => hold.orig.call(window, cb));
+  });
+  return page.evaluate(
+    async ({ a, b }) => {
+      const read = async (url: string) => {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const g = c.getContext("2d")!;
+        g.drawImage(img, 0, 0);
+        return { w: c.width, h: c.height, d: g.getImageData(0, 0, c.width, c.height).data };
+      };
+      const A = await read(a);
+      const B = await read(b);
+      const rows: number[] = [];
+      for (let y = 0; y < A.h; y++) {
+        let sum = 0;
+        for (let x = 0; x < A.w; x++) {
+          const i = (y * A.w + x) * 4;
+          const la = 0.2126 * A.d[i] + 0.7152 * A.d[i + 1] + 0.0722 * A.d[i + 2];
+          const lb = 0.2126 * B.d[i] + 0.7152 * B.d[i + 1] + 0.0722 * B.d[i + 2];
+          sum += la - lb;
+        }
+        rows.push(sum / A.w);
+      }
+      let step = 0;
+      let row = 0;
+      for (let y = 1; y < rows.length; y++) {
+        const d = Math.abs(rows[y] - rows[y - 1]);
+        if (d > step) {
+          step = d;
+          row = y;
+        }
+      }
+      return { step, row };
+    },
+    {
+      a: `data:image/png;base64,${withVeils.toString("base64")}`,
+      b: `data:image/png;base64,${without.toString("base64")}`,
+    },
+  );
+}
+
+/** Scroll so the boundary between two chapters sits mid-screen (as near as the page allows). */
+async function centreBoundary(page: Page, id: string) {
+  await page.evaluate(async (id) => {
+    const y = document.getElementById(id)!.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: Math.round(y - window.innerHeight / 2), behavior: "instant" });
+    for (let i = 0; i < 4; i++) await new Promise((r) => requestAnimationFrame(r));
+  }, id);
+}
+
+for (const vp of [
+  { width: 1280, height: 800 },
+  { width: 390, height: 844 },
+]) {
+  test.describe(`veil edges at ${vp.width}x${vp.height}`, () => {
+    test.use({ viewport: vp });
+
+    test("every veil boundary feathers into the scene: no row-to-row step over 3 levels", async ({ page }) => {
+      test.setTimeout(90_000);
+      await frozen(page);
+      await settled(page);
+      test.skip(!(await hasWebGL(page)), "no WebGL in this browser build");
+      await expect(page.locator(".bg")).toHaveAttribute("data-mode", "gl");
+      const found: string[] = [];
+      // Each boundary between neighbouring chapters (the next chapter's top), then the page end.
+      for (const id of ["projects", "research", "path", "contact"]) {
+        await centreBoundary(page, id);
+        const r = await veilRowStep(page);
+        console.log(`veil edge ${vp.width} above #${id}: largest row step ${r.step.toFixed(2)} at row ${r.row}`);
+        if (r.step > ROW_STEP_MAX) found.push(`above #${id}: ${r.step.toFixed(2)} at row ${r.row}`);
+      }
+      await scrollTo(page, 1);
+      const end = await veilRowStep(page);
+      console.log(`veil edge ${vp.width} at the end: largest row step ${end.step.toFixed(2)} at row ${end.row}`);
+      if (end.step > ROW_STEP_MAX) found.push(`at the end: ${end.step.toFixed(2)} at row ${end.row}`);
+      expect(found).toEqual([]);
+
+      // Control: with the feather switched off, the same measure sees the veil's edge.
+      await page.addStyleTag({ content: ".veil { -webkit-mask-image: none !important; mask-image: none !important; }" });
+      await centreBoundary(page, "path");
+      const hard = await veilRowStep(page);
+      console.log(`veil edge ${vp.width} above #path without the feather: ${hard.step.toFixed(2)}`);
+      expect(hard.step).toBeGreaterThan(ROW_STEP_MAX);
+    });
+  });
+}
