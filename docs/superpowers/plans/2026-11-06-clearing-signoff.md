@@ -121,7 +121,12 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 ## 3. Preview
 
 - Preview URL: https://v2-clearing--v2-previews-c4e19a7b.netlify.app (a branch-alias draft on the separate preview project `v2-previews-c4e19a7b`, not the production project; never `--prod`)
-- Deployed from commit: `3de405a` (refinement round). The first preview, `094b9af`, was not approved. Vatsal's review of 2026-11-07 led to four changes:
+- Deployed from commit: `61d5882` (refinement round 2).
+- Second review (2026-11-07) fixes:
+  - R6: the strip at the page end came from a flat pier slab, now a textured deck. The footer sits on the deck and reads "© 2026 Vatsal Maniar". The email no longer wraps on mobile. The Liquidity wording is no longer absolute, and the Allocation Study result is linked.
+  - R7: Research is compact, with two-column finding and figure rows, no accordion, and no prospectus or "Now" note.
+- Full e2e: 348 passed, 4 skipped, 0 failed.
+- Earlier rounds: `3de405a` (refinement round 1). The first preview, `094b9af`, was not approved. Vatsal's review of 2026-11-07 led to four changes:
   - R1: removed every clock, time label and project date, and replaced the morning switch with a continuous warm night finish.
   - R2: copy audit.
   - R3: DiffusionWorks presentation.
