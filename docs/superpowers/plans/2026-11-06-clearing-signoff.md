@@ -121,7 +121,13 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 ## 3. Preview
 
 - Preview URL: https://v2-clearing--v2-previews-c4e19a7b.netlify.app (a branch-alias draft on the separate preview project `v2-previews-c4e19a7b`, not the production project; never `--prod`)
-- Deployed from commit: `61d5882` (refinement round 2).
+- Deployed from commit: `6198800` (final pass, after Vatsal approved the visual direction on 2026-11-07).
+  - YieldShock wording.
+  - The share image and metadata read "Financial Engineering · Quantitative Research".
+  - The 2022 loss is a numerical callout; the bar had no scale.
+  - The prospectus PDF moved from `public/` to `docs/research/`: it returns 404 on the preview and is unchanged on production.
+  - Full e2e: 348 passed, 4 skipped, 0 failed. Vitest: 49/49.
+- Earlier: `61d5882` (refinement round 2).
 - Second review (2026-11-07) fixes:
   - R6: the strip at the page end came from a flat pier slab, now a textured deck. The footer sits on the deck and reads "© 2026 Vatsal Maniar". The email no longer wraps on mobile. The Liquidity wording is no longer absolute, and the Allocation Study result is linked.
   - R7: Research is compact, with two-column finding and figure rows, no accordion, and no prospectus or "Now" note.
