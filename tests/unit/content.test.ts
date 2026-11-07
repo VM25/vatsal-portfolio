@@ -105,6 +105,55 @@ describe("content", () => {
     expect(researchMod.research).not.toHaveProperty("kicker");
   });
 
+  it("has no visitor prompts or defensive qualifiers, in the data, the metadata or the OG image", () => {
+    const banned =
+      /\b(try|play with|see what happens|move the slider|choose one|pick an?|your N|illustration only|only a simulation|not the study|never existed|not a trading book|not prediction|causal identification|not a fund)\b/i;
+    for (const { s } of all) expect(s, s).not.toMatch(banned);
+    for (const file of ["src/app/layout.tsx", "src/app/opengraph-image.tsx"]) {
+      // The copy only: comments and the inline boot script (its try/catch) are code.
+      const copy = readFileSync(file, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "")
+        .replace(/const BOOT = `[^`]*`;/, "");
+      expect(copy, file).not.toMatch(banned);
+    }
+  });
+
+  it("carries the review's exact lines (refinement R2)", () => {
+    const { diffusion, liquidity, rail } = projectsMod.projects;
+    expect(profileMod.profile.lede).toBe("Financial engineer. I build models for markets, risk, and portfolios.");
+    expect(projectsMod.projects).not.toHaveProperty("intro");
+    expect(diffusion).not.toHaveProperty("note");
+    expect(diffusion.chartCaption).not.toMatch(/\byour\b/i);
+    expect(diffusion.result.line).toContain("none failed");
+    expect(diffusion.result.caveat).toContain("off at 23 of 24 up-barrier cells, where it consistently over-predicts");
+    expect(liquidity.replay).toBe("Replay");
+    expect(liquidity.canvasLabel).not.toMatch(/illustration/i);
+    expect(liquidity.result.caveat).toBe(
+      "Historical order-book replay with modeled executions under stated queue, latency and fee assumptions.",
+    );
+    expect(liquidity.caption.split(/[.!?](\s|$)/).filter((x) => x && x.trim()).length).toBe(1);
+    const byTitle = Object.fromEntries(rail.map((p) => [p.title, p]));
+    expect(byTitle["Allocation Study"].question).toBe(
+      "Can a portfolio adapt when stocks and Treasuries fall together, and does adapting actually help?",
+    );
+    expect(byTitle["Allocation Study"].question).not.toMatch(/memo|below/i);
+    expect(byTitle["YieldShock"].question).toBe(
+      "When an inflation-regime shock hits a Treasury book, where does the loss actually come from?",
+    );
+    expect(byTitle["Lending Decisions"].figures).toContainEqual(["1 of 3", "models flagged for monitoring"]);
+    // "simulated book" once on ApexGP's stage: in the figure, not the result.
+    const apex = byTitle["ApexGP"];
+    expect(apex.result).not.toContain("simulated book");
+    expect(apex.figures).toContainEqual(["$100,000", "simulated book"]);
+    // "illustrative" once on the Currency Options Desk's stage.
+    expect(byTitle["Currency Options Desk"].result.match(/illustrative/gi)).toHaveLength(1);
+    const { research } = researchMod;
+    expect(research).not.toHaveProperty("limit");
+    expect(research.evidence.drawdown).not.toHaveProperty("note");
+    expect(research.ask).toMatch(/and measures why the hedge failed\.$/);
+  });
+
   it("has six rail projects with three figures each", () => {
     const { rail } = projectsMod.projects;
     expect(rail).toHaveLength(6);

@@ -23,7 +23,7 @@ import { fill, readFonts, sizeCanvas } from "@/components/exhibits/canvas";
     never re-renders their text; the run rewrites the text nodes in place.
   - While the tab is hidden the timer is cancelled and the run's clock stands still;
     it resumes where it was when the tab is visible again.
-  - Reduced motion: "Run it again" and the first view compute all 420 trades at once.
+  - Reduced motion: "Replay" and the first view compute all 420 trades at once.
     No run, no rush, no stamp; the single beat still counts (the scene drops its flash).
   - The counters are aria-hidden while running; one polite sentence says how it ended.
 

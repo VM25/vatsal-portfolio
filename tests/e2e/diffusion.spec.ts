@@ -460,7 +460,10 @@ test.describe("DiffusionWorks exhibit", () => {
   test("links and result copy are in place", async ({ page }) => {
     await open(page);
     await expect(ex(page).getByRole("heading", { level: 3, name: "DiffusionWorks" })).toHaveCount(1);
-    await expect(ex(page)).toContainText("an illustration on this page, not one of the fifteen studies");
+    // No disclaimer note under the question (refinement R2).
+    await expect(ex(page).locator(".intro .note")).toHaveCount(0);
+    await expect(ex(page).locator(".result")).toContainText("off at 23 of 24 up-barrier cells, where it consistently over-predicts");
+    await expect(ex(page).locator(".result")).toContainText("none failed");
     await expect(ex(page).getByRole("link", { name: /Open the study/ })).toHaveAttribute("href", "https://diffusionworks.netlify.app");
     await expect(ex(page).getByRole("link", { name: /Source/ })).toHaveAttribute("href", "https://github.com/VM25/stochastic-lab");
     await expect(ex(page).locator(".result")).toContainText("16 of 18");

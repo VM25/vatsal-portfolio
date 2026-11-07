@@ -1,10 +1,7 @@
 import { profile } from "@/data/profile";
 import { JumpLink } from "@/components/site/JumpLink";
 
-/**
- * Home (#top). The reflection count is written by the scene. Without JavaScript nothing
- * counts, so the caption shows the converged count (512), as the still behind it does.
- */
+/** Home (#top). */
 export function Home() {
   return (
     <section id="top" className="sec hero g" data-sec="home" tabIndex={-1} aria-labelledby="home-h">
@@ -24,10 +21,6 @@ export function Home() {
             Read the research
           </JumpLink>
         </div>
-        <p className="refl stix" aria-hidden="true">
-          The lamp&apos;s reflection averages <i>n</i> = <b data-n className="n-live">1</b>
-          <b className="n-still">512</b> ripples. Its wobble shrinks like <i>σ</i>/√<i>n</i>.
-        </p>
       </div>
     </section>
   );

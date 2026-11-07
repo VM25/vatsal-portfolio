@@ -40,7 +40,7 @@ type Evidence = {
     bars: { label: string; value: number }[];
     source: string;
   };
-  drawdown: { label: string; zero: string; chartTitle: string; value: string; note: string };
+  drawdown: { label: string; zero: string; chartTitle: string; value: string };
   identity: { definition: string; body: string };
 };
 
@@ -133,7 +133,7 @@ function Drawdown({ e }: { e: Evidence["drawdown"] }) {
   return (
     <div className="chart">
       <p className="ctitle">{e.chartTitle}</p>
-      <svg viewBox="0 0 520 216" role="img" aria-label={e.label}>
+      <svg viewBox="0 0 520 200" role="img" aria-label={e.label}>
         <line x1="0" y1="26" x2="520" y2="26" stroke="#5B6661" />
         <g className="ticks" fill="#9AA39E" fontSize="13">
           <text x="0" y="16">
@@ -155,9 +155,6 @@ function Drawdown({ e }: { e: Evidence["drawdown"] }) {
         <circle cx="60" cy="178" r="7" fill="#FFA62B" />
         <text className="tb" x="76" y="186" fill="#FFA62B" fontSize="30">
           {e.value}
-        </text>
-        <text className="tt" x="76" y="210" fill="#9AA39E" fontSize="14">
-          {e.note}
         </text>
       </svg>
     </div>

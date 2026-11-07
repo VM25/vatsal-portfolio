@@ -5,7 +5,7 @@ import { projects } from "../../src/data/projects";
 
 /*
   Research: the premise, three claims as an accordion of buttons with their evidence,
-  the Now line, the limit and the links. The premise is the page's third and last beat;
+  the Now line and the links. The premise is the page's third and last beat;
   the Sharpe bars draw on it.
 
   Test hooks: .claims carries data-ready once hydrated and data-play ("true" once the
@@ -70,7 +70,9 @@ test.describe("Research chapter", () => {
     }
     await expect(sec(page).locator(".now")).toContainText(research.now.label);
     await expect(sec(page).locator(".now")).toContainText(research.now.body);
-    await expect(sec(page).locator(".lim")).toHaveText(research.limit);
+    // The limit line was removed in refinement R2; the question ends after the method.
+    await expect(sec(page).locator(".lim")).toHaveCount(0);
+    expect(research.ask.endsWith("and measures why the hedge failed.")).toBe(true);
     const all = (await sec(page).textContent()) ?? "";
     expect(all).not.toContain("—");
   });
@@ -130,7 +132,9 @@ test.describe("Research chapter", () => {
       "Long-duration Treasury hedge book, modeled 2022 replay: a loss of roughly 19 percent",
     );
     await expect(drop).toContainText("≈ −19%");
-    await expect(drop).toContainText(research.evidence.drawdown.note);
+    // The chart title carries "modeled 2022 replay"; there is no extra note (refinement R2).
+    await expect(page.locator("#ev-drawdown .ctitle")).toHaveText(research.evidence.drawdown.chartTitle);
+    await expect(drop.locator("text")).toHaveCount(2);
     await expect(drop.locator(".bar")).toHaveCSS("transform-box", "view-box");
     await expect(drop.locator(".bar")).toHaveAttribute("data-ax", "y");
   });
@@ -194,7 +198,7 @@ test.describe("Research chapter", () => {
             limit: box.right,
           }));
         });
-        expect(sizes.length).toBeGreaterThan(2);
+        expect(sizes.length).toBeGreaterThanOrEqual(2);
         for (const s of sizes) {
           expect(s.px, `${s.text}`).toBeGreaterThanOrEqual(s.tick ? 12 : 14);
           expect(s.right, `${s.text} overflows the chart`).toBeLessThanOrEqual(s.limit + 1);

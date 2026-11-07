@@ -85,9 +85,9 @@ One page, five chapters, in this order. Each chapter has an anchor and a scene c
 
 | Chapter | Anchor | Content |
 |---|---|---|
-| Home | `#top` | Place line, name, one-line role, availability, two actions, reflection caption |
+| Home | `#top` | Name, one-line role, availability, two actions |
 | Projects | `#projects` | DiffusionWorks exhibit, The Liquidity Paradox exhibit, "More projects" rail of six |
-| Research | `#research` | "The hedge that stopped working": premise, question, three claims with evidence, FE800 "Now", limit, links |
+| Research | `#research` | "The hedge that stopped working": premise, question, three claims with evidence, FE800 "Now", links |
 | Path | `#path` | Mumbai → Arizona → New Jersey, degrees, FRM Part 1 (shown only here), experience list |
 | Contact | `#contact` | "Let's talk", availability, email (link + copy), LinkedIn, GitHub, résumé |
 
@@ -142,7 +142,7 @@ Phone (portrait) adds +0.06 to the horizon and uses the portrait composition con
 the prototype.
 
 - The lamp reflection is the mean of *n* ripples, *n* doubling from 1 to 512 on load; its
-  wobble scales with `1/√n`. The hero caption states this and must stay true to the shader.
+  wobble scales with `1/√n`. (The hero caption that stated this was removed in refinement R2.)
 - Section transitions: a short fog "gust" (≈600 ms) when the active chapter changes.
 - Readability: every chapter's text sits on a soft veil (gradient, no boxes) so contrast holds
   over any scene state.
@@ -158,7 +158,7 @@ the prototype.
   a tree of the first 6 steps (5 on narrow screens) labelled with option values; a convergence
   chart of all `N` 1–200 with a marker at the chosen `N`.
 - Motion: on slider release, a backward-induction sweep runs from expiry to the root (650 ms).
-- Labelled as "an illustration on this page, not one of the fifteen studies".
+- No disclaimer note: refinement R2 removed "an illustration on this page, not one of the fifteen studies". The findings below carry the study results.
 - Project findings (from `stochastic-lab/README.md` and
   `docs/BARRIER-MONITORING-METHODOLOGY.md`): 15 studies, 10 clean, 5 with documented caveats,
   none failed; Broadie–Glasserman–Kou continuity correction within two standard errors at
@@ -167,8 +167,8 @@ the prototype.
 ### 6.2 The Liquidity Paradox (the fast moment)
 - On first view, a seeded toy simulation runs for about 4.2 s, accelerating; the river and ferry
   speed up with it; then a hard cut: the simulation dims, the fog snaps clear, "4.2% skill"
-  stamps. "Run it again" replays.
-- Toy model (illustration, labelled as such): market maker quotes ±1 tick around a price that
+  stamps. "Replay" replays.
+- Toy model (a mechanism illustration, captioned "How adverse selection works: …"): market maker quotes ±1 tick around a price that
   moves ±2 ticks per trade; 55% of trades are informed (trade in the direction of the next
   move); 45% are uninformed (random side). Seeded LCG (`seed = 20261106`) so the default state
   is reproducible.
@@ -181,7 +181,7 @@ the prototype.
   out-of-sample R² 4.2% at 5 s, positive in all 5 test sessions; baseline quoting rules lost
   about 1–2 bp of notional before fees (mostly adverse selection) and about 11–12 bp at the
   exchange's default fee tier, under every modeled fill, latency and fee assumption. Shown with
-  the note "Modeled historical replay: the orders never existed; fills are inferred…".
+  the note "Historical order-book replay with modeled executions under stated queue, latency and fee assumptions."
 
 ### 6.3 The hedge that stopped working (evidence-led research)
 Claims are buttons; each opens its evidence (beside it on wide screens, under it on phones).
@@ -282,13 +282,13 @@ directly under the selected item and scrolls into view. Arrow keys move between 
 | That loss came primarily from rising real yields, not breakevens, under the memo's attribution framework, for this one episode | abstract (lines 62–63); prospectus ("under a stated portfolio-level attribution framework and for that single episode") |
 | Breakeven = nominal − TIPS yield; inflation compensation including an inflation risk premium and TIPS liquidity effects, not pure expected inflation | `FE800/10:13/FE800_Week3_Research_Memo.tex` line 226; `Research_Progress_Summary_10-13.md` |
 | FE800 (Fall 2026) tests whether real-rate dominance generalizes across stress episodes | prospectus, "Core FE800 question" |
-| Measurement and attribution, not prediction or causal identification | prospectus, "Expected contribution" |
+| (Removed from the site in refinement R2, at Vatsal's request.) Measurement and attribution, not prediction or causal identification | prospectus, "Expected contribution" |
 | DiffusionWorks: 15 studies, 10 clean, 5 caveats, none failed; BGK 16/18 down, 23/24 up | `stochastic-lab/README.md`; `docs/BARRIER-MONITORING-METHODOLOGY.md` §6–6.2 |
 | Liquidity Paradox: 20 sessions SOL/USDT; held-out R² 4.2% at 5 s, 5 of 5 positive; −1 to −2 bp before fees; −11 to −12 bp at default fee tier; modeled replay | `liquidity-lab/README.md`; `results/closeout/CLOSEOUT_report.md` (H1-F); `results/e002/E002_report.md` |
 | YieldShock: 10 shock scenarios, 4 hedge overlays, 5 attribution channels; the Treasury curve-risk and attribution side of the FE800 research | `inflation-lab/README.md` (header; stages 1, 5, 6); `FE800/Writing Sample/Vatsal_Maniar_FE800_Research_Prospectus.tex` lines 128–129 |
 | Signal Survival: 5 signals, 20 years of ETF data (2006–2026), 3 survived, 1 conditional (risk-control overlay), 1 rejected (12.8x/yr turnover trails every passive benchmark and degrades sharply as costs rise) | `research-lab/README.md`, "Final verdicts", "Data" |
-| Currency Options Desk: USD 4.65M gross notional; 10,000-path Monte Carlo VaR/ES; delta hedge takes net delta to ~0 and reduces worst-case loss ~99%; book breaches illustrative limits before hedging; illustrative data | `fx-options-risk-lab/README.md`, "Headline figures", "Quant methodology", "Limitations" |
-| Lending Decisions: 94,999 credit applicants, 180 policy scenarios; underwriting model ROC-AUC about 0.695 = Monitor, fraud model = Pass, stablecoin scorer = Pass (1 of 3 marked Monitor); public and synthetic data | `credits-lab/README.md`, "What it answers", "Key results", "Data sources" |
+| Currency Options Desk: USD 4.65M gross notional; 10,000-path Monte Carlo VaR/ES; delta hedge takes net delta to ~0 and reduces worst-case loss ~99%; book breaches illustrative limits before hedging (the site says "illustrative" once, on the limits; the separate "illustrative data" line was removed in R2) | `fx-options-risk-lab/README.md`, "Headline figures", "Quant methodology", "Limitations" |
+| Lending Decisions: 94,999 credit applicants, 180 policy scenarios; underwriting model ROC-AUC about 0.695 = Monitor, fraud model = Pass, stablecoin scorer = Pass (shown as "1 of 3 models flagged for monitoring"); public and synthetic data | `credits-lab/README.md`, "What it answers", "Key results", "Data sources" |
 | ApexGP: 2025 season replayed lap by lap, $100,000 simulated book, circuit-breaker halts, audit ledger; 30% total and 15% single-contract exposure limits; 24 races | `ApexGP/README.md` ("Race Replay Engine", "Portfolio Management", sandbox balance); `ApexGP/docs/v2/README.md` lines 29, 97–98 (limits); `ApexGP/public/data/official/` (24 round files) |
 | Allocation Study: 13 assets, benchmarks, 35% per-asset cap, 5 bps costs, three crisis windows (2008, 2020, 2022) | `portfolio-lab-4/README.md`, "What this is"; sample start April 2007 per its data notes |
 

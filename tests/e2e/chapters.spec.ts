@@ -23,35 +23,12 @@ test.describe("Home, Path and Contact", () => {
     await expect(page.getByRole("link", { name: "Read the research" })).toHaveAttribute("href", "#research");
   });
 
-  test("the reflection count reaches 512", async ({ page }) => {
+  test("the hero is the name, the lede, availability and two actions, with no reflection caption", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("[data-n]")).toHaveText("512", { timeout: 12_000 });
-  });
-
-  test("the reflection count shows 512 at once under reduced motion", async ({ browser }) => {
-    const ctx = await browser.newContext({ reducedMotion: "reduce" });
-    const page = await ctx.newPage();
-    await noWatchdog(page);
-    await page.goto("/");
-    await expect(page.locator("[data-n]")).toHaveText("512", { timeout: 2000 });
-    await ctx.close();
-  });
-
-  test("without JavaScript the reflection caption shows the converged count, 512", async ({ browser }) => {
-    const ctx = await browser.newContext({ javaScriptEnabled: false });
-    const page = await ctx.newPage();
-    await page.goto("/");
-    await expect(page.locator(".refl .n-still")).toBeVisible();
-    await expect(page.locator(".refl .n-still")).toHaveText("512");
-    await expect(page.locator(".refl [data-n]")).toBeHidden();
-    expect(await page.locator(".refl").innerText()).toContain("= 512 ripples");
-    await ctx.close();
-  });
-
-  test("with JavaScript the caption shows only the live count", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator(".refl [data-n]")).toBeVisible();
-    await expect(page.locator(".refl .n-still")).toBeHidden();
+    await expect(page.locator("#top .lede")).toHaveText("Financial engineer. I build models for markets, risk, and portfolios.");
+    await expect(page.locator("#top .refl")).toHaveCount(0);
+    await expect(page.locator("[data-n]")).toHaveCount(0);
+    expect(await page.locator("#top").innerText()).not.toMatch(/ripples|σ\/√/);
   });
 
   test("Path has the unfiltered photo", async ({ page }) => {

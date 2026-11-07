@@ -18,7 +18,7 @@ export const research = {
   premise:
     "For most of the period from the late 1990s through 2020, U.S. stocks and Treasuries did not fall together. In 2022 they did.",
 
-  ask: "asks whether acting on that helps in practice, using only lagged, observable signals with realistic trading costs and position limits, and then measures why the hedge failed. Three findings, each with its evidence:",
+  ask: "asks whether acting on that helps in practice, using only lagged, observable signals with realistic trading costs and position limits, and measures why the hedge failed.",
 
   claims: [
     {
@@ -60,7 +60,6 @@ export const research = {
       zero: "0%",
       chartTitle: "Long-duration hedge book, modeled 2022 replay",
       value: "≈ −19%",
-      note: "a modeled book, not a fund's return",
     },
     identity: {
       definition: "b ≈ expected inflation + inflation risk premium + TIPS liquidity effects",
@@ -72,8 +71,6 @@ export const research = {
     label: "Now · FE800, Fall 2026",
     body: "Testing whether real-rate dominance is a general feature of Treasury hedge failures or specific to 2022, by applying one standardized hedge book across other market-stress episodes.",
   },
-
-  limit: "Measurement and attribution, not prediction or causal identification.",
 
   links: {
     ssrn: { label: "Read on SSRN", href: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7469079" },

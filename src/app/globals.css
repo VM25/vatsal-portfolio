@@ -136,7 +136,12 @@ main:focus, .sec:focus { outline: none; }
   mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,0.1) 40px, rgba(0,0,0,0.5) 100px, rgba(0,0,0,0.9) 160px, #000 200px, #000 calc(100% - 200px), rgba(0,0,0,0.9) calc(100% - 160px), rgba(0,0,0,0.5) calc(100% - 100px), rgba(0,0,0,0.1) calc(100% - 40px), transparent 100%); }
 
 /* hero */
-.hero { min-height: 88svh; display: flex; flex-direction: column; justify-content: center; padding-block: 24px 64px; }
+/*
+  The hero used to end with an 80px caption (36px gap and two lines). Refinement R2 removed it
+  and took the same 80px off the hero, so the centred text stays exactly where it was over
+  the scene and Projects starts 80px sooner, instead of the text sliding down onto the lamp.
+*/
+.hero { min-height: calc(88svh - 80px); display: flex; flex-direction: column; justify-content: center; padding-block: 24px 64px; }
 /* The page starts at the hero's top, so its veil feathers at the bottom only. */
 .hero .veil { inset: 0 0 -100px; background: radial-gradient(70% 60% at 20% 50%, rgba(11,18,20,0.55), transparent 70%);
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 200px), rgba(0,0,0,0.9) calc(100% - 160px), rgba(0,0,0,0.5) calc(100% - 100px), rgba(0,0,0,0.1) calc(100% - 40px), transparent 100%);
@@ -150,33 +155,19 @@ main:focus, .sec:focus { outline: none; }
 .btn:active { transform: scale(0.97); }
 @media (hover: hover) and (pointer: fine) { .btn:hover { background: var(--sodium-glow); } }
 .tlink { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px; min-height: 44px; display: inline-flex; align-items: center; }
-.refl { margin-top: 36px; max-width: 34ch; font-size: 15px; line-height: 1.45; color: #B5BEB9; }
-.refl b { font-weight: 500; color: var(--sodium); font-family: var(--font-num); font-size: 14px; }
-.refl .n-still { display: none; }
-html:not(.js) .refl .n-live { display: none; }
-html:not(.js) .refl .n-still { display: inline; }
 /*
   Night halo (controller ruling, Task 13): on phones the lamp and its reflection sit
   behind the opening screen's smaller text. A soft night-deep (#060A0B) halo under those
   lines keeps them at 4.5:1 or more without moving the lamp or changing their colour.
-  The reflection count is a thin sodium digit sitting right on the reflection, where a
-  blur alone fades within a pixel of the stroke, so it also gets a 1px night-deep edge.
 */
 @container site (max-width: 759px) {
-  .hero :is(.avail, .tlink, .refl) {
+  .hero :is(.avail, .tlink) {
     text-shadow: 0 0 3px rgba(6,10,11,0.9), 0 0 8px rgba(6,10,11,0.75), 0 0 16px rgba(6,10,11,0.6);
-  }
-  .hero .refl b {
-    text-shadow:
-      1px 0 1px #060A0B, -1px 0 1px #060A0B, 0 1px 1px #060A0B, 0 -1px 1px #060A0B,
-      1px 1px 1px #060A0B, -1px 1px 1px #060A0B, 1px -1px 1px #060A0B, -1px -1px 1px #060A0B,
-      0 0 3px #060A0B, 0 0 3px #060A0B, 0 0 6px #060A0B, 0 0 12px rgba(6,10,11,0.8);
   }
 }
 
 .shead { display: grid; gap: 10px; margin-bottom: 36px; }
 .shead h2 { font-size: clamp(2.4rem, 7cqi, 4rem); letter-spacing: -0.035em; line-height: 1; }
-.shead p.sub { max-width: 52ch; color: #CDD4D0; font-weight: 300; }
 
 /* ---------- projects ---------- */
 .projects { padding-block: 72px 56px; }
@@ -186,7 +177,6 @@ html:not(.js) .refl .n-still { display: inline; }
 .ex .fld { font-size: 14px; color: var(--fog-mid); }
 .ex h3 { font-size: clamp(2rem, 5.6cqi, 3rem); letter-spacing: -0.03em; line-height: 1.05; margin-top: 6px; }
 .ex .q { margin-top: 12px; font-weight: 300; font-size: clamp(1.12rem, 2.5cqi, 1.35rem); line-height: 1.45; color: #D6DDD9; max-width: 38ch; }
-.ex .note { font-size: 14px; color: var(--fog-mid); max-width: 52ch; margin-top: 12px; }
 .viz { display: grid; gap: 12px; }
 .viz canvas { width: 100%; display: block; }
 /* CSS sets the drawn height, so the canvas never jumps when its backing store is sized. */
@@ -343,9 +333,9 @@ html.rm .ev .bar { transition: none; }
 */
 .ev .chart { container-type: inline-size; container-name: chart; }
 .ev .ctitle { font-size: 14px; color: var(--fog-mid); margin-bottom: 12px; }
-@container chart (max-width: 519px) { .ev svg .tt { font-size: 17px; } .ev svg .tl { font-size: 18px; } .ev svg .tv { font-size: 23px; } .ev svg .tb { font-size: 34px; } .ev svg .ticks text { font-size: 14px; } }
-@container chart (max-width: 449px) { .ev svg .tt { font-size: 22px; } .ev svg .tl { font-size: 22px; } .ev svg .tv { font-size: 27px; } .ev svg .tb { font-size: 38px; } .ev svg .ticks text { font-size: 19px; } }
-@container chart (max-width: 334px) { .ev svg .tt { font-size: 27px; } .ev svg .tl { font-size: 27px; } .ev svg .tv { font-size: 31px; } .ev svg .tb { font-size: 40px; } .ev svg .ticks text { font-size: 23px; } }
+@container chart (max-width: 519px) { .ev svg .tl { font-size: 18px; } .ev svg .tv { font-size: 23px; } .ev svg .tb { font-size: 34px; } .ev svg .ticks text { font-size: 14px; } }
+@container chart (max-width: 449px) { .ev svg .tl { font-size: 22px; } .ev svg .tv { font-size: 27px; } .ev svg .tb { font-size: 38px; } .ev svg .ticks text { font-size: 19px; } }
+@container chart (max-width: 334px) { .ev svg .tl { font-size: 27px; } .ev svg .tv { font-size: 31px; } .ev svg .tb { font-size: 40px; } .ev svg .ticks text { font-size: 23px; } }
 .ev .ident { font-family: var(--font-argue); font-size: clamp(1.2rem, 3cqi, 1.5rem); line-height: 1.7; color: var(--fog-hi); }
 .ev .ident .where { font-size: 0.8em; color: #CDD4D0; }
 .ev .ident .def { display: block; font-size: 0.8em; color: #CDD4D0; }
@@ -354,7 +344,6 @@ html.rm .ev .bar { transition: none; }
 .now { padding: 18px 0; border-block: 1px solid rgba(255,166,43,0.35); display: grid; gap: 4px; }
 .now b { font-weight: 400; color: var(--sodium); font-size: 15px; }
 .now p { font-family: var(--font-argue); font-size: 1.1rem; color: var(--fog-hi); max-width: 62ch; }
-.paper .lim { font-family: var(--font-argue); font-style: italic; color: var(--fog-mid); }
 /* Evidence beside the claims on wide screens; only with JavaScript, where one is open at a time. */
 @container site (min-width: 980px) {
   html.js .claims { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 64px; }

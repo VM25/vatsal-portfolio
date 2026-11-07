@@ -164,14 +164,6 @@ export function World() {
     let raf = 0;
     let stopped = false;
     let renderer: Renderer | null = null;
-    let lastN = -1;
-    const writeN = (n: number) => {
-      if (n === lastN) return;
-      lastN = n;
-      document.querySelectorAll<HTMLElement>("[data-n]").forEach((e) => {
-        e.textContent = String(n);
-      });
-    };
 
     const onContextLost = () => fallback("context-lost");
 
@@ -182,8 +174,6 @@ export function World() {
       bg.dataset.mode = "stills";
       bg.dataset.fallback = reason;
       setStillsOn(true);
-      // The stills are the converged scene.
-      writeN(512);
       // Give the GPU back. Unhook first so our own loseContext isn't reported as a loss.
       canvas.removeEventListener("webglcontextlost", onContextLost);
       if (reason === "slow") renderer?.release();
@@ -204,7 +194,6 @@ export function World() {
       const t = still ? STILL_TIME : (now - t0) / 1000;
       const k = still ? 9 : Math.min(9, Math.floor((now - t0) / 1000 / 1.1));
       const n = 2 ** k;
-      writeN(n);
       const st = sceneState(b.p, w / h, t, b.keys);
       st.uN = n;
       st.uFlash = still ? 0 : Math.min(1, b.flash * 1.6) * FLASH_PEAK;

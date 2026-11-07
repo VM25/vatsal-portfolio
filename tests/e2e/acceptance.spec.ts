@@ -354,14 +354,14 @@ test.describe("acceptance", () => {
       ]);
       // Every text block in every chapter is visible, except what the no-JS page replaces:
       // the interactive rail (its six projects are listed in full in .rail-all) and the
-      // spoken live-region sentences, and the live reflection count (the converged 512 shows instead).
+      // spoken live-region sentences.
       const hidden = await page.evaluate(() => {
         const out: string[] = [];
         const walker = document.createTreeWalker(document.querySelector("main")!, NodeFilter.SHOW_TEXT);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
           const el = n.parentElement;
           const text = n.textContent?.trim();
-          if (!el || !text || el.closest("script, style, noscript, .sr-only, .more > .rail, #more-stage, .refl .n-live")) continue;
+          if (!el || !text || el.closest("script, style, noscript, .sr-only, .more > .rail, #more-stage")) continue;
           if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) out.push(`"${text.slice(0, 50)}" (${el.tagName.toLowerCase()}.${el.getAttribute("class") ?? ""})`);
         }
         return out;

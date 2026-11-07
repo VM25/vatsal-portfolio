@@ -69,7 +69,6 @@ export function Projects() {
       <div className="inner">
         <div className="shead">
           <h2 id="projects-h">Projects</h2>
-          <p className="sub">{projects.intro}</p>
         </div>
 
         <Diffusion
@@ -79,7 +78,6 @@ export function Projects() {
               <p className="fld">{dw.field}</p>
               <h3 id="dw-h">{dw.title}</h3>
               <p className="q">{dw.question}</p>
-              <p className="note">{dw.note}</p>
             </>
           }
           formulas={

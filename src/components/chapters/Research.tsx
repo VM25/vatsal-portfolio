@@ -39,7 +39,6 @@ export function Research() {
           <b>{research.now.label}</b>
           <p>{research.now.body}</p>
         </div>
-        <p className="lim">{research.limit}</p>
         <div className="ex-links">
           <NewTab href={research.links.ssrn.href}>{research.links.ssrn.label}</NewTab>
           <NewTab href={research.links.prospectus.href} pdf>

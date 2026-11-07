@@ -33,7 +33,7 @@ The repository paths are Vatsal's project repos (README and docs files). "Kept" 
 | "$4.65M position" | "Gross notional USD 4.65M" | Kept as "$4.65M gross notional" |
 | "95% loss-estimate confidence" | 95% VaR is a confidence level, not a result | Removed; replaced by "10,000 simulated paths for VaR" (Methodology: "10,000 paths") |
 | "100% directional risk hedged" | Not supported. README: "net delta reduced to ~0; worst-case loss reduced ~99%" | Replaced by "~99% worst-case loss cut by the hedge" |
-| "The hedge removes the directional risk entirely … what remains is the risk of the market moving sharply" | "Entirely" overstates it, and no README line says the residual is gamma or vol | Rewritten to the README facts: before the hedge it breaches the illustrative delta, vega and stress-loss limits; the hedge brings net delta to about zero and cuts worst-case stress loss by about 99%. "Illustrative data and limits, not a trading book" added (Limitations) |
+| "The hedge removes the directional risk entirely … what remains is the risk of the market moving sharply" | "Entirely" overstates it, and no README line says the residual is gamma or vol | Rewritten to the README facts: before the hedge it breaches the illustrative delta, vega and stress-loss limits; the hedge brings net delta to about zero and cuts worst-case stress loss by about 99%. "Illustrative data and limits, not a trading book" added (Limitations), then removed in R2 at the controller's ruling: "illustrative" stays once, on the limits |
 | Dollar-peso, a sharp move, a hedge | USD/MXN, an 11×7 stress grid, a delta hedge | Kept |
 
 ## Lending Decisions (credits-lab/README.md)
@@ -42,11 +42,11 @@ The repository paths are Vatsal's project repos (README and docs files). "Kept" 
 |---|---|---|
 | 95,000 applicants | "94,999 credit applicants" | Changed to the exact 94,999 |
 | 180 policy scenarios | "180 policy scenarios" | Kept |
-| 1 of 3 models flagged | Key results: underwriting Monitor, fraud Pass, stablecoin Pass | Kept, label made exact ("models marked Monitor") |
+| 1 of 3 models flagged | Key results: underwriting Monitor, fraud Pass, stablecoin Pass | Kept. Label was "models marked Monitor"; R2 made it "models flagged for monitoring" (Vatsal's review) |
 | "The fraud side works well" | PR-AUC 0.66, ROC-AUC 0.97, verdict Pass | Kept |
-| "Separates borrowers only modestly" | "ROC-AUC about 0.695 … modest discrimination, disclosed" | Kept; "marked for monitoring" became "marked Monitor" (wording call for Vatsal, see the sign-off) |
+| "Separates borrowers only modestly" | "ROC-AUC about 0.695 … modest discrimination, disclosed" | Kept. R2 wording: "separates borrowers only modestly, so it is flagged for monitoring" (the README's Monitor verdict, in plain words) |
 | Decisions: approve, review, decline, block | "What it answers" table | Kept |
-| — | README banner | Added "Built on public and clearly labeled synthetic data" |
+| — | README banner | Added "Built on public and clearly labeled synthetic data"; R2 shortened it to "Built on public and synthetic data" |
 
 ## Allocation Study (portfolio-lab-4/README.md)
 
@@ -70,9 +70,11 @@ The repository paths are Vatsal's project repos (README and docs files). "Kept" 
 | Claim | Source | Decision |
 |---|---|---|
 | DiffusionWorks: 15 studies, 10 clean, 5 with caveats, none failed | stochastic-lab/README.md lines 19 and 53 | Kept |
-| BGK correction "matched within two standard errors at 16 of 18 down" | "Two standard errors" not found. BARRIER-MONITORING-METHODOLOGY.md line 397: "resolved as wrong at 23 of 24 up-barrier cells against 2 of 18 down-barrier ones"; line 255: "over-predicts" | Changed to "held at 16 of 18 down-barrier test cells, but was resolved as wrong at 23 of 24 up-barrier cells, where it consistently over-predicts" ("wrong" is the source's word; wording call in the sign-off) |
+| BGK correction "matched within two standard errors at 16 of 18 down" | "Two standard errors" not found. BARRIER-MONITORING-METHODOLOGY.md line 397: "resolved as wrong at 23 of 24 up-barrier cells against 2 of 18 down-barrier ones"; line 255: "over-predicts" | Changed to "held at 16 of 18 down-barrier test cells, but was resolved as wrong at 23 of 24 up-barrier cells, where it consistently over-predicts". R2 made it "but was off at 23 of 24 up-barrier cells, where it consistently over-predicts", following spec §6.1 ("resolved as off (over-predicting)"); the source's word is "wrong" |
 | Liquidity: 20 sessions of SOL/USDT | liquidity-lab/README.md line 7 | Kept |
 | Liquidity: 4.2% R², 5 of 5, 1–2 bp, 11–12 bp | Spec §9 register (not re-derived from the closeout CSVs) | Kept |
+| Liquidity method line: "Historical order-book replay with modeled executions under stated queue, latency and fee assumptions" | `results/e002/E002_report.md` line 3 ("modeled historical replay … Fills are inferred under the stated queue, latency and fee assumptions"); README layout ("L2 replay") | R2: replaces "Modeled historical replay: the orders never existed; fills are inferred under …" |
+| Liquidity animation caption: "a market maker quotes one tick either side of a price that moves two ticks per trade, and 55% of trades come from informed flow" | The toy's own parameters, `src/lib/mmToy.ts` (HALF = 1, MOVE = 2, ALPHA = 0.55); spec §6.2 | R2: one line describing the mechanism, replacing the "Illustration only … Not the study's data" caption. The study's own figures sit in the results block |
 | "Lost money in every modeled scenario … mostly to better-informed flow" | "Every" and "mostly to informed flow" are not in the README or the E002 report | Changed to "lost money in the modeled replay"; "mostly to better-informed flow" dropped |
 
 ## Profile and Path
@@ -96,3 +98,17 @@ All 16 project URLs returned HTTP 200 (checked by the controller in Task 5).
 | Currency Options Desk | fxrisklab.netlify.app | Old site data only |
 | Allocation Study | pra-analytics.netlify.app | Old site data only |
 | ApexGP | apexgp-markets.netlify.app, repo `VM25/apexgp-markets` | Old site data only. The README says it is deployed on Vercel, so the URL and the repo name need confirming |
+
+## Refinement R2 (2026-11-07): copy changes that touch a sourced line
+
+The facts are unchanged. Only the wording moved, and each line still traces to the row above it.
+
+| Where | Old | New | Source |
+|---|---|---|---|
+| ApexGP result | "replays lap by lap as event contracts on a simulated book, with …" | "replays lap by lap as event contracts, with …" ("simulated book" stays once, in the figure "$100,000 simulated book") | ApexGP rows above |
+| YieldShock question | "Pick an inflation-regime shock and a Treasury book: where does the loss actually come from?" | "When an inflation-regime shock hits a Treasury book, where does the loss actually come from?" | No figure; README lines 6–8 |
+| Allocation Study question | "The allocation side of the research memo below." | "Can a portfolio adapt when stocks and Treasuries fall together, and does adapting actually help?" (Vatsal's line, em dash replaced by a comma) | No figure; README "What this is" |
+| Research, drawdown chart | note "a modeled book, not a fund's return" | removed; the chart title already says "modeled 2022 replay" | Spec §9 |
+| Research, limit line | "Measurement and attribution, not prediction or causal identification." | removed at Vatsal's request; the register row is marked removed | Spec §9 |
+| Research, question | "… and then measures why the hedge failed. Three findings, each with its evidence:" | "… and measures why the hedge failed." | Writing sample abstract |
+| Hero | the reflection caption ("averages n = … ripples; wobble shrinks like σ/√n") | removed; the shader still averages 512 ripples | Spec §5.3 |

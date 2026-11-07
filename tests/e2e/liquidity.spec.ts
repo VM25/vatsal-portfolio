@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { projects } from "../../src/data/projects";
 
 /*
   The Liquidity Paradox: a seeded toy market maker. The default state (420 trades from
@@ -169,21 +170,25 @@ test.describe("Liquidity Paradox exhibit", () => {
     await expect(page.locator("#mmN + span")).toHaveText("net, in ticks");
   });
 
-  test("the caption, canvas label and copy follow the data, with true minus and no em dash", async ({ page }) => {
+  test("the caption, canvas label and copy follow the data, with no em dash", async ({ page }) => {
     await open(page);
     const cap = ex(page).locator(".mm-stage .cap");
-    await expect(cap).toContainText("Illustration only");
-    await expect(cap).toContainText("Not the study's data");
-    await expect(cap).toContainText("−");
+    // One line on the mechanism (refinement R2); the study's figures are in the cut.
+    await expect(cap).toHaveText(projects.liquidity.caption);
+    await expect(cap).toContainText("How adverse selection works");
+    await expect(page.locator("#mmEq")).toContainText("−");
     const c = page.locator("#mmCanvas");
     await expect(c).toHaveAttribute("role", "img");
-    await expect(c).toHaveAttribute("aria-label", "Illustration: a simulated market maker's quotes and fills, speeding up");
+    await expect(c).toHaveAttribute("aria-label", "A simulated market maker's quotes and fills, speeding up");
     const all = (await ex(page).textContent()) ?? "";
     expect(all).not.toContain("—");
     expect(all).not.toContain("--");
     await expect(ex(page).locator(".cut")).toContainText("4.2%");
     await expect(ex(page).locator(".cut")).toContainText("11 to 12 bp");
-    await expect(ex(page).locator(".cut")).toContainText("Modeled historical replay");
+    // The single methodological line (refinement R2).
+    await expect(ex(page).locator(".cut .cap")).toHaveText(
+      "Historical order-book replay with modeled executions under stated queue, latency and fee assumptions.",
+    );
     await expect(ex(page).getByRole("link", { name: /Open the study/ })).toHaveAttribute("href", "https://liquidityparadox.netlify.app");
     await expect(ex(page).getByRole("link", { name: /Source/ })).toHaveAttribute("href", "https://github.com/VM25/liquidity-lab");
   });
@@ -227,13 +232,13 @@ test.describe("Liquidity Paradox exhibit", () => {
     await expect(ex(page)).toHaveAttribute("data-run-id", "1");
   });
 
-  test("Review Focus 3: five quick clicks on Run it again leave one run that ends on a clean state", async ({ page }) => {
+  test("Review Focus 3: five quick clicks on Replay leave one run that ends on a clean state", async ({ page }) => {
     await open(page);
     await watch(page);
     await bringIntoView(page);
     await expect(ex(page)).toHaveAttribute("data-running", "true");
     await expect.poll(async () => Number(await ex(page).getAttribute("data-steps"))).toBeGreaterThan(5);
-    const button = ex(page).getByRole("button", { name: "Run it again" });
+    const button = ex(page).getByRole("button", { name: "Replay", exact: true });
     const { before, after } = await button.evaluate(async (b) => {
       const before: [string, string][] = [];
       const after: [string, string][] = [];
@@ -288,12 +293,12 @@ test.describe("Liquidity Paradox exhibit", () => {
     await expect(ex(page)).toHaveAttribute("data-rush", "0");
   });
 
-  test("Run it again after a finished run replays from zero without another beat", async ({ page }) => {
+  test("Replay after a finished run replays from zero without another beat", async ({ page }) => {
     await open(page);
     await bringIntoView(page);
     await expect(ex(page)).toHaveAttribute("data-runs-done", "1", { timeout: 15_000 });
     await watch(page);
-    const button = ex(page).getByRole("button", { name: "Run it again" });
+    const button = ex(page).getByRole("button", { name: "Replay", exact: true });
     await expect(button).toBeEnabled();
     const box = await button.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -358,12 +363,12 @@ test.describe("Liquidity Paradox exhibit", () => {
     await expect(ex(page)).toHaveAttribute("data-beat-count", "1");
     await expect(page.locator("#liquidity .cut .big")).not.toHaveClass(/landed/);
     await expect(page.locator("#liquidity [data-say]")).toHaveText("Run finished: net −96 ticks over 420 trades.");
-    // Run it again recomputes at once, and is announced again: the sentence clears, then
+    // Replay recomputes at once, and is announced again: the sentence clears, then
     // comes back (a polite region only speaks when its text changes).
     const seenBefore = log.updates;
     await zeroCounters(page);
     await watchSay(page);
-    await ex(page).getByRole("button", { name: "Run it again" }).click();
+    await ex(page).getByRole("button", { name: "Replay", exact: true }).click();
     await expect(ex(page)).toHaveAttribute("data-runs-done", "2");
     await expectFinal(page);
     const sentence = "Run finished: net −96 ticks over 420 trades.";
