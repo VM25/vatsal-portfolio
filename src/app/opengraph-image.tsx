@@ -4,10 +4,13 @@ export const alt = "Vatsal Maniar";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const ONYX = "#020202";
-const PRAXETI = "#f6f7ed";
-const SAFFRON = "#ff9932";
-const AQUA = "#a0c9cb";
+// The Clearing palette: harbor night, pearl fog and one sodium lamp.
+const NIGHT = "#0B1214";
+const NIGHT_DEEP = "#060A0B";
+const FOG_HI = "#E6EBE7";
+const FOG_MID = "#9AA39E";
+const FOG_LO = "#5B6661";
+const SODIUM = "#FFA62B";
 
 export default function OpengraphImage() {
   return new ImageResponse(
@@ -19,54 +22,54 @@ export default function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: ONYX,
-          color: PRAXETI,
+          background: `linear-gradient(180deg, ${NIGHT_DEEP} 0%, ${NIGHT} 70%, ${NIGHT_DEEP} 100%)`,
+          color: FOG_HI,
           padding: "68px 72px",
           fontFamily: "Helvetica, Arial, sans-serif",
         }}
       >
-        <div style={{ display: "flex", fontSize: 20, color: AQUA, letterSpacing: 3 }}>
-          JERSEY CITY, NEW JERSEY
-        </div>
+        <div style={{ display: "flex" }} />
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div
             style={{
               display: "flex",
-              fontSize: 150,
-              fontWeight: 800,
-              letterSpacing: -7,
-              lineHeight: 0.88,
+              fontSize: 132,
+              fontWeight: 300,
+              letterSpacing: -5,
+              lineHeight: 1,
             }}
           >
-            Vatsal
+            Vatsal Maniar
           </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 150,
-              fontWeight: 800,
-              letterSpacing: -7,
-              lineHeight: 0.88,
-            }}
-          >
-            Maniar
+          <div style={{ display: "flex", marginTop: 22, fontSize: 34, color: FOG_HI, opacity: 0.86 }}>
+            Financial Engineering · Quantitative Research
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", height: 1, width: "100%", background: "#114c5a" }} />
+          <div style={{ display: "flex", height: 1, width: "100%", background: FOG_LO }} />
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              marginTop: 22,
-              fontSize: 24,
-              color: AQUA,
+              alignItems: "center",
+              marginTop: 24,
+              fontSize: 26,
+              color: FOG_MID,
             }}
           >
-            <span>Measuring what risk actually costs</span>
-            <span style={{ color: SAFFRON }}>Graduating December 2026</span>
+            <div
+              style={{
+                display: "flex",
+                width: 14,
+                height: 14,
+                borderRadius: 7,
+                background: SODIUM,
+                boxShadow: `0 0 18px ${SODIUM}`,
+                marginRight: 16,
+              }}
+            />
+            Graduating December 2026 · open to full-time quantitative roles
           </div>
         </div>
       </div>

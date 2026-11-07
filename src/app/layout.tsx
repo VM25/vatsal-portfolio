@@ -1,35 +1,45 @@
-import type { Metadata } from "next";
-import { Big_Shoulders, B612, B612_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono, STIX_Two_Text } from "next/font/google";
 import "./globals.css";
 
-// Chapter titles and the name. Extremely condensed and very tall — at
-// full-screen sizes it reads as architecture rather than as text.
-const display = Big_Shoulders({
+/*
+  Weights are listed explicitly. The docs' "200 500" range string is rejected
+  by this version's Google font validator (it checks each weight against the
+  font's listed values), so the ranges are spelled out.
+*/
+
+// Display and UI: 200 for the name and titles, 300 for the lede, 400 for UI.
+const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-display",
+  weight: ["200", "300", "400", "500"],
+  variable: "--ff-geist",
   display: "swap",
 });
 
-// Reading text. Drawn by Airbus for cockpit displays, so it was designed to
-// stay legible on a lit surface that is moving — which is this whole page.
-const body = B612({
+// Only for numbers the page computes or counts.
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500"],
+  variable: "--ff-geist-mono",
+  display: "swap",
+});
+
+// Research prose and all mathematics.
+const stix = STIX_Two_Text({
+  subsets: ["latin"],
+  weight: ["400", "500"],
   style: ["normal", "italic"],
-  variable: "--font-body",
+  variable: "--ff-stix",
   display: "swap",
 });
 
-// Readouts, coordinates, figures.
-const mono = B612_Mono({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-mono",
-  display: "swap",
-});
+const description = "Financial Engineering · Quantitative Research. Models for markets, risk, and portfolios.";
 
-const description =
-  "Vatsal Maniar builds systems that measure risk — across interest rates, currencies, credit and portfolios.";
+/*
+  Preview builds only: `CLEARING_NOINDEX=1` at build time marks every page noindex.
+  Production never sets it, so the live site keeps index, follow.
+*/
+const noindex = process.env.CLEARING_NOINDEX === "1";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://maniar-portfolio.netlify.app"),
@@ -43,24 +53,44 @@ export const metadata: Metadata = {
     "derivatives",
     "Stevens Institute of Technology",
   ],
+  // The production address is the canonical one, on previews too.
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
+    url: "/",
     title: "Vatsal Maniar",
     description,
     siteName: "Vatsal Maniar",
   },
   twitter: { card: "summary_large_image", title: "Vatsal Maniar", description },
-  robots: { index: true, follow: true },
+  robots: noindex ? { index: false, follow: false } : { index: true, follow: true },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export const viewport: Viewport = {
+  themeColor: "#0B1214",
+  colorScheme: "dark",
+  viewportFit: "cover",
+};
+
+/*
+  Runs while the HTML is parsed, before the first paint (see the Next guide
+  "preventing flash before hydration"). It marks <html> with .js, so the rail's
+  tabs show collapsed from the first frame, and with
+  .rm under reduced motion, so the Sharpe bars never start at zero for those
+  readers. Without JavaScript neither class is set and everything is expanded.
+  ScrollState keeps .rm in sync afterwards; suppressHydrationWarning lets React
+  accept the classes it did not render. If the app has not hydrated (ScrollState
+  sets data-hydrated) within five seconds, the bundle is taken to have failed and
+  .js comes off, so the page falls back to its fully expanded form.
+*/
+const BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("rm")}catch(e){}setTimeout(function(){if(!d.hasAttribute("data-hydrated"))d.classList.remove("js")},5000)})()`;
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
-    >
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${stix.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: BOOT }} />
+      </head>
       <body>{children}</body>
     </html>
   );

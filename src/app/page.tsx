@@ -1,40 +1,33 @@
-import { Nav } from "@/components/site/Nav";
-import { Hero } from "@/components/sections/Hero";
-import { Projects } from "@/components/sections/Projects";
-import { Research } from "@/components/sections/Research";
-import { Background } from "@/components/sections/Background";
-import { Experience } from "@/components/sections/Experience";
-import { Contact } from "@/components/sections/Contact";
+import { ScrollStateProvider } from "@/components/world/ScrollState";
+import { World } from "@/components/world/World";
+import { Home } from "@/components/chapters/Home";
+import { Projects } from "@/components/chapters/Projects";
+import { Research } from "@/components/chapters/Research";
+import { Path } from "@/components/chapters/Path";
+import { Contact } from "@/components/chapters/Contact";
+import { TopBar } from "@/components/site/TopBar";
+import { MobileMenu } from "@/components/site/MobileMenu";
 
 /*
-  Order follows what matters: the projects and the paper carry the site, so they
-  come first. Background and previous roles are context and sit behind them.
+  One continuous page over the scene. The chapters are server components; the
+  scroll state and the scene are the only client code here. The top bar is sticky
+  inside the layout container; the phone menu sits beside it, not in it.
 */
 export default function Page() {
   return (
-    <>
-      <div className="field" aria-hidden>
-        <span className="bloom bloom--e" />
-        <span className="bloom bloom--a" />
-        <span className="bloom bloom--b" />
-        <span className="bloom bloom--c" />
-        <span className="bloom bloom--d" />
+    <ScrollStateProvider>
+      <World />
+      <div className="site">
+        <TopBar />
+        <main id="content" tabIndex={-1}>
+          <Home />
+          <Projects />
+          <Research />
+          <Path />
+          <Contact />
+        </main>
       </div>
-      <Nav />
-      <a
-        href="#projects"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-saffron focus:px-4 focus:py-2 focus:text-onyx"
-      >
-        Skip to the projects
-      </a>
-      <main>
-        <Hero />
-        <Projects />
-        <Research />
-        <Background />
-        <Experience />
-        <Contact />
-      </main>
-    </>
+      <MobileMenu />
+    </ScrollStateProvider>
   );
 }

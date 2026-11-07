@@ -1,0 +1,212 @@
+import type { RailProject } from "@/types";
+
+/**
+ * Project copy. Every figure traces to the project's own README or results;
+ * see the spec's section 9 register. Ported from the Clearing prototype, with
+ * the unsupported claims softened (see the task 5 report).
+ */
+
+/** Exhibit 1: the slow moment. A binomial tree closing in on Black–Scholes. */
+const diffusion = {
+  field: "Options pricing",
+  title: "DiffusionWorks",
+  question:
+    "A pricing engine is easy to write and hard to trust. DiffusionWorks prices equity derivatives several ways, then runs fifteen controlled studies of where the methods agree and where they quietly break down.",
+  controls: {
+    steps: "Steps in the tree, N",
+    volatility: "Volatility, σ",
+    strike: "Strike, K (spot 100)",
+  },
+  /** Over the sliders, which follow the visuals and the result (refinement R3). */
+  inputsLabel: "Model inputs",
+  /** On the convergence chart: the dashed line's label, and the word before the difference at the marker. */
+  annotations: {
+    blackScholes: "Black–Scholes",
+    difference: "difference",
+  },
+  /** The contract, at the head of the chart caption. "{sig}" is σ in percent; `other` also takes "{K}". */
+  terms: {
+    atMoney: "European call · S = K = 100, σ = {sig}%, r = 4%, T = 1.",
+    other: "European call · S = 100, K = {K}, σ = {sig}%, r = 4%, T = 1.",
+  },
+  result: {
+    big: "10 of 15",
+    line: "studies reached a clean result. Five carry a documented caveat, and none failed.",
+    caveat:
+      "The sharpest caveat: the Broadie–Glasserman–Kou continuity correction for barrier options observed at discrete dates held at 16 of 18 down-barrier test cells, but was off at 23 of 24 up-barrier cells, where it consistently over-predicts.",
+    figures: [
+      ["15", "studies"],
+      ["10", "clean"],
+      ["5", "with caveats"],
+    ] as [string, string][],
+  },
+  treeLabel: "The first steps of the binomial tree with the option's value at each node",
+  treeCaption:
+    "First {shown} of {total} steps. Each node shows the option's value there, worked back from expiry.",
+  /** When the whole tree fits on the canvas. */
+  treeCaptionAll: {
+    one: "All 1 step. Each node shows the option's value there, worked back from expiry.",
+    other: "All {total} steps. Each node shows the option's value there, worked back from expiry.",
+  },
+  /** The tree's node values as a visually hidden table beside the canvas, one row per step. */
+  treeTable: {
+    caption: "Option value at each node of the tree shown, by step, from the top node down",
+    /** Row header: "{i}" is the step, 0 for today. */
+    step: "Step {i}",
+  },
+  /** Drawn on the tree canvas when the tree runs past what is shown. */
+  treeMore: {
+    one: "… 1 more step to expiry",
+    other: "… {n} more steps to expiry",
+  },
+  /** The volatility slider's spoken value. */
+  percentText: "{v} percent",
+  /** What the polite live region says once a slider settles. */
+  say: "N = {N}, σ = {sig}%, K = {K}. Binomial price {bin}. Black–Scholes {bs}. Difference {gap}.",
+  chartLabel: "Binomial price for 1 to 200 steps against the Black–Scholes price",
+  chartCaption:
+    "Binomial price for every N from 1 to 200 (dots) against Black–Scholes (dashed). The marker is the selected N; its stroke to the dashed line is the difference.",
+  live: "https://diffusionworks.netlify.app",
+  code: "https://github.com/VM25/stochastic-lab",
+  openLabel: "Open the study",
+  sourceLabel: "Source",
+};
+
+/** Exhibit 2: the fast moment. A clearly labelled toy market maker. */
+const liquidity = {
+  field: "Market making",
+  title: "The Liquidity Paradox",
+  question:
+    "A market maker earns the gap between its buy and sell quotes, and tends to lose when the trader on the other side knows where the price is going. Can a five-second forecast tip that balance?",
+  canvasLabel: "A simulated market maker's quotes and fills, speeding up",
+  counters: {
+    trades: "trades",
+    earned: "spread earned",
+    lost: "lost to informed flow",
+    noise: "random moves on uninformed trades",
+    net: "net, in ticks",
+  },
+  caption:
+    "A stylized view of adverse selection: a market maker quotes one tick either side of a price that moves two ticks per trade; 55% of trades come from informed flow (amber).",
+  replay: "Replay",
+  /** Drawn on the canvas beside the quote rails. */
+  rails: { ask: "ask", bid: "bid" },
+  /** Follows the equation line: "+420 − 476 − 40 = −96 ticks". */
+  unit: "ticks",
+  /** Said once, politely, when a run finishes. "{net}" signed with a true minus, "{trades}" with separators. */
+  finished: "Run finished: net {net} ticks over {trades} trades.",
+  result: {
+    big: "4.2% skill",
+    forecast:
+      "Across twenty sessions of SOL/USDT order-book data, the five-second forecast worked: an out-of-sample R² of 4.2% on the five held-out sessions, positive in each.",
+    losses:
+      "Simple quoting rules still lost money in the modeled replay: about 1 to 2 bp of notional before fees, and about 11 to 12 bp at the exchange's default fee tier.",
+    caveat:
+      "Historical order-book replay with modeled executions under stated queue, latency and fee assumptions.",
+  },
+  live: "https://liquidityparadox.netlify.app",
+  code: "https://github.com/VM25/liquidity-lab",
+  openLabel: "Open the study",
+  sourceLabel: "Source",
+};
+
+const rail: RailProject[] = [
+  {
+    title: "YieldShock",
+    field: "Interest rates",
+    question:
+      "When an inflation-regime shock hits a Treasury book, where does the loss actually come from?",
+    result:
+      "The engine reprices every cash flow under the shocked curve, attributes the P&L across duration, convexity, curve-shape, real-rate and breakeven channels, and measures what a rule-based hedge overlay recovers. This is the Treasury curve-risk and attribution component of my stock–bond diversification research.",
+    figures: [
+      ["10", "shock scenarios"],
+      ["4", "hedge overlays"],
+      ["5", "attribution channels"],
+    ],
+    live: "https://yieldshock.netlify.app",
+    code: "https://github.com/VM25/inflation-lab",
+  },
+  {
+    title: "Signal Survival",
+    field: "Trading strategy",
+    question:
+      "Which simple trading signals survive costs, unseen years and changed settings?",
+    result:
+      "Over twenty years of real ETF data, three of five signals survived. One works only as a risk-control overlay, and one was rejected: it trades so often that it trails every passive benchmark and degrades sharply as costs rise.",
+    figures: [
+      ["5", "signals"],
+      ["20", "years of ETF data"],
+      ["3 of 5", "survived"],
+    ],
+    live: "https://alpha-research.netlify.app",
+    code: "https://github.com/VM25/research-lab",
+  },
+  {
+    title: "Currency Options Desk",
+    field: "Foreign exchange",
+    question:
+      "What does a sharp move cost a dollar–peso options book, and what does a hedge fix?",
+    result:
+      "Before hedging, the book breaches its illustrative delta, vega and stress-loss limits. A static delta hedge brings net delta to about zero and cuts the worst-case stress loss by about 99%.",
+    figures: [
+      ["$4.65M", "gross notional"],
+      ["10,000", "simulated paths for VaR"],
+      ["~99%", "worst-case loss cut by the hedge"],
+    ],
+    live: "https://fxrisklab.netlify.app",
+    code: "https://github.com/VM25/fx-options-risk-lab",
+  },
+  {
+    title: "Lending Decisions",
+    field: "Credit risk",
+    question:
+      "Can borrower and payment signals become decisions that hold up: approve, review, decline, block?",
+    result:
+      "The fraud side works well. The lending model separates borrowers only modestly, so it is flagged for monitoring. Built on public and synthetic data.",
+    figures: [
+      ["94,999", "credit applicants"],
+      ["180", "policy scenarios"],
+      ["1 of 3", "models flagged for monitoring"],
+    ],
+    live: "https://credits-engine.netlify.app",
+    code: "https://github.com/VM25/credits-lab",
+  },
+  {
+    title: "Allocation Study",
+    field: "Portfolios",
+    question:
+      "Can a portfolio adapt when stocks and Treasuries fall together, and does adapting actually help?",
+    result:
+      "A regime-aware allocation across 13 assets, tested against equal weight, minimum variance, maximum Sharpe, SPY and a static 60/40, with transaction costs, position limits and crisis analysis for 2008, 2020 and 2022. Over 2007–2026, with costs and limits, the regime-aware rule did not beat a static 60/40 on a risk-adjusted basis: Sharpe 0.48 against 0.66, as reported in the research memo.",
+    figures: [
+      ["13", "assets"],
+      ["2007–2026", "sample"],
+      ["3", "crisis windows"],
+    ],
+    live: "https://pra-analytics.netlify.app",
+    code: "https://github.com/VM25/portfolio-lab",
+  },
+  {
+    title: "ApexGP",
+    field: "Prediction markets",
+    question: "Can a full Formula 1 season be run as a market?",
+    result:
+      "The 2025 season replays lap by lap as event contracts, with trading halts on safety cars and retirements, an audit ledger and exposure limits.",
+    figures: [
+      ["$100,000", "simulated book"],
+      ["24", "races replayed"],
+      ["30% / 15%", "total and single-contract exposure limits"],
+    ],
+    live: "https://apexgp-markets.netlify.app",
+    code: "https://github.com/VM25/apexgp-markets",
+  },
+];
+
+export const projects = {
+  moreLabel: "More projects",
+  /** The two links on each rail project's stage. */
+  railLinks: { open: "Open the project", source: "Source" },
+  diffusion,
+  liquidity,
+  rail,
+};

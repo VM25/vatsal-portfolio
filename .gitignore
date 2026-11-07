@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
 
 # next.js
 /.next/
@@ -47,3 +50,9 @@ next-env.d.ts
 /skills-lock.json
 /.impeccable/
 .Rhistory
+
+# SDD workspace scratch
+/.superpowers/
+
+# Netlify CLI local state
+.netlify
