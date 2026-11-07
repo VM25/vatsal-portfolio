@@ -9,6 +9,7 @@ describe("format", () => {
   });
   it("num groups thousands", () => {
     expect(num(10000)).toBe("10,000");
+    expect(num(-1032)).toBe("−1,032");
   });
   it("fixed uses true minus and no plus", () => {
     expect(fixed(-0.163898, 4)).toBe("−0.1639");
