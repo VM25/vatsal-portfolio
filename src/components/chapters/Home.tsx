@@ -1,6 +1,6 @@
 import { profile } from "@/data/profile";
 
-/** Home (#top). The place line's clock is kept current by ScrollState. */
+/** Home (#top). The place line's clock and the reflection count are written by the scene. */
 export function Home() {
   return (
     <section id="top" className="sec hero g" data-sec="home" tabIndex={-1} aria-labelledby="home-h">
@@ -10,6 +10,22 @@ export function Home() {
           <span data-clock>2:04 a.m.</span> · {profile.location}
         </p>
         <h1 id="home-h">{profile.name}</h1>
+        <p className="lede">{profile.lede}</p>
+        <p className="avail">
+          <i aria-hidden="true" />
+          {profile.availability}
+        </p>
+        <div className="acts">
+          <a className="btn" href="#projects">
+            See the work
+          </a>
+          <a className="tlink" href="#research">
+            Read the research
+          </a>
+        </div>
+        <p className="refl stix" aria-hidden="true">
+          The lamp&apos;s reflection averages <i>n</i> = <b data-n>1</b> ripples. Its wobble shrinks like <i>σ</i>/√<i>n</i>.
+        </p>
       </div>
     </section>
   );

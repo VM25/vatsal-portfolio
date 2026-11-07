@@ -289,6 +289,10 @@ html.rm .ev .bar { transition: none; }
 .stop .w { color: #D6DDD9; }
 .stop .d { font-size: 14px; color: var(--fog-mid); }
 @container site (min-width: 900px) { .route { grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) minmax(0, 5fr); gap: 32px; } }
+.who { display: grid; gap: 28px; align-items: start; }
+.portrait { width: 160px; height: auto; aspect-ratio: 1200 / 1601; object-fit: cover; filter: none; }
+@container site (min-width: 900px) { .who { grid-template-columns: 220px minmax(0, 1fr); gap: 40px; } .portrait { width: 220px; } }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .frm { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; padding: 18px 0; border-block: 1px solid rgba(255,166,43,0.35); }
 .frm b { font-weight: 300; font-size: 1.5rem; letter-spacing: -0.02em; }
 .frm b em { font-style: normal; color: var(--sodium); }
@@ -304,7 +308,7 @@ html.rm .ev .bar { transition: none; }
 .contact { min-height: 78svh; padding-block: 96px 44px; display: flex; flex-direction: column; justify-content: center; }
 .contact .veil { inset: -40px 0 0; background: radial-gradient(80% 70% at 25% 50%, rgba(11,18,20,0.6), transparent 75%); transition: background 800ms ease; }
 html.morning .contact { color: var(--ink); }
-html.morning .contact .veil { background: radial-gradient(80% 70% at 25% 50%, rgba(240,243,241,0.8), rgba(240,243,241,0.25) 75%); }
+html.morning .contact .veil { background: linear-gradient(to top, rgba(240,243,241,0.8), rgba(240,243,241,0) 28%), radial-gradient(80% 70% at 25% 50%, rgba(240,243,241,0.8), rgba(240,243,241,0.25) 75%); }
 .contact h2 { font-size: clamp(3rem, 12cqi, 6rem); letter-spacing: -0.04em; line-height: 1; }
 .contact .st { margin-top: 18px; font-size: 1.15rem; font-weight: 300; max-width: 40ch; }
 .chan { margin-top: 30px; display: grid; max-width: 600px; }
@@ -312,9 +316,12 @@ html.morning .contact .veil { background: radial-gradient(80% 70% at 25% 50%, rg
 html.morning .chan > div { border-color: rgba(19,32,31,0.18); }
 .chan .k { font-size: 14px; opacity: 0.8; }
 .chan a { text-decoration: none; overflow-wrap: anywhere; min-height: 44px; display: inline-flex; align-items: center; border-bottom: 1px solid currentColor; border-color: rgba(195,203,198,0.3); align-self: center; }
-html.morning .chan a { border-color: rgba(19,32,31,0.3); }
+html.morning .chan a { border-color: rgba(19,32,31,0.75); }
 .copy { min-height: 44px; padding: 0 12px; font-size: 14px; border: 1px solid rgba(195,203,198,0.35); }
-html.morning .copy { border-color: rgba(19,32,31,0.3); }
+html.morning .copy { border-color: var(--ink); background: rgba(240,243,241,0.88); }
+html.morning .contact .place { color: var(--ink); opacity: 1; }
+html.morning .contact .foot { opacity: 1; }
+.contact .place { opacity: 0.85; }
 .foot { margin-top: 48px; font-size: 14px; opacity: 0.8; }
 
 
