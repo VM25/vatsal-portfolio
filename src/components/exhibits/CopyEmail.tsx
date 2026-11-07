@@ -15,7 +15,15 @@ export function CopyEmail({ email }: { email: string }) {
   const link = useRef<HTMLAnchorElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(timer.current);
+    };
+  }, []);
 
   function settle(next: State) {
     setState(next);
@@ -37,8 +45,9 @@ export function CopyEmail({ email }: { email: string }) {
     try {
       if (!navigator.clipboard?.writeText) throw new Error("no clipboard");
       await navigator.clipboard.writeText(email);
-      settle("copied");
+      if (mounted.current) settle("copied");
     } catch {
+      if (!mounted.current) return;
       setCombo(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘C" : "Ctrl+C");
       selectLink();
       settle("manual");
@@ -53,7 +62,7 @@ export function CopyEmail({ email }: { email: string }) {
       <button className="copy" type="button" onClick={copy}>
         {state === "copied" ? "Copied" : state === "manual" ? `Press ${combo}` : "Copy"}
       </button>
-      <span className="sr" aria-live="polite" role="status">
+      <span className="sr-only" aria-live="polite" role="status">
         {state === "copied" ? "Email address copied" : state === "manual" ? `Address selected. Press ${combo} to copy.` : ""}
       </span>
     </>

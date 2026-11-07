@@ -23,26 +23,29 @@ export function Contact() {
           <div>
             <span className="k">LinkedIn</span>
             <a href={links.linkedin} target="_blank" rel="noopener">
-              {handle(links.linkedin)} ↗
+              {handle(links.linkedin)} <span aria-hidden="true">↗</span>
+              <span className="sr-only">, opens in a new tab</span>
             </a>
             <span />
           </div>
           <div>
             <span className="k">GitHub</span>
             <a href={links.github} target="_blank" rel="noopener">
-              {handle(links.github)} ↗
+              {handle(links.github)} <span aria-hidden="true">↗</span>
+              <span className="sr-only">, opens in a new tab</span>
             </a>
             <span />
           </div>
           <div>
             <span className="k">Résumé</span>
             <a href={links.resume} target="_blank" rel="noopener">
-              PDF ↗
+              PDF <span aria-hidden="true">↗</span>
+              <span className="sr-only">, opens in a new tab</span>
             </a>
             <span />
           </div>
         </div>
-        <p className="foot">© 2026 · Jersey City</p>
+        <p className="foot">© 2026 · {profile.location}</p>
       </div>
     </section>
   );

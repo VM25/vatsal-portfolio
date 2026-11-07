@@ -23,7 +23,7 @@ export function Path() {
             alt={profile.name}
             width={1200}
             height={1601}
-            sizes="(min-width: 760px) 220px, 160px"
+            sizes="(min-width: 900px) 220px, 160px"
             loading="lazy"
           />
           <div className="route">

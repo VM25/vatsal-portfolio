@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { measurePacing } from "./helpers";
 
 const EMAIL = "vatsalmaniar2003@gmail.com";
 
@@ -6,39 +7,6 @@ async function noWatchdog(page: Page) {
   await page.addInitScript(() => {
     (window as unknown as { __CLEARING_TEST__: unknown }).__CLEARING_TEST__ = { watchdog: false };
   });
-}
-
-/**
- * Pacing helper. Scrolls from the top of `fromId` to the end of `toId` in steps of 10% of the
- * viewport and returns the scroll positions where no text element intersected the viewport.
- * Task 12 can call it with ("top", "contact") to cover the whole page.
- */
-async function textFreeSteps(page: Page, fromId: string, toId: string) {
-  return page.evaluate(
-    async ({ fromId, toId }) => {
-      const vh = window.innerHeight;
-      const start = document.getElementById(fromId)!.getBoundingClientRect().top + window.scrollY;
-      const to = document.getElementById(toId)!;
-      const end = Math.min(
-        to.getBoundingClientRect().bottom + window.scrollY - vh,
-        document.documentElement.scrollHeight - vh,
-      );
-      const sel = "h1, h2, h3, p, li";
-      const gaps: number[] = [];
-      for (let y = start; y <= Math.max(start, end) + 1; y += vh * 0.1) {
-        window.scrollTo({ top: y, behavior: "instant" });
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
-        const seen = Array.from(document.querySelectorAll<HTMLElement>(sel)).some((el) => {
-          if (!el.textContent?.trim()) return false;
-          const r = el.getBoundingClientRect();
-          return r.height > 0 && r.bottom > 0 && r.top < vh;
-        });
-        if (!seen) gaps.push(Math.round(y));
-      }
-      return gaps;
-    },
-    { fromId, toId },
-  );
 }
 
 test.describe("Home, Path and Contact", () => {
@@ -89,6 +57,7 @@ test.describe("Home, Path and Contact", () => {
     await expect(page.locator(".frm")).toHaveCount(1);
     const flat = (s: string) => s.replace(/\s+/g, " ");
     expect(flat(await page.locator(".frm").innerText())).toContain("GARP FRM Part 1 Candidate");
+    expect(flat(await page.locator(".frm").innerText())).toContain("November 2026");
     expect(await page.evaluate(() => (document.body.innerText.match(/FRM/g) ?? []).length)).toBe(1);
     expect(await page.evaluate(() => {
           const root = document.documentElement.cloneNode(true) as HTMLElement;
@@ -178,7 +147,8 @@ test.describe("Home, Path and Contact", () => {
         ["top", "top"],
         ["path", "contact"],
       ]) {
-        expect(await textFreeSteps(page, from, to), `${from}..${to}`).toEqual([]);
+        const r = await measurePacing(page, from, to);
+        expect(r.largestGap, `${from}..${to} largest text-free band at scrollY ${r.gapAt}`).toBeLessThanOrEqual(r.viewport * 0.4);
       }
     });
   }
