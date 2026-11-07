@@ -180,8 +180,11 @@ main:focus, .sec:focus { outline: none; }
 .formula { font-family: var(--font-argue); font-size: 16px; line-height: 1.8; color: #CDD4D0; overflow-x: auto; }
 .formula i { font-style: italic; }
 .formula .lp { font-family: var(--font-num); font-size: 14px; color: var(--fog-mid); }
-.formula .fl, .formula .lp { display: block; white-space: nowrap; }
-.formula .lp { white-space: normal; margin-top: 4px; }
+.formula .fl, .formula .lp { display: block; }
+/* A formula that wraps on a narrow screen breaks only between its groups, with the rest indented. */
+.formula .fl { padding-left: 1.25em; text-indent: -1.25em; }
+.formula .fg { white-space: nowrap; }
+.formula .lp { margin-top: 4px; }
 @container site (max-width: 620px) { .ev svg text { font-size: 21px; } .ev svg text[font-size="20"] { font-size: 27px; } .ev svg text[font-size="30"] { font-size: 38px; } .ev svg text[font-size="13"] { font-size: 19px; } }
 .result { display: grid; gap: 10px; }
 .result .big, .cut .big { font-weight: 200; font-size: clamp(2.6rem, 9cqi, 4.4rem); letter-spacing: -0.04em; line-height: 1; color: var(--fog-hi); display: inline-block; transform-origin: 0 70%; }

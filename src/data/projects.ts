@@ -37,6 +37,20 @@ const diffusion = {
   treeLabel: "The first steps of the binomial tree with the option's value at each node",
   treeCaption:
     "First {shown} of {total} steps. Each node shows the option's value there, worked back from expiry.",
+  /** When the whole tree fits on the canvas. */
+  treeCaptionAll: {
+    one: "All 1 step. Each node shows the option's value there, worked back from expiry.",
+    other: "All {total} steps. Each node shows the option's value there, worked back from expiry.",
+  },
+  /** Drawn on the tree canvas when the tree runs past what is shown. */
+  treeMore: {
+    one: "… 1 more step to expiry",
+    other: "… {n} more steps to expiry",
+  },
+  /** The volatility slider's spoken value. */
+  percentText: "{v} percent",
+  /** What the polite live region says once a slider settles. */
+  say: "N = {N}, σ = {sig}%, K = {K}. Binomial price {bin}. Black–Scholes {bs}. Difference {gap}.",
   chartLabel: "Binomial price for 1 to 200 steps against the Black–Scholes price",
   chartCaption:
     "Binomial price for every N from 1 to 200 (dots) against Black–Scholes (dashed). The marker is your N.",

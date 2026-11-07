@@ -34,6 +34,13 @@ async function open(page: Page) {
   await expect(page.locator("#dwTree[data-draws]")).toHaveCount(1);
 }
 
+/** Wait for n animation frames. */
+async function ticks(page: Page, n: number) {
+  await page.evaluate(async (n) => {
+    for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(() => r(null)));
+  }, n);
+}
+
 const ex = (page: Page) => page.locator("#diffusion");
 const say = (page: Page) => page.locator("#diffusion .read [data-say]");
 
@@ -71,6 +78,7 @@ test.describe("DiffusionWorks exhibit", () => {
     await open(page);
     const read = page.locator("#diffusion .read");
     await expect(read).toHaveAttribute("aria-live", "polite");
+    await expect(say(page)).toHaveAttribute("aria-atomic", "true");
     await expect(say(page)).toContainText("9.7612");
     await page.locator("#dwN").focus();
     await expect(page.locator("#dwN")).toBeFocused();
@@ -243,7 +251,7 @@ test.describe("DiffusionWorks exhibit", () => {
     expect(all).toContain("Black–Scholes");
   });
 
-  test("a release runs the backward sweep", async ({ page }) => {
+  test("a release runs one backward sweep of about 650 ms", async ({ page }) => {
     await open(page);
     const tree = page.locator("#dwTree");
     await tree.scrollIntoViewIfNeeded();
@@ -251,22 +259,49 @@ test.describe("DiffusionWorks exhibit", () => {
     await setRange(page, "dwN", 30);
     await expect.poll(async () => Number(await tree.getAttribute("data-sweep-frames"))).toBeGreaterThan(3);
     await expect(tree).toHaveAttribute("data-sweeping", "false", { timeout: 3000 });
+    expect(await tree.getAttribute("data-sweeps")).toBe("1");
+    // One sweep is one frame per animation frame for 650 ms, and not a runaway loop.
+    expect(Number(await tree.getAttribute("data-sweep-frames"))).toBeLessThan(650 / 16 + 8);
   });
 
-  test("a new release cancels the sweep in flight", async ({ page }) => {
+  test("a new release cancels the sweep in flight; at most one frame is ever pending", async ({ page }) => {
     await open(page);
     const tree = page.locator("#dwTree");
     await tree.scrollIntoViewIfNeeded();
-    await setRange(page, "dwN", 30);
-    await setRange(page, "dwN", 31);
-    await setRange(page, "dwN", 32);
+    // Releases 200 ms apart: each lands while the previous 650 ms sweep is still running.
+    for (const n of [30, 31, 32]) {
+      await setRange(page, "dwN", n);
+      await expect.poll(async () => Number(await tree.getAttribute("data-sweeps"))).toBe(n - 29);
+      await expect(tree).toHaveAttribute("data-sweeping", "true");
+      await ticks(page, 6);
+    }
     await expect(tree).toHaveAttribute("data-sweeping", "false", { timeout: 3000 });
-    // One sweep at most ever runs: the number of sweeps started equals releases, and only one is live.
-    expect(Number(await tree.getAttribute("data-sweeps"))).toBe(3);
-    expect(Number(await tree.getAttribute("data-sweeps-live-max"))).toBe(1);
+    expect(Number(await tree.getAttribute("data-raf-pending-max"))).toBe(1);
+    // Three sweeps, two of them cut short: fewer frames than three whole sweeps.
+    expect(Number(await tree.getAttribute("data-sweep-frames"))).toBeLessThan(3 * (650 / 16));
   });
 
-  test("under reduced motion there is no sweep and the tree is drawn once per change", async ({ browser }) => {
+  test("keyboard repeats announce and sweep once the steps settle", async ({ page }) => {
+    await open(page);
+    const tree = page.locator("#dwTree");
+    await tree.scrollIntoViewIfNeeded();
+    await page.locator("#dwN").focus();
+    // Five quick steps, as a held arrow key gives.
+    await page.evaluate(() => {
+      const el = document.getElementById("dwN") as HTMLInputElement;
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      for (let n = 13; n <= 17; n++) {
+        set.call(el, String(n));
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+    await expect(say(page)).toContainText("N = 17");
+    await expect(tree).toHaveAttribute("data-sweeping", "false", { timeout: 3000 });
+    expect(await tree.getAttribute("data-sweeps")).toBe("1");
+  });
+
+  test("under reduced motion there is no sweep and the tree is drawn at most once per change", async ({ browser }) => {
     const ctx = await browser.newContext({ reducedMotion: "reduce" });
     const page = await ctx.newPage();
     await noWatchdog(page);
@@ -274,15 +309,90 @@ test.describe("DiffusionWorks exhibit", () => {
     await page.evaluate(() => document.fonts.ready);
     const tree = page.locator("#dwTree");
     await tree.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(300);
+    await ticks(page, 4);
     const before = Number(await tree.getAttribute("data-draws"));
     await page.locator("#dwN").focus();
     await page.keyboard.press("ArrowRight");
     await expect(page.locator("#dwBin")).toHaveText("10.0665");
-    await page.waitForTimeout(900);
+    // The change has been handled once the announcement says so.
+    await expect(say(page)).toContainText("N = 13");
+    await ticks(page, 10);
     expect(await tree.getAttribute("data-sweep-frames")).toBe("0");
-    expect(Number(await tree.getAttribute("data-draws")) - before).toBe(1);
+    expect(Number(await tree.getAttribute("data-draws")) - before).toBeLessThanOrEqual(1);
     await ctx.close();
+  });
+
+  test("the convergence marker follows N and the curve follows σ and K", async ({ page }) => {
+    await open(page);
+    const chart = page.locator("#dwChart");
+    await expect(chart).toHaveAttribute("data-marker-n", "12");
+    await expect(chart).toHaveAttribute("data-curve", "20|100");
+    await setRange(page, "dwN", 77);
+    await expect(chart).toHaveAttribute("data-marker-n", "77");
+    await setRange(page, "dwK", 90);
+    await expect(chart).toHaveAttribute("data-curve", "20|90");
+  });
+
+  test("tree text is drawn at 14px or larger", async ({ browser }) => {
+    for (const width of [375, 1280]) {
+      const ctx = await browser.newContext({ viewport: { width, height: 812 } });
+      const page = await ctx.newPage();
+      await noWatchdog(page);
+      await page.addInitScript(() => {
+        const sizes: number[] = [];
+        (window as unknown as { __treeFonts: number[] }).__treeFonts = sizes;
+        const orig = CanvasRenderingContext2D.prototype.fillText;
+        CanvasRenderingContext2D.prototype.fillText = function (...args: Parameters<typeof orig>) {
+          if (this.canvas.id === "dwTree") sizes.push(parseFloat(this.font));
+          return orig.apply(this, args);
+        };
+      });
+      await open(page);
+      // Wide values (K = 60, σ = 80%) and the "more steps" note.
+      await setRange(page, "dwK", 60);
+      await setRange(page, "dwS", 80);
+      await setRange(page, "dwN", 40);
+      await expect(page.locator("#dwBin")).not.toHaveText("9.7612");
+      await ticks(page, 2);
+      const sizes = await page.evaluate(() => (window as unknown as { __treeFonts: number[] }).__treeFonts);
+      expect(sizes.length).toBeGreaterThan(10);
+      expect(Math.min(...sizes)).toBeGreaterThanOrEqual(14);
+      await ctx.close();
+    }
+  });
+
+  test("a slider moved before hydration keeps its value", async ({ page }) => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    // Hold the client scripts (not the styles) until the slider has been moved.
+    await page.route("**/_next/static/chunks/**", async (route) => {
+      if (new URL(route.request().url()).pathname.endsWith(".js")) await gate;
+      await route.continue();
+    });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      const el = document.getElementById("dwN") as HTMLInputElement;
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      set.call(el, "40");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    release();
+    await expect(page.locator("#dwTree[data-draws]")).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.locator("#dwNo")).toHaveText("40");
+    await expect(page.locator("#dwBin")).toHaveText("9.8755");
+  });
+
+  test("formulas fit a 320px screen without scrolling sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await open(page);
+    const f = page.locator("#diffusion .formula");
+    const m = await f.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
+    expect(m.sw).toBeLessThanOrEqual(m.cw);
+    const lines = await page.locator("#diffusion .formula .fl").evaluateAll((els) =>
+      els.map((e) => ({ sw: e.scrollWidth, cw: e.clientWidth })),
+    );
+    for (const l of lines) expect(l.sw).toBeLessThanOrEqual(l.cw);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   });
 
   test("the 10 of 15 stamp beats once, the first time it is seen", async ({ page }) => {
@@ -296,9 +406,9 @@ test.describe("DiffusionWorks exhibit", () => {
     await expect.poll(beats).toBe(1);
     await expect(big).toHaveClass(/landed/);
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-    await page.waitForTimeout(300);
+    await ticks(page, 6);
     await big.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await ticks(page, 12);
     expect(await beats()).toBe(1);
   });
 

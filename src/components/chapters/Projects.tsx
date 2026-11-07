@@ -24,10 +24,14 @@ const copy: DiffusionCopy = {
   readouts: dw.readouts,
   treeLabel: dw.treeLabel,
   treeCaption: dw.treeCaption,
+  treeCaptionAll: dw.treeCaptionAll,
+  treeMore: dw.treeMore,
   chartLabel: dw.chartLabel,
   chartCaption: dw.chartCaption,
   formulaLabel: dw.formulaLabel,
   assumptions: dw.assumptions,
+  percentText: dw.percentText,
+  say: dw.say,
 };
 
 /** Projects (#projects). ScrollState re-measures the time in [data-time] [data-clocktime]. */
@@ -56,40 +60,69 @@ export function Projects() {
             </>
           }
           formulas={
+            /*
+              One formula per line. On narrow screens a line may wrap, but only between
+              the groups (.fg), so a break falls after a comma or an operator.
+            */
             <>
               <span className="fl">
-                <i>u</i> = <i>e</i>
-                <sup>
-                  <i>σ</i>√Δ<i>t</i>
-                </sup>
-                ,&ensp; <i>d</i> = 1/<i>u</i>,&ensp; <i>p</i> = (<i>e</i>
-                <sup>
-                  <i>r</i>Δ<i>t</i>
-                </sup>{" "}
-                − <i>d</i>)/(<i>u</i> − <i>d</i>)
+                <span className="fg">
+                  <i>u</i> = <i>e</i>
+                  <sup>
+                    <i>σ</i>√Δ<i>t</i>
+                  </sup>
+                  ,
+                </span>
+                &ensp;
+                <span className="fg">
+                  <i>d</i> = 1/<i>u</i>,
+                </span>
+                &ensp;
+                <span className="fg">
+                  <i>p</i> = (<i>e</i>
+                  <sup>
+                    <i>r</i>Δ<i>t</i>
+                  </sup>{" "}
+                  − <i>d</i>)/(<i>u</i> − <i>d</i>)
+                </span>
               </span>
               <span className="fl">
-                <i>V</i> = <i>e</i>
-                <sup>
-                  −<i>r</i>Δ<i>t</i>
-                </sup>
-                [<i>p V</i>
-                <sub>up</sub> + (1 − <i>p</i>)<i>V</i>
-                <sub>down</sub>]
+                <span className="fg">
+                  <i>V</i> = <i>e</i>
+                  <sup>
+                    −<i>r</i>Δ<i>t</i>
+                  </sup>
+                  [<i>p V</i>
+                  <sub>up</sub> +
+                </span>{" "}
+                <span className="fg">
+                  (1 − <i>p</i>)<i>V</i>
+                  <sub>down</sub>]
+                </span>
               </span>
               <span className="fl">
-                <i>C</i> = <i>S N</i>(<i>d</i>
-                <sub>1</sub>) − <i>K e</i>
-                <sup>
-                  −<i>rT</i>
-                </sup>
-                <i>N</i>(<i>d</i>
-                <sub>2</sub>)
+                <span className="fg">
+                  <i>C</i> = <i>S N</i>(<i>d</i>
+                  <sub>1</sub>) −
+                </span>{" "}
+                <span className="fg">
+                  <i>K e</i>
+                  <sup>
+                    −<i>rT</i>
+                  </sup>
+                  <i>N</i>(<i>d</i>
+                  <sub>2</sub>)
+                </span>
               </span>
               <span className="fl">
-                <i>d</i>
-                <sub>1,2</sub> = [ln(<i>S</i>/<i>K</i>) + (<i>r</i> ± <i>σ</i>
-                <sup>2</sup>/2)<i>T</i>]/(<i>σ</i>√<i>T</i>)
+                <span className="fg">
+                  <i>d</i>
+                  <sub>1,2</sub> = [ln(<i>S</i>/<i>K</i>) +
+                </span>{" "}
+                <span className="fg">
+                  (<i>r</i> ± <i>σ</i>
+                  <sup>2</sup>/2)<i>T</i>]/(<i>σ</i>√<i>T</i>)
+                </span>
               </span>
             </>
           }

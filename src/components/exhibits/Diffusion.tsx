@@ -16,15 +16,19 @@ import { useSceneActions } from "@/components/world/ScrollState";
 
 /*
   DiffusionWorks: a Cox–Ross–Rubinstein tree closing in on Black–Scholes. The drawing
-  is ported from the prototype; the numbers come from src/lib/pricing.ts. Every number
-  the canvases show is also in the DOM (readouts, the u d p line, the captions).
+  is ported from the prototype; the numbers come from src/lib/pricing.ts. The values
+  that matter (the binomial and Black–Scholes prices, the difference, u, d, p and how
+  many steps the tree shows) are also in the DOM. The per-node values on the tree and
+  the chart's axis labels are drawn only.
 
   The intro, result and formula copy are rendered by the server component and passed
-  in as slots. Default readouts are computed during render, so the server HTML (and a
-  page with no JavaScript) carries the real values and hydration matches.
+  in as slots; every other string comes from `copy` (src/data/projects.ts). Default
+  readouts are computed during render, so the server HTML (and a page with no
+  JavaScript) carries the real values and hydration matches.
 
-  The readouts' visible numbers update on every input; the polite live region gets its
-  sentence on `change`, or 250 ms after the last input of a drag.
+  The readouts' visible numbers update on every input. The polite live region gets
+  its sentence 250 ms after the last input of a drag, or 120 ms after the last
+  `change` (keyboard repeats fire one `change` per step), which also starts the sweep.
 */
 
 const S0 = 100;
@@ -32,21 +36,48 @@ const R0 = 0.04;
 const TT = 1;
 const SWEEP_MS = 650;
 const SAY_IDLE_MS = 250;
+const CHANGE_IDLE_MS = 120;
 const TREE_H = 300;
 const CHART_H = 230;
+/** Canvas text: node values and notes at 14px (secondary text minimum); axis ticks at 12px. */
+const TREE_FS = 14;
+const AXIS_FS = 12;
+
+type Inputs = { N: number; sig: number; K: number };
+
+/** Slider defaults: N steps, σ in percent, strike K. */
+const DEFAULTS: Readonly<Inputs> = { N: 12, sig: 20, K: 100 };
+
+type Plural = { one: string; other: string };
 
 export type DiffusionCopy = {
   controls: { steps: string; volatility: string; strike: string };
   readouts: { binomial: string; blackScholes: string; difference: string };
   treeLabel: string;
+  /** "{shown}" of "{total}" steps. */
   treeCaption: string;
+  /** "{total}" steps, when the whole tree fits. */
+  treeCaptionAll: Plural;
+  /** "{n}" steps beyond the canvas. */
+  treeMore: Plural;
   chartLabel: string;
   chartCaption: string;
   formulaLabel: string;
   assumptions: string;
+  /** "{v}" percent. */
+  percentText: string;
+  /** "{N}", "{sig}", "{K}", "{bin}", "{bs}", "{gap}". */
+  say: string;
 };
 
-type Inputs = { N: number; sig: number; K: number };
+/** Fill "{name}" slots in a copy template. */
+function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
+function plural(p: Plural, n: number, vars: Record<string, string | number>): string {
+  return fill(n === 1 ? p.one : p.other, vars);
+}
 
 /** Difference to 4 dp with a sign: "+" for zero and up, true minus below. */
 function diff(v: number): string {
@@ -62,7 +93,7 @@ function price({ N, sig, K }: Inputs, keep: number) {
 
 function sayText(i: Inputs, copy: DiffusionCopy): string {
   const { tree, ref, gap } = price(i, -1);
-  return `N = ${i.N}, σ = ${i.sig}%, K = ${i.K}. ${copy.readouts.binomial} ${fixed(tree.price, 4)}. ${copy.readouts.blackScholes} ${fixed(ref, 4)}. ${copy.readouts.difference} ${diff(gap)}.`;
+  return fill(copy.say, { N: i.N, sig: i.sig, K: i.K, bin: fixed(tree.price, 4), bs: fixed(ref, 4), gap: diff(gap) });
 }
 
 /** Set the single-letter symbols N, σ and K in STIX italic, as the prototype does. */
@@ -84,12 +115,10 @@ function symbols(text: string): ReactNode {
   return out;
 }
 
-function treeCaption(N: number, shown: number, template: string): string {
-  if (N <= shown) {
-    const tail = template.slice(template.indexOf(". ") + 2);
-    return `All ${N} step${N > 1 ? "s" : ""}. ${tail}`;
-  }
-  return template.replace("{shown}", String(shown)).replace("{total}", String(N));
+function treeCaption(N: number, shown: number, copy: DiffusionCopy): string {
+  return N <= shown
+    ? plural(copy.treeCaptionAll, N, { total: N })
+    : fill(copy.treeCaption, { shown, total: N });
 }
 
 function sizeCanvas(c: HTMLCanvasElement, h: number) {
@@ -104,15 +133,24 @@ function sizeCanvas(c: HTMLCanvasElement, h: number) {
   return { g, w, h };
 }
 
-function fontVar(el: Element, name: string, fallback: string): string {
-  return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+/** The page's font stacks (next/font sets hashed family names behind the CSS variables). */
+function readFonts(el: Element) {
+  const cs = getComputedStyle(el);
+  return {
+    mono: cs.getPropertyValue("--font-num").trim() || "monospace",
+    sans: cs.getPropertyValue("--font-world").trim() || "sans-serif",
+  };
 }
 
 function readInputs(n: HTMLInputElement | null, s: HTMLInputElement | null, k: HTMLInputElement | null): Inputs {
-  return { N: n?.valueAsNumber ?? 12, sig: s?.valueAsNumber ?? 20, K: k?.valueAsNumber ?? 100 };
+  return {
+    N: n?.valueAsNumber ?? DEFAULTS.N,
+    sig: s?.valueAsNumber ?? DEFAULTS.sig,
+    K: k?.valueAsNumber ?? DEFAULTS.K,
+  };
 }
 
-type Model = { inputs: Inputs; keep: number; rows: number[][]; ref: number };
+type Model = { inputs: Inputs; keep: number; rows: number[][]; ref: number; more: string };
 
 export function Diffusion({
   copy,
@@ -126,16 +164,17 @@ export function Diffusion({
   result: ReactNode;
 }) {
   const { requestBeat } = useSceneActions();
-  const [N, setN] = useState(12);
-  const [sig, setSig] = useState(20);
-  const [K, setK] = useState(100);
+  const [N, setN] = useState(DEFAULTS.N);
+  const [sig, setSig] = useState(DEFAULTS.sig);
+  const [K, setK] = useState(DEFAULTS.K);
   const [maxShow, setMaxShow] = useState(6);
-  const [said, setSaid] = useState<Inputs>({ N: 12, sig: 20, K: 100 });
+  const [said, setSaid] = useState<Inputs>(DEFAULTS);
 
   const inputs: Inputs = { N, sig, K };
   const keep = Math.min(N, maxShow);
   const { tree, ref, gap } = price(inputs, keep);
   const { u, d, p } = tree.params;
+  const more = N > keep ? plural(copy.treeMore, N - keep, { n: N - keep }) : "";
 
   const nIn = useRef<HTMLInputElement>(null);
   const sIn = useRef<HTMLInputElement>(null);
@@ -145,10 +184,13 @@ export function Diffusion({
   const resultRef = useRef<HTMLDivElement>(null);
 
   const model = useRef<Model | null>(null);
+  const fonts = useRef({ mono: "monospace", sans: "sans-serif" });
   const curve = useRef<{ key: string; v: number[] }>({ key: "", v: [] });
-  const sweep = useRef({ t: 1, raf: 0, start: 0, frames: 0, sweeps: 0, live: 0, liveMax: 0 });
+  // pending counts rAF callbacks requested and not yet run or cancelled.
+  const sweep = useRef({ t: 1, raf: 0, start: 0, frames: 0, sweeps: 0, pending: 0, pendingMax: 0 });
   const draws = useRef(0);
   const sayTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const changeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const beaten = useRef(false);
 
   const drawTree = useCallback(() => {
@@ -159,8 +201,7 @@ export function Diffusion({
     const k = L.keep;
     const rows = L.rows;
     const sweepT = sweep.current.t;
-    const mono = fontVar(c, "--font-num", "monospace");
-    const sans = fontVar(c, "--font-world", "sans-serif");
+    const { mono, sans } = fonts.current;
     g.clearRect(0, 0, W, H);
     const padX = 36;
     const padY = 26;
@@ -182,7 +223,6 @@ export function Diffusion({
           g.stroke();
         }
       }
-    const fs = W < 420 ? 12 : 13;
     for (let i = 0; i <= k; i++)
       for (let j = 0; j <= i; j++) {
         const shown = i >= front - 0.001;
@@ -198,16 +238,16 @@ export function Diffusion({
         g.shadowBlur = 0;
         if (shown && rows[i]) {
           g.fillStyle = i === 0 ? "#FFC873" : "rgba(230,235,231,0.85)";
-          g.font = `${i === 0 ? fs + 2 : fs}px ${mono}`;
+          g.font = `${i === 0 ? TREE_FS + 2 : TREE_FS}px ${mono}`;
           g.textAlign = "center";
           g.fillText(rows[i][j].toFixed(2), X(i), Y(i, j) - 9);
         }
       }
-    if (L.inputs.N > k) {
+    if (L.more) {
       g.fillStyle = "#9AA39E";
-      g.font = `13px ${sans}`;
+      g.font = `${TREE_FS}px ${sans}`;
       g.textAlign = "right";
-      g.fillText(`… ${L.inputs.N - k} more steps to expiry`, W - 4, H - 6);
+      g.fillText(L.more, W - 4, H - 6);
     }
     draws.current += 1;
     c.dataset.draws = String(draws.current);
@@ -226,7 +266,7 @@ export function Diffusion({
     }
     const cv = curve.current.v;
     const { g, w: W, h: H } = sizeCanvas(c, CHART_H);
-    const mono = fontVar(c, "--font-num", "monospace");
+    const { mono } = fonts.current;
     g.clearRect(0, 0, W, H);
     const tail = cv.slice(2);
     let lo = Math.min(Math.min(...tail), L.ref);
@@ -248,7 +288,7 @@ export function Diffusion({
     g.lineTo(Rx, B);
     g.stroke();
     g.fillStyle = "#9AA39E";
-    g.font = `12px ${mono}`;
+    g.font = `${AXIS_FS}px ${mono}`;
     g.textAlign = "right";
     for (const v of [lo + pad, L.ref, hi - pad]) g.fillText(v.toFixed(2), Lx - 6, Y(v) + 4);
     g.textAlign = "center";
@@ -280,6 +320,9 @@ export function Diffusion({
     g.arc(mx, my, 5, 0, 6.283);
     g.fill();
     g.shadowBlur = 0;
+    // What the chart shows, for tests: the marker's N and the curve's σ|K.
+    c.dataset.markerN = String(n0);
+    c.dataset.curve = key;
   }, []);
 
   const markSweep = useCallback(() => {
@@ -287,35 +330,45 @@ export function Diffusion({
     if (!c) return;
     const s = sweep.current;
     c.dataset.sweepFrames = String(s.frames);
-    c.dataset.sweeping = String(s.live > 0);
+    c.dataset.sweeping = String(s.raf !== 0);
     c.dataset.sweeps = String(s.sweeps);
-    c.dataset.sweepsLiveMax = String(s.liveMax);
+    c.dataset.rafPendingMax = String(s.pendingMax);
   }, []);
 
   const stopSweep = useCallback(() => {
     const s = sweep.current;
-    if (s.raf) cancelAnimationFrame(s.raf);
+    if (s.raf) {
+      cancelAnimationFrame(s.raf);
+      s.pending -= 1;
+    }
     s.raf = 0;
-    if (s.live > 0) s.live -= 1;
     s.t = 1;
   }, []);
 
-  // Keep the drawing model in step with what was rendered, then draw.
+  // Keep the drawing model in step with what was rendered.
   useLayoutEffect(() => {
-    model.current = { inputs: { N, sig, K }, keep, rows: tree.rows, ref };
+    model.current = { inputs: { N, sig, K }, keep, rows: tree.rows, ref, more };
   });
 
   useEffect(() => {
     drawChart();
     drawTree();
-    // Only the values that change the picture.
   }, [N, sig, K, maxShow, drawChart, drawTree]);
 
-  // Native `change` (release, or a keyboard step): announce now, and sweep.
+  // Native `change` (release, or a keyboard step): once the steps settle, announce and sweep.
   useEffect(() => {
     const els = [nIn.current, sIn.current, kIn.current].filter(Boolean) as HTMLInputElement[];
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => {
+    const request = (cb: FrameRequestCallback) => {
+      const s = sweep.current;
+      s.pending += 1;
+      s.pendingMax = Math.max(s.pendingMax, s.pending);
+      return requestAnimationFrame((now) => {
+        s.pending -= 1;
+        cb(now);
+      });
+    };
+    const settle = () => {
       clearTimeout(sayTimer.current);
       setSaid(readInputs(nIn.current, sIn.current, kIn.current));
       if (rm.matches) return; // no sweep; the input already drew the tree once
@@ -324,28 +377,26 @@ export function Diffusion({
       s.t = 0;
       s.start = performance.now();
       s.sweeps += 1;
-      s.live += 1;
-      s.liveMax = Math.max(s.liveMax, s.live);
-      markSweep();
       const frame = (now: number) => {
-        // A frame's timestamp can precede the event that started the sweep.
+        // A frame's timestamp can precede the call that started the sweep.
         s.t = Math.min(1, Math.max(0, now - s.start) / SWEEP_MS);
         s.frames += 1;
         drawTree();
-        if (s.t >= 1) {
-          s.raf = 0;
-          s.live -= 1;
-        } else {
-          s.raf = requestAnimationFrame(frame);
-        }
+        s.raf = s.t >= 1 ? 0 : request(frame);
         markSweep();
       };
-      s.raf = requestAnimationFrame(frame);
+      s.raf = request(frame);
+      markSweep();
+    };
+    const onChange = () => {
+      clearTimeout(changeTimer.current);
+      changeTimer.current = setTimeout(settle, CHANGE_IDLE_MS);
     };
     els.forEach((e) => e.addEventListener("change", onChange));
     return () => {
       els.forEach((e) => e.removeEventListener("change", onChange));
       clearTimeout(sayTimer.current);
+      clearTimeout(changeTimer.current);
       stopSweep();
     };
   }, [drawTree, markSweep, stopSweep]);
@@ -355,11 +406,12 @@ export function Diffusion({
     const c = tc.current;
     const ch = cc.current;
     if (!c || !ch) return;
+    fonts.current = readFonts(c);
     markSweep();
     c.dataset.draws = String(draws.current);
     // A slider moved before hydration (or restored by the browser) wins over the defaults.
     const pre = readInputs(nIn.current, sIn.current, kIn.current);
-    if (pre.N !== 12 || pre.sig !== 20 || pre.K !== 100) {
+    if (pre.N !== DEFAULTS.N || pre.sig !== DEFAULTS.sig || pre.K !== DEFAULTS.K) {
       setN(pre.N);
       setSig(pre.sig);
       setK(pre.K);
@@ -375,10 +427,10 @@ export function Diffusion({
     ro.observe(c);
     ro.observe(ch);
     document.fonts?.ready.then(() => {
-      if (live) {
-        drawTree();
-        drawChart();
-      }
+      if (!live) return;
+      fonts.current = readFonts(c);
+      drawTree();
+      drawChart();
     });
     return () => {
       live = false;
@@ -418,8 +470,6 @@ export function Diffusion({
     sayTimer.current = setTimeout(() => setSaid(readInputs(nIn.current, sIn.current, kIn.current)), SAY_IDLE_MS);
   };
 
-  const say = said.N === N && said.sig === sig && said.K === K ? sayText(inputs, copy) : sayText(said, copy);
-
   return (
     <article className="ex ex-math" id="diffusion" aria-labelledby="dw-h">
       <div className="intro">{intro}</div>
@@ -444,7 +494,7 @@ export function Diffusion({
             max={80}
             step={1}
             value={sig}
-            aria-valuetext={`${sig} percent`}
+            aria-valuetext={fill(copy.percentText, { v: sig })}
             onChange={onInput}
           />
         </div>
@@ -459,7 +509,7 @@ export function Diffusion({
       <div className="viz">
         <canvas ref={tc} id="dwTree" height={TREE_H} role="img" aria-label={copy.treeLabel} />
         <p className="cap" id="dwTreeCap">
-          {treeCaption(N, maxShow, copy.treeCaption)}
+          {treeCaption(N, maxShow, copy)}
         </p>
         <canvas ref={cc} id="dwChart" height={CHART_H} role="img" aria-label={copy.chartLabel} />
         <p className="cap">{symbols(copy.chartCaption)}</p>
@@ -479,8 +529,8 @@ export function Diffusion({
           <b id="dwGap">{diff(gap)}</b>
           <span>{copy.readouts.difference}</span>
         </div>
-        <p className="sr-only" data-say>
-          {say}
+        <p className="sr-only" data-say aria-atomic="true">
+          {sayText(said, copy)}
         </p>
       </div>
       <div className="formula" role="group" aria-label={copy.formulaLabel}>
