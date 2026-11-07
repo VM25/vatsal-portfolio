@@ -35,6 +35,12 @@ const stix = STIX_Two_Text({
 
 const description = "Financial engineer in Jersey City. Models for markets, risk and portfolios.";
 
+/*
+  Preview builds only: `CLEARING_NOINDEX=1` at build time marks every page noindex.
+  Production never sets it, so the live site keeps index, follow.
+*/
+const noindex = process.env.CLEARING_NOINDEX === "1";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://maniar-portfolio.netlify.app"),
   title: { default: "Vatsal Maniar", template: "%s · Vatsal Maniar" },
@@ -54,7 +60,7 @@ export const metadata: Metadata = {
     siteName: "Vatsal Maniar",
   },
   twitter: { card: "summary_large_image", title: "Vatsal Maniar", description },
-  robots: { index: true, follow: true },
+  robots: noindex ? { index: false, follow: false } : { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
