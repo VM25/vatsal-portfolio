@@ -120,8 +120,17 @@ Lighthouse 12.8.2 run against `next start -p 3100` (production build), mobile fo
 
 ## 3. Preview
 
-- Preview URL: `__PREVIEW_URL__` (the controller fills this in after `npx netlify deploy --build --alias v2-clearing`; never `--prod`)
-- Deployed from commit: `__PREVIEW_COMMIT__`
+- Preview URL: https://v2-clearing--v2-previews-c4e19a7b.netlify.app (a branch-alias draft on the separate preview project `v2-previews-c4e19a7b`, not the production project; never `--prod`)
+- Deployed from commit: `094b9af`
+- Command: `CLEARING_NOINDEX=1 npx netlify deploy --alias v2-clearing --site 369b1275-7215-4b09-a8e5-a3a5b8476370 --functions .netlify/functions-internal`, run after `rm -rf .next .netlify/{functions,functions-internal,edge-functions,static,deploy}`.
+  - **Why `--functions`:** the Next server handler is not uploaded without it. The first two deploys returned 404 on every page route.
+  - **Why the cleanup:** a stale `.next` triggers the intermittent `next/font/google` build error.
+- Search engines: the preview serves `<meta name="robots" content="noindex, nofollow">` and a robots.txt that disallows everything, via the opt-in `CLEARING_NOINDEX=1` build switch. Production never sets it.
+- Checked after deploy:
+  - The home page, opengraph image, stills, résumé and prospectus all return 200.
+  - The scene runs live (gl). DiffusionWorks reads 9.7612 against 9.9251. No console errors.
+  - maniar-portfolio.netlify.app still serves V1, and the preview project's root still serves its earlier concept pages.
+- Known cosmetic issue: `metadataBase` is production, so a shared preview link shows production's share image.
 
 ## 4. Real-device checklist (Vatsal)
 
