@@ -1,0 +1,901 @@
+<title>Clearing Homepage Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@200;300;400;500&family=Geist+Mono:wght@400;500&family=STIX+Two+Text:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: one continuous page over a fixed, scroll-driven scene (the Hudson from Jersey City, 2 a.m. to morning). The camera moves between chapters: wide at home, down at the waterline for projects, under a fog bank for research, along the river for the path, and back out at morning. Mobile-first with container queries so the phone layout can be shown in place. */
+:root {
+  --night: #0B1214; --night-2: #111A1D; --night-3: #1A2528; --night-deep: #060A0B;
+  --fog: #C3CBC6; --fog-hi: #E6EBE7; --fog-mid: #9AA39E; --fog-lo: #5B6661;
+  --sodium: #FFA62B; --sodium-glow: #FFC873; --sodium-deep: #C77A10;
+  --ink: #13201F; --ink-mid: #3E4B48;
+  --font-world: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-argue: "STIX Two Text", "Times New Roman", serif;
+  --font-num: "Geist Mono", ui-monospace, Menlo, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--night); scroll-behavior: smooth; scroll-padding-top: 76px; }
+html.rm { scroll-behavior: auto; }
+body { margin: 0; background: var(--night); color: var(--fog-hi); font-family: var(--font-world); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+html.phone body { background: #050708; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--sodium); outline-offset: 3px; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-weight: 200; }
+p { margin: 0; text-wrap: pretty; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.stix { font-family: var(--font-argue); }
+.stix i, .ident i { font-style: italic; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- the world behind the page ---------- */
+.bg { position: fixed; top: 0; bottom: 0; left: 0; width: 100%; z-index: 0; overflow: hidden; background: var(--night); }
+html.phone .bg { left: calc(50% - 195px); width: 390px; }
+.bg canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.bg .fb { position: absolute; inset: 0; display: none; }
+.bg .fb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; opacity: 0; }
+html.nogl .bg canvas { display: none; }
+html.nogl .bg .fb { display: block; }
+
+/* ---------- page ---------- */
+.site { position: relative; z-index: 1; container-type: inline-size; container-name: site; margin-inline: auto; }
+html.phone .site { max-width: 390px; box-shadow: 0 0 0 1px #24302f; }
+.g { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+@container site (min-width: 760px) { .g { padding-left: max(clamp(28px, 5cqi, 80px), env(safe-area-inset-left, 0px)); padding-right: max(clamp(28px, 5cqi, 80px), env(safe-area-inset-right, 0px)); } }
+.inner { max-width: 1240px; margin-inline: auto; }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 16px; min-height: 60px; padding-bottom: 14px; background: linear-gradient(rgba(11,18,20,0.95) 62%, rgba(11,18,20,0)); transition: background 600ms ease, color 600ms ease; }
+html.morning .top { background: linear-gradient(rgba(236,240,238,0.95) 62%, rgba(236,240,238,0)); color: var(--ink); }
+.top .mk { font-weight: 500; text-decoration: none; margin-right: auto; min-height: 44px; display: inline-flex; align-items: center; }
+.top .links { display: none; gap: 26px; }
+.top .links a { text-decoration: none; color: var(--fog-mid); min-height: 44px; display: inline-flex; align-items: center; font-size: 15px; transition: color 200ms ease; }
+html.morning .top .links a { color: var(--ink-mid); }
+.top .links a[aria-current="true"] { color: var(--fog-hi); }
+html.morning .top .links a[aria-current="true"] { color: var(--ink); }
+.top .clock { display: none; font-size: 14px; color: var(--fog-mid); min-width: 6.5ch; text-align: right; }
+html.morning .top .clock { color: var(--ink-mid); }
+.top .res { display: none; color: var(--sodium); text-decoration: none; font-size: 15px; min-height: 44px; align-items: center; }
+html.morning .top .res { color: #8A5000; }
+.menu-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px 0 12px; font-size: 15px; }
+.menu-btn .bars { display: grid; gap: 4px; }
+.menu-btn .bars i { display: block; width: 18px; height: 1.5px; background: currentColor; }
+@container site (min-width: 760px) { .top .links, .top .clock { display: flex; } .top .res { display: inline-flex; } .menu-btn { display: none; } }
+
+/* mobile menu sheet */
+.sheet { position: fixed; inset: 0; z-index: 40; display: grid; align-content: start; gap: 4px; padding: calc(env(safe-area-inset-top, 0px) + 12px) max(20px, env(safe-area-inset-right, 0px)) 30px max(20px, env(safe-area-inset-left, 0px)); background: #080C0D; color: var(--fog-hi); overflow-y: auto; }
+.sheet[hidden] { display: none; }
+html.phone .sheet { left: calc(50% - 195px); right: auto; width: 390px; }
+.sheet .row1 { display: flex; justify-content: space-between; align-items: center; min-height: 48px; margin-bottom: 18px; }
+.sheet .row1 span { font-size: 14px; color: var(--fog-mid); }
+.sheet a { display: flex; justify-content: space-between; align-items: baseline; min-height: 60px; padding: 12px 0; border-top: 1px solid rgba(195,203,198,0.15); text-decoration: none; font-weight: 200; font-size: 34px; letter-spacing: -0.02em; }
+.sheet a small { font-family: var(--font-num); font-size: 14px; color: var(--fog-mid); letter-spacing: 0; }
+.sheet .close { min-height: 44px; min-width: 44px; font-size: 15px; }
+.sheet a.res { font-size: 22px; color: var(--sodium); }
+
+.sec { position: relative; }
+.veil { position: absolute; inset: -40px 0; pointer-events: none; z-index: -1; }
+
+/* hero */
+.hero { min-height: 88svh; display: flex; flex-direction: column; justify-content: center; padding-block: 24px 64px; }
+.hero .veil { inset: 0 0 -40px; background: radial-gradient(70% 60% at 20% 50%, rgba(11,18,20,0.55), transparent 70%); }
+.place { font-size: 14px; color: var(--fog-mid); }
+.hero h1 { font-size: clamp(3.1rem, 13cqi, 6rem); letter-spacing: -0.04em; line-height: 0.98; margin-top: 10px; }
+.lede { margin-top: 18px; max-width: 30ch; font-weight: 300; font-size: clamp(1.1rem, 2.4cqi, 1.35rem); line-height: 1.5; color: #D6DDD9; }
+.avail { margin-top: 20px; display: flex; gap: 10px; align-items: center; font-size: 15px; color: #C2CAC5; }
+.avail i { width: 8px; height: 8px; border-radius: 50%; background: var(--sodium); box-shadow: 0 0 12px var(--sodium); flex: none; }
+.acts { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; }
+.btn { display: inline-flex; align-items: center; min-height: 46px; padding: 0 20px; background: var(--sodium); color: #1a1205; font-weight: 500; text-decoration: none; transition: transform 140ms var(--ease-out), background 200ms ease; }
+.btn:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .btn:hover { background: var(--sodium-glow); } }
+.tlink { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px; min-height: 44px; display: inline-flex; align-items: center; }
+.refl { margin-top: 36px; max-width: 34ch; font-size: 15px; line-height: 1.45; color: #B5BEB9; }
+.refl b { font-weight: 500; color: var(--sodium); font-family: var(--font-num); font-size: 14px; }
+
+.shead { display: grid; gap: 10px; margin-bottom: 36px; }
+.shead .t { font-size: 14px; color: var(--fog-mid); }
+.shead h2 { font-size: clamp(2.4rem, 7cqi, 4rem); letter-spacing: -0.035em; line-height: 1; }
+.shead p.sub { max-width: 52ch; color: #CDD4D0; font-weight: 300; }
+
+/* ---------- projects ---------- */
+.projects { padding-block: 72px 56px; }
+.projects .veil { background: linear-gradient(90deg, rgba(11,18,20,0.9), rgba(11,18,20,0.8) 55%, rgba(11,18,20,0.74)); }
+.ex { display: grid; gap: 26px; padding-block: 8px 52px; }
+.ex + .ex, .more { border-top: 1px solid rgba(195,203,198,0.14); padding-top: 44px; }
+.ex .fld { font-size: 14px; color: var(--fog-mid); }
+.ex h3 { font-size: clamp(2rem, 5.6cqi, 3rem); letter-spacing: -0.03em; line-height: 1.05; margin-top: 6px; }
+.ex .q { margin-top: 12px; font-weight: 300; font-size: clamp(1.12rem, 2.5cqi, 1.35rem); line-height: 1.45; color: #D6DDD9; max-width: 38ch; }
+.ex .note { font-size: 14px; color: var(--fog-mid); max-width: 52ch; margin-top: 12px; }
+.viz { display: grid; gap: 12px; }
+.viz canvas { width: 100%; display: block; }
+.cap { font-size: 14px; color: var(--fog-mid); }
+.ctrls { display: grid; gap: 14px; }
+.ctrl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; }
+.ctrl label { font-size: 15px; color: #CDD4D0; }
+.ctrl output { font-family: var(--font-num); font-size: 15px; color: var(--fog-hi); }
+.ctrl input { grid-column: 1 / -1; width: 100%; height: 40px; accent-color: var(--sodium); margin: 0; }
+.read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid rgba(195,203,198,0.14); }
+.read div { min-width: 0; }
+.read b { display: block; font-family: var(--font-num); font-weight: 500; font-size: clamp(1.05rem, 3cqi, 1.5rem); color: var(--fog-hi); font-variant-numeric: tabular-nums; }
+.read b.s { color: var(--sodium); }
+.read span { font-size: 14px; color: var(--fog-mid); }
+.formula { font-family: var(--font-argue); font-size: 16px; line-height: 1.8; color: #CDD4D0; overflow-x: auto; }
+.formula i { font-style: italic; }
+.formula .lp { font-family: var(--font-num); font-size: 14px; color: var(--fog-mid); }
+.formula .fl, .formula .lp { display: block; white-space: nowrap; }
+.formula .lp { white-space: normal; margin-top: 4px; }
+@container site (max-width: 620px) { .ev svg text { font-size: 21px; } .ev svg text[font-size="20"] { font-size: 27px; } .ev svg text[font-size="30"] { font-size: 38px; } .ev svg text[font-size="13"] { font-size: 19px; } }
+.result { display: grid; gap: 10px; }
+.result .big, .cut .big { font-weight: 200; font-size: clamp(2.6rem, 9cqi, 4.4rem); letter-spacing: -0.04em; line-height: 1; color: var(--fog-hi); display: inline-block; transform-origin: 0 70%; }
+.result .big em, .cut .big em { font-style: normal; color: var(--sodium); }
+.result p, .cut p { max-width: 52ch; color: #CDD4D0; font-weight: 300; }
+.result p b, .cut p b { font-weight: 500; color: var(--sodium); font-family: var(--font-num); font-size: 0.95em; }
+.figs { display: flex; flex-wrap: wrap; gap: 10px 32px; margin-top: 4px; }
+.figs b { display: block; font-family: var(--font-num); font-weight: 500; font-size: 22px; color: var(--fog-hi); }
+.figs span { font-size: 14px; color: var(--fog-mid); }
+.ex-links { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 6px; }
+.ex-links a { color: var(--sodium); min-height: 44px; display: inline-flex; align-items: center; }
+.left { display: grid; gap: 26px; }
+.ex-math .left { display: contents; }
+.ex-math .intro { order: 1; } .ex-math .ctrls { order: 2; } .ex-math .viz { order: 3; } .ex-math .read { order: 4; } .ex-math .formula { order: 5; } .ex-math .result { order: 6; }
+@container site (min-width: 980px) {
+  .ex-math { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 56px; align-items: start; }
+  .ex.ex-math .left { grid-column: 1; grid-row: 1 / span 3; display: grid; gap: 28px; align-content: start; }
+  .ex-math .viz { grid-column: 2; grid-row: 1; }
+  .ex-math .formula { grid-column: 2; grid-row: 2; }
+}
+
+/* the fast moment: market making */
+.mm-stage { display: grid; gap: 12px; }
+.mm-stage canvas { width: 100%; display: block; }
+.mm-count { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.mm-count div { min-width: 0; }
+.mm-count b { display: block; font-family: var(--font-num); font-weight: 500; font-size: clamp(1.2rem, 3.4cqi, 1.7rem); color: var(--fog-hi); font-variant-numeric: tabular-nums; }
+.mm-count b.s { color: var(--sodium); }
+.mm-count span { font-size: 14px; color: var(--fog-mid); }
+.mm-replay { justify-self: start; min-height: 44px; font-size: 15px; color: var(--sodium); border-bottom: 1px solid rgba(255,166,43,0.5); }
+.cut { display: grid; gap: 14px; }
+.mm-count .net { grid-column: 1 / -1; }
+.mm-eq { font-family: var(--font-num); font-size: 15px; color: #CDD4D0; font-variant-numeric: tabular-nums; padding-top: 10px; border-top: 1px solid rgba(195,203,198,0.14); overflow-wrap: anywhere; }
+.mm-eq b { font-weight: 500; color: var(--fog-hi); }
+@container site (min-width: 760px) { .mm-count { grid-template-columns: repeat(5, minmax(0, 1fr)); } .mm-count .net { grid-column: auto; } }
+@container site (min-width: 980px) {
+  .ex-mm { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 56px; align-items: start; }
+  .ex-mm .intro { grid-column: 1; grid-row: 1; }
+  .ex-mm .mm-stage { grid-column: 2; grid-row: 1 / span 2; }
+  .ex-mm .cut { grid-column: 1; grid-row: 2; }
+}
+
+/* beat: a stamp that never hides anything */
+.landed { animation: stamp 700ms var(--ease-out) both; }
+@keyframes stamp { 0% { transform: scale(1.07); text-shadow: 0 0 40px rgba(255,166,43,0.75); } 100% { transform: scale(1); text-shadow: 0 0 0 rgba(255,166,43,0); } }
+html.rm .landed { animation: none; }
+
+/* more projects */
+.more { display: grid; gap: 22px; }
+.more h3 { font-size: 1.6rem; letter-spacing: -0.02em; }
+.rail { display: grid; }
+.rail button { text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline; min-height: 54px; padding: 12px 0; border-bottom: 1px solid rgba(195,203,198,0.12); color: #CDD4D0; transition: color 200ms ease; }
+.rail button > span { font-size: 14px; color: var(--fog-mid); }
+.rail button[aria-selected="true"] { color: var(--fog-hi); }
+.rail .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 12px; vertical-align: 2px; box-shadow: inset 0 0 0 1px var(--fog-lo); }
+.rail button[aria-selected="true"] .dot { background: var(--sodium); box-shadow: 0 0 10px var(--sodium); }
+.stage { display: grid; gap: 14px; align-content: start; }
+.rail .stage { padding: 6px 0 22px 19px; border-bottom: 1px solid rgba(195,203,198,0.12); }
+.stage .fld { font-size: 14px; color: var(--fog-mid); }
+.stage h4 { font-size: clamp(1.7rem, 4.4cqi, 2.4rem); letter-spacing: -0.03em; line-height: 1.05; }
+.rail .stage h4 { display: none; }
+.stage .q { font-weight: 300; font-size: 1.12rem; color: #D6DDD9; max-width: 46ch; }
+.stage .r { color: #CDD4D0; max-width: 54ch; }
+.swap { animation: fadein 360ms var(--ease-out); }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+html.rm .swap { animation: none; }
+@container site (min-width: 900px) { .more { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); column-gap: 56px; } .more h3 { grid-column: 1 / -1; } }
+
+/* ---------- research ---------- */
+.research { padding-block: 96px 72px; }
+.research .veil { background: linear-gradient(90deg, rgba(11,18,20,0.9), rgba(11,18,20,0.76) 55%, rgba(11,18,20,0.66)); }
+.paper { display: grid; gap: 26px; }
+.paper .premise { font-family: var(--font-argue); font-size: clamp(1.3rem, 3cqi, 1.65rem); line-height: 1.45; color: var(--fog-hi); max-width: 36ch; }
+.paper .ask { font-family: var(--font-argue); font-size: 1.12rem; line-height: 1.6; color: #CDD4D0; max-width: 58ch; }
+.claims { display: grid; align-items: start; }
+.claim { text-align: left; display: block; width: 100%; padding: 18px 0; border-top: 1px solid rgba(195,203,198,0.14); font-family: var(--font-argue); font-size: 1.15rem; line-height: 1.5; color: #CDD4D0; min-height: 44px; transition: color 200ms ease; }
+.claim small { display: block; margin-bottom: 4px; font-family: var(--font-world); font-size: 14px; color: var(--fog-mid); }
+.claim b { font-weight: 500; color: var(--sodium); font-variant-numeric: tabular-nums; }
+.claim[aria-expanded="true"] { color: var(--fog-hi); }
+.ev { display: none; padding: 6px 0 24px; }
+.ev.on { display: block; }
+.ev svg { width: 100%; height: auto; display: block; overflow: visible; }
+.ev svg text { font-family: var(--font-world); }
+.ev .bar { transform-box: view-box; transition: transform 900ms var(--ease-out); }
+html.rm .ev .bar { transition: none; }
+.ev .ident { font-family: var(--font-argue); font-size: clamp(1.2rem, 3cqi, 1.5rem); line-height: 1.7; color: var(--fog-hi); }
+.ev .ident .def { display: block; font-size: 0.8em; color: #CDD4D0; }
+.ev p { color: #CDD4D0; margin-top: 10px; max-width: 48ch; }
+.ev .src { font-size: 14px; color: var(--fog-mid); margin-top: 8px; }
+.now { padding: 18px 0; border-block: 1px solid rgba(255,166,43,0.35); display: grid; gap: 4px; }
+.now b { font-weight: 400; color: var(--sodium); font-size: 15px; }
+.now p { font-family: var(--font-argue); font-size: 1.1rem; color: var(--fog-hi); max-width: 62ch; }
+.paper .lim { font-family: var(--font-argue); font-style: italic; color: var(--fog-mid); }
+@container site (min-width: 980px) {
+  .claims { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 64px; }
+  .claim { grid-column: 1; }
+  .ev { grid-column: 2; grid-row: 1 / span 8; padding-top: 18px; }
+}
+
+/* ---------- path ---------- */
+.path { padding-block: 88px 64px; }
+.path .veil { background: linear-gradient(90deg, rgba(14,22,26,0.84), rgba(14,22,26,0.6) 60%, rgba(14,22,26,0.42)); }
+.route { display: grid; gap: 28px; margin-top: 8px; }
+.stop { display: grid; gap: 6px; padding-top: 18px; border-top: 1px solid rgba(195,203,198,0.18); position: relative; }
+.stop::before { content: ""; position: absolute; top: -5px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--fog); }
+.stop.here::before { background: var(--sodium); box-shadow: 0 0 12px var(--sodium); }
+.stop h3 { font-size: clamp(1.8rem, 4.6cqi, 2.6rem); letter-spacing: -0.03em; }
+.stop .w { color: #D6DDD9; }
+.stop .d { font-size: 14px; color: var(--fog-mid); }
+@container site (min-width: 900px) { .route { grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) minmax(0, 5fr); gap: 32px; } }
+.frm { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; padding: 18px 0; border-block: 1px solid rgba(255,166,43,0.35); }
+.frm b { font-weight: 300; font-size: 1.5rem; letter-spacing: -0.02em; }
+.frm b em { font-style: normal; color: var(--sodium); }
+.frm span { color: var(--fog-mid); font-size: 14px; }
+.roles { margin-top: 44px; display: grid; }
+.roles h3 { font-size: 1.5rem; letter-spacing: -0.02em; margin-bottom: 10px; }
+.role { display: grid; grid-template-columns: 1fr; gap: 2px; padding: 12px 0; border-top: 1px solid rgba(195,203,198,0.12); }
+.role b { font-weight: 400; color: var(--fog-hi); }
+.role span { font-size: 14px; color: var(--fog-mid); }
+@container site (min-width: 760px) { .role { grid-template-columns: 1.4fr 1fr auto; gap: 18px; align-items: baseline; } }
+
+/* ---------- contact ---------- */
+.contact { min-height: 78svh; padding-block: 96px 44px; display: flex; flex-direction: column; justify-content: center; }
+.contact .veil { inset: -40px 0 0; background: radial-gradient(80% 70% at 25% 50%, rgba(11,18,20,0.6), transparent 75%); transition: background 800ms ease; }
+html.morning .contact { color: var(--ink); }
+html.morning .contact .veil { background: radial-gradient(80% 70% at 25% 50%, rgba(240,243,241,0.8), rgba(240,243,241,0.25) 75%); }
+.contact h2 { font-size: clamp(3rem, 12cqi, 6rem); letter-spacing: -0.04em; line-height: 1; }
+.contact .st { margin-top: 18px; font-size: 1.15rem; font-weight: 300; max-width: 40ch; }
+.chan { margin-top: 30px; display: grid; max-width: 600px; }
+.chan > div { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 54px; border-top: 1px solid rgba(195,203,198,0.2); }
+html.morning .chan > div { border-color: rgba(19,32,31,0.18); }
+.chan .k { font-size: 14px; opacity: 0.8; }
+.chan a { text-decoration: none; overflow-wrap: anywhere; min-height: 44px; display: inline-flex; align-items: center; border-bottom: 1px solid currentColor; border-color: rgba(195,203,198,0.3); align-self: center; }
+html.morning .chan a { border-color: rgba(19,32,31,0.3); }
+.copy { min-height: 44px; padding: 0 12px; font-size: 14px; border: 1px solid rgba(195,203,198,0.35); }
+html.morning .copy { border-color: rgba(19,32,31,0.3); }
+.foot { margin-top: 48px; font-size: 14px; opacity: 0.8; }
+
+/* ---------- prototype controls (not part of the design) ---------- */
+.proto { position: fixed; z-index: 50; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: #e8e8e4; }
+.proto details { background: rgba(18,18,20,0.92); border: 1px solid #333; border-radius: 10px; padding: 8px 14px; max-width: 290px; backdrop-filter: blur(6px); }
+.proto summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+.proto label { display: flex; gap: 10px; align-items: center; min-height: 36px; cursor: pointer; }
+.proto input { width: 18px; height: 18px; accent-color: #FFA62B; }
+.proto p { color: #a9a9a3; margin-top: 6px; line-height: 1.45; }
+
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .landed, .swap { animation: none; } .ev .bar { transition: none; } }
+</style>
+
+<div class="bg" aria-hidden="true">
+  <canvas id="world"></canvas>
+  <div class="fb" id="fallback"></div>
+</div>
+
+  <div class="sheet" id="menu" role="dialog" aria-modal="true" aria-label="Sections" hidden>
+    <div class="row1"><span class="num" data-clock>2:04 a.m.</span><button class="close" type="button">Close</button></div>
+    <a href="#top">Home <small>2:04</small></a>
+    <a href="#projects">Projects <small data-tsec="projects"></small></a>
+    <a href="#research">Research <small data-tsec="research"></small></a>
+    <a href="#path">Path <small data-tsec="path"></small></a>
+    <a href="#contact">Contact <small data-tsec="contact"></small></a>
+    <a class="res" href="https://maniar-portfolio.netlify.app/resume/Maniar_Vatsal.pdf" target="_blank" rel="noopener">Résumé (PDF) ↗</a>
+  </div>
+
+<div class="site">
+  <nav class="top g" aria-label="Main">
+    <a class="mk" href="#top">Vatsal Maniar</a>
+    <div class="links"><a href="#projects" data-nav="projects">Projects</a><a href="#research" data-nav="research">Research</a><a href="#path" data-nav="path">Path</a><a href="#contact" data-nav="contact">Contact</a></div>
+    <span class="clock num" data-clock aria-hidden="true">2:04 a.m.</span>
+    <a class="res" href="https://maniar-portfolio.netlify.app/resume/Maniar_Vatsal.pdf" target="_blank" rel="noopener">Résumé</a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu"><span>Menu</span><span class="bars" aria-hidden="true"><i></i><i></i></span></button>
+  </nav>
+
+  <main>
+    <header id="top" class="sec hero g" data-sec="home">
+      <div class="veil"></div>
+      <div class="inner" style="width:100%">
+        <p class="place"><span data-clock>2:04 a.m.</span> · Jersey City, across from Manhattan</p>
+        <h1>Vatsal Maniar</h1>
+        <p class="lede">Financial engineer. I build models for markets, risk and portfolios, and I write about what they find.</p>
+        <p class="avail"><i></i>Graduating December 2026 · open to full-time quantitative roles</p>
+        <div class="acts"><a class="btn" href="#projects">See the work</a><a class="tlink" href="#research">Read the research</a></div>
+        <p class="refl stix" aria-hidden="true">The lamp's reflection averages <i>n</i> = <b data-n>1</b> ripples. Its wobble shrinks like <i>σ</i>/√<i>n</i>.</p>
+      </div>
+    </header>
+
+    <section id="projects" class="sec projects g" data-sec="projects" aria-labelledby="projects-h">
+      <div class="veil"></div>
+      <div class="inner">
+        <div class="shead"><p class="t" data-time>3:20 a.m. · down at the waterline</p><h2 id="projects-h">Projects</h2><p class="sub">Eight pieces of work across options, market making, rates, currencies, credit and portfolios. Two are open below; the rest are a tap away.</p></div>
+
+        <article class="ex ex-math" id="diffusion" aria-labelledby="dw-h">
+          <div class="left">
+            <div class="intro">
+              <p class="fld">Options pricing · 2026</p>
+              <h3 id="dw-h">DiffusionWorks</h3>
+              <p class="q">A pricing engine is easy to write and hard to trust. DiffusionWorks prices equity derivatives several ways, then runs fifteen controlled studies of where the methods agree and where they quietly break down.</p>
+              <p class="note">Try the simplest case: a binomial tree closing in on Black–Scholes. This interactive is an illustration on this page, not one of the fifteen studies.</p>
+            </div>
+            <div class="ctrls">
+              <div class="ctrl"><label for="dwN">Steps in the tree, <span class="stix"><i>N</i></span></label><output id="dwNo" class="num">12</output><input id="dwN" type="range" min="1" max="200" value="12"></div>
+              <div class="ctrl"><label for="dwS">Volatility, <span class="stix"><i>σ</i></span></label><output id="dwSo" class="num">20%</output><input id="dwS" type="range" min="5" max="80" value="20"></div>
+              <div class="ctrl"><label for="dwK">Strike, <span class="stix"><i>K</i></span> (spot 100)</label><output id="dwKo" class="num">100</output><input id="dwK" type="range" min="60" max="140" value="100"></div>
+            </div>
+            <div class="read" aria-live="polite">
+              <div><b id="dwBin">—</b><span>Binomial price</span></div>
+              <div><b id="dwBS" class="s">—</b><span>Black–Scholes</span></div>
+              <div><b id="dwGap">—</b><span>Difference</span></div>
+            </div>
+            <div class="result">
+              <p class="big" data-beat><em>10</em> of 15</p>
+              <p>studies reached a clean result. Five carry a documented caveat, and none failed.</p>
+              <p>The sharpest caveat: the Broadie–Glasserman–Kou continuity correction for barrier options observed at discrete dates matched simulated prices within two standard errors at <b>16 of 18</b> down-barrier test cells, but was resolved as off, consistently over-predicting, at <b>23 of 24</b> up-barrier cells.</p>
+              <div class="figs"><span><b>15</b>studies</span><span><b>10</b>clean</span><span><b>5</b>with caveats</span></div>
+              <div class="ex-links"><a href="https://diffusionworks.netlify.app" target="_blank" rel="noopener">Open the study ↗</a><a href="https://github.com/VM25/stochastic-lab" target="_blank" rel="noopener">Source ↗</a></div>
+            </div>
+          </div>
+          <div class="viz">
+            <canvas id="dwTree" height="300" aria-label="The first steps of the binomial tree with the option's value at each node"></canvas>
+            <p class="cap" id="dwTreeCap">First 6 of 12 steps. Each node shows the option's value there, worked back from expiry.</p>
+            <canvas id="dwChart" height="230" aria-label="Binomial price for 1 to 200 steps against the Black–Scholes price"></canvas>
+            <p class="cap">Binomial price for every <span class="stix"><i>N</i></span> from 1 to 200 (dots) against Black–Scholes (dashed). The marker is your <span class="stix"><i>N</i></span>.</p>
+          </div>
+          <div class="formula" aria-label="Formulas">
+            <span class="fl"><i>u</i> = <i>e</i><sup><i>σ</i>√Δ<i>t</i></sup>,&ensp; <i>d</i> = 1/<i>u</i>,&ensp; <i>p</i> = (<i>e</i><sup><i>r</i>Δ<i>t</i></sup> − <i>d</i>)/(<i>u</i> − <i>d</i>)</span>
+            <span class="fl"><i>V</i> = <i>e</i><sup>−<i>r</i>Δ<i>t</i></sup>[<i>p V</i><sub>up</sub> + (1 − <i>p</i>)<i>V</i><sub>down</sub>]</span>
+            <span class="fl"><i>C</i> = <i>S N</i>(<i>d</i><sub>1</sub>) − <i>K e</i><sup>−<i>rT</i></sup><i>N</i>(<i>d</i><sub>2</sub>)</span>
+            <span class="fl"><i>d</i><sub>1,2</sub> = [ln(<i>S</i>/<i>K</i>) + (<i>r</i> ± <i>σ</i><sup>2</sup>/2)<i>T</i>]/(<i>σ</i>√<i>T</i>)</span>
+            <span class="lp" id="dwLive">u = — · d = — · p = —</span>
+            <span class="lp">S = 100, r = 4%, T = 1 year, European call</span>
+          </div>
+        </article>
+
+        <article class="ex ex-mm" id="liquidity" aria-labelledby="lp-h">
+          <div class="intro">
+            <p class="fld">Market making · 2026</p>
+            <h3 id="lp-h">The Liquidity Paradox</h3>
+            <p class="q">A market maker earns the gap between its buy and sell quotes, and loses every time the trader on the other side knows where the price is going. Can a five-second forecast tip that balance?</p>
+          </div>
+          <div class="mm-stage">
+            <canvas id="mmCanvas" height="250" aria-label="Illustration: a simulated market maker's quotes and fills, speeding up"></canvas>
+            <div class="mm-count">
+              <div><b id="mmT">0</b><span>trades</span></div>
+              <div><b id="mmE">+0</b><span>spread earned</span></div>
+              <div><b id="mmL" class="s">−0</b><span>lost to informed flow</span></div>
+              <div><b id="mmU">0</b><span>random moves on uninformed trades</span></div>
+              <div class="net"><b id="mmN">0</b><span>net, in ticks</span></div>
+            </div>
+            <p class="mm-eq" id="mmEq" aria-live="off">+0 − 0 + 0 = <b>0</b></p>
+            <p class="cap">Illustration only: a simulated market maker quoting one tick either side of a price that moves two ticks at a time. In this toy, 55% of trades come from traders who know the next move (amber dots), so each of them costs more than the spread earns. On the other 45%, the next move is as likely to help as to hurt, so that line drifts around zero. Net = spread earned − informed loss + random moves. Not the study's data.</p>
+            <button class="mm-replay" type="button" id="mmReplay">Run it again</button>
+          </div>
+          <div class="cut" id="mmCut">
+            <p class="big" id="mmBig"><em>4.2%</em> skill</p>
+            <p>On twenty sessions of SOL/USDT order-book data, the five-second forecast worked: an out-of-sample <span class="stix"><i>R</i></span>² of <b>4.2%</b> on the held-out sessions, positive in all five.</p>
+            <p>Simple quoting rules still lost money in every modeled scenario: about <b>1 to 2 bp</b> of notional before fees, mostly to better-informed flow, and about <b>11 to 12 bp</b> at the exchange's default fee tier.</p>
+            <p class="cap">Modeled historical replay: the orders never existed; fills are inferred under stated queue, latency and fee assumptions.</p>
+            <div class="ex-links"><a href="https://liquidityparadox.netlify.app" target="_blank" rel="noopener">Open the study ↗</a><a href="https://github.com/VM25/liquidity-lab" target="_blank" rel="noopener">Source ↗</a></div>
+          </div>
+        </article>
+
+        <div class="more" id="more">
+          <h3>More projects</h3>
+          <div class="rail" role="tablist" aria-label="More projects"></div>
+          <div class="stage" role="tabpanel" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="research" class="sec research g" data-sec="research" aria-labelledby="research-h">
+      <div class="veil"></div>
+      <div class="inner paper">
+        <div class="shead" style="margin-bottom:0"><p class="t" data-time>4:45 a.m. · Research memo, June 2026 · on SSRN</p><h2 id="research-h">The hedge that stopped working</h2></div>
+        <p class="premise" data-beat-fog>For most of the period from the late 1990s through 2020, U.S. stocks and Treasuries did not fall together. In 2022 they did.</p>
+        <p class="ask"><i>Stock–Bond Diversification in an Inflation-Driven Rates Regime</i> asks whether acting on that helps in practice, using only lagged, observable signals with realistic trading costs and position limits, and then measures why the hedge failed. Three findings, each with its evidence:</p>
+        <div class="claims">
+          <button class="claim" aria-expanded="true" aria-controls="ev1" id="cl1"><small>13 assets, 2007–2026, costs and limits included</small>A regime-aware allocation did not beat a static 60/40 on a risk-adjusted basis: <span>Sharpe <b>0.48</b> against <b>0.66</b>.</span></button>
+          <div class="ev on" id="ev1" role="region" aria-labelledby="cl1">
+            <svg viewBox="0 0 520 240" aria-label="Full-sample Sharpe ratio, 2007 to 2026: static 60/40 0.66, regime-aware rule 0.48">
+              <text x="0" y="14" fill="#9AA39E" font-size="14">Full-sample Sharpe ratio, 2007–2026</text>
+              <text x="0" y="58" fill="#E6EBE7" font-size="15">Static 60/40</text>
+              <line class="bar" data-ax="x" x1="0" y1="76" x2="412" y2="76" stroke="#FFA62B" stroke-width="5" stroke-linecap="round" style="transform-origin:0px 76px"/>
+              <text x="424" y="82" fill="#FFA62B" font-size="20" font-family="Geist Mono, monospace">0.66</text>
+              <text x="0" y="128" fill="#E6EBE7" font-size="15">Regime-aware rule</text>
+              <line class="bar" data-ax="x" x1="0" y1="146" x2="300" y2="146" stroke="#C3CBC6" stroke-width="5" stroke-linecap="round" style="transform-origin:0px 146px"/>
+              <text x="312" y="152" fill="#C3CBC6" font-size="20" font-family="Geist Mono, monospace">0.48</text>
+              <line x1="0" y1="190" x2="500" y2="190" stroke="#5B6661"/>
+              <g fill="#9AA39E" font-size="13" font-family="Geist Mono, monospace"><text x="0" y="212">0</text><text x="125" y="212" text-anchor="middle">0.2</text><text x="250" y="212" text-anchor="middle">0.4</text><text x="375" y="212" text-anchor="middle">0.6</text><text x="500" y="212" text-anchor="end">0.8</text></g>
+            </svg>
+            <p class="src">Also benchmarked against equal weight, minimum variance, maximum Sharpe and SPY.</p>
+          </div>
+          <button class="claim" aria-expanded="false" aria-controls="ev2" id="cl2"><small>Replaying 2022 on a Treasury curve model</small>A long-duration Treasury hedge book lost <span>roughly <b>19%</b>.</span></button>
+          <div class="ev" id="ev2" role="region" aria-labelledby="cl2">
+            <svg viewBox="0 0 520 240" aria-label="Long-duration Treasury hedge book, modeled 2022 replay: a loss of roughly 19 percent">
+              <text x="0" y="14" fill="#9AA39E" font-size="14">Long-duration hedge book, modeled 2022 replay</text>
+              <line x1="0" y1="50" x2="520" y2="50" stroke="#5B6661"/>
+              <text x="0" y="40" fill="#9AA39E" font-size="13" font-family="Geist Mono, monospace">0%</text>
+              <line class="bar" data-ax="y" x1="60" y1="50" x2="60" y2="202" stroke="#FFA62B" stroke-width="5" stroke-linecap="round" style="transform-origin:60px 50px"/>
+              <circle cx="60" cy="202" r="7" fill="#FFA62B"/>
+              <text x="82" y="210" fill="#FFA62B" font-size="30" font-family="Geist Mono, monospace">≈ −19%</text>
+              <text x="82" y="234" fill="#9AA39E" font-size="14">a modeled book, not a fund's return</text>
+            </svg>
+          </div>
+          <button class="claim" aria-expanded="false" aria-controls="ev3" id="cl3"><small>Under the memo's attribution framework, for this one episode</small>That loss came primarily from rising <span><b>real yields</b>,</span> not from breakevens.</button>
+          <div class="ev" id="ev3" role="region" aria-labelledby="cl3">
+            <p class="ident">Δ<i>y</i><sub>nominal</sub> = Δ<i>y</i><sub>real</sub> + Δ<i>b</i>,&ensp;<span style="font-size:0.8em;color:#CDD4D0">where <i>b</i> = <i>y</i><sub>nominal</sub> − <i>y</i><sub>TIPS</sub></span><span class="def"><i>b</i> ≈ expected inflation + inflation risk premium + TIPS liquidity effects</span></p>
+            <p>A breakeven is inflation compensation read off nominal minus TIPS yields. It is not a pure measure of expected inflation: it also carries an inflation risk premium and, in stressed markets, TIPS liquidity effects.</p>
+          </div>
+        </div>
+        <div class="now"><b>Now · FE800, Fall 2026</b><p>Testing whether real-rate dominance is a general feature of Treasury hedge failures or specific to 2022, by applying one standardized hedge book across other market-stress episodes.</p></div>
+        <p class="lim">Measurement and attribution, not prediction or causal identification.</p>
+        <div class="ex-links"><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7469079" target="_blank" rel="noopener">Read on SSRN ↗</a><a href="https://maniar-portfolio.netlify.app/research/Maniar-Research-Prospectus.pdf" target="_blank" rel="noopener">FE800 prospectus ↗</a></div>
+      </div>
+    </section>
+
+    <section id="path" class="sec path g" data-sec="path" aria-labelledby="path-h">
+      <div class="veil"></div>
+      <div class="inner">
+        <div class="shead"><p class="t" data-time>5:40 a.m. · along the river</p><h2 id="path-h">Mumbai, Arizona, New Jersey</h2></div>
+        <div class="route">
+          <div class="stop"><h3>Mumbai</h3><p class="w">Where it starts.</p></div>
+          <div class="stop"><h3>Arizona</h3><p class="w">B.S. Computer Science, Arizona State University</p><p class="d">Aug 2021 – May 2025 · GPA 3.74 · Magna Cum Laude</p></div>
+          <div class="stop here"><h3>New Jersey</h3><p class="w">M.S. Financial Engineering, Stevens Institute of Technology</p><p class="d">Sep 2025 – Dec 2026 · GPA 3.67 · Graduate Certificate in Financial Risk Engineering</p></div>
+        </div>
+        <div class="frm"><b><em>GARP</em> FRM Part 1 Candidate</b><span>Financial Risk Manager · sitting November 2026</span></div>
+        <div class="roles">
+          <h3>Experience</h3>
+          <div class="role"><b>Software &amp; Platform Development Intern</b><span>Alcove Ridge Consulting</span><span>Sep 2024 – Jun 2025</span></div>
+          <div class="role"><b>Asset Management Specialist</b><span>Arizona State University</span><span>May 2024 – May 2025</span></div>
+          <div class="role"><b>IT Project Management Consultant</b><span>Arizona State University</span><span>Jun 2024 – Sep 2024</span></div>
+          <div class="role"><b>Verification Supervisor</b><span>Arizona State University</span><span>May 2022 – May 2024</span></div>
+          <div class="role"><b>Undergraduate Teaching Assistant</b><span>Arizona State University</span><span>Aug 2023 – Dec 2023</span></div>
+          <div class="role"><b>Data Analyst</b><span>Arizona State University</span><span>Oct 2021 – May 2022</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="sec contact g" data-sec="contact" aria-labelledby="contact-h">
+      <div class="veil"></div>
+      <div class="inner" style="width:100%">
+        <p class="place" data-time style="opacity:0.85">6:12 a.m.</p>
+        <h2 id="contact-h">Let's talk</h2>
+        <p class="st">Graduating in December 2026 and looking for full-time quantitative roles from January 2027.</p>
+        <div class="chan">
+          <div><span class="k">Email</span><a href="mailto:vatsalmaniar2003@gmail.com" id="mail">vatsalmaniar2003@gmail.com</a><button class="copy" type="button" id="copyMail">Copy</button></div>
+          <div><span class="k">LinkedIn</span><a href="https://www.linkedin.com/in/vatsal-maniar/" target="_blank" rel="noopener">vatsal-maniar ↗</a><span></span></div>
+          <div><span class="k">GitHub</span><a href="https://github.com/VM25" target="_blank" rel="noopener">VM25 ↗</a><span></span></div>
+          <div><span class="k">Résumé</span><a href="https://maniar-portfolio.netlify.app/resume/Maniar_Vatsal.pdf" target="_blank" rel="noopener">PDF ↗</a><span></span></div>
+        </div>
+        <p class="foot">© 2026 · Jersey City</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="proto">
+  <details>
+    <summary>Prototype controls</summary>
+    <label><input type="checkbox" id="tPhone"> Phone width (390 px)</label>
+    <label><input type="checkbox" id="tRM"> Reduced motion</label>
+    <label><input type="checkbox" id="tNoGL"> No WebGL (static fallback)</label>
+    <p>These switch the real page, not a mockup. Your device's own reduced-motion setting is honoured automatically.</p>
+  </details>
+</div>
+
+<script>window.FALLBACK = /*FALLBACK_DATA*/null;</script>
+<script>
+(function () {
+  var root = document.documentElement;
+  var mqRM = window.matchMedia("(prefers-reduced-motion: reduce)");
+  if (mqRM.matches) root.classList.add("rm");
+  function rm() { return root.classList.contains("rm"); }
+  function sstep(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /* =================== the world: one fragment shader =================== */
+  var VS = "attribute vec2 p; void main(){ gl_Position=vec4(p,0.,1.); }";
+  var FS = [
+    "precision highp float;",
+    "uniform vec2 uRes; uniform float uTime, uFog, uDawn, uN, uFlash, uHz, uPier, uLampX, uMidX, uDownX, uPar, uAmp, uFerry, uPlane, uMist, uRush, uLamp;",
+    "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
+    "float h1(float n){return fract(sin(n*12.9898+1.7)*43758.5453);}",
+    "float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}",
+    "float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}",
+    "vec4 layer(float x,float y,float hz,float dens,float seed,float amp,float far){",
+    "  float q=x*dens+seed*13.; float c=floor(q); float fx=fract(q); float cx=(c-seed*13.+0.5)/dens;",
+    "  float boost=0.30*exp(-pow((cx-uMidX)/0.22,2.))+0.22*exp(-pow((cx-uDownX)/0.13,2.));",
+    "  float bh=(0.012+0.06*pow(h1(c+seed*7.),2.)+boost*(0.35+0.65*h1(c*1.31+seed)))*amp*uAmp;",
+    "  if(fx<0.07||fx>0.93||y<hz||y>hz+bh) return vec4(0.);",
+    "  float ry=(y-hz)*230./amp; float rx=fx*7.; vec2 cell=vec2(floor(rx),floor(ry)); vec2 f=fract(vec2(rx,ry));",
+    "  float win=step(0.2,f.x)*step(f.x,0.8)*step(0.25,f.y)*step(f.y,0.75);",
+    "  float on=step(0.64+uDawn*0.3*hash(cell+c),hash(cell+c*0.37+seed))*win*(1.-uDawn*0.9);",
+    "  vec3 wc=mix(vec3(1.,.78,.48),vec3(.78,.86,1.),step(.8,hash(cell*1.9+c)))*(.45+.55*hash(cell+c+3.));",
+    "  vec3 fac=mix(vec3(.018,.024,.027)+far*vec3(.012,.014,.014),vec3(.20,.22,.24)+far*vec3(.12,.12,.12),uDawn);",
+    "  float gr=clamp((y-hz)/bh,0.,1.); fac*=mix(1.,0.78+0.4*gr,uDawn); fac+=vec3(.10,.07,.04)*uDawn*smoothstep(0.75,0.95,fx)*(1.-far);",
+    "  float gl=step(0.86,hash(cell*2.3+c+seed))*win*uDawn;",
+    "  return vec4(fac+wc*on*(1.-far*0.35)+vec3(1.,.84,.66)*gl*0.32*(1.-far*0.5),1.);",
+    "}",
+    "vec3 sky(float y,float hz){ float h=y-hz; vec3 n=mix(vec3(.05,.058,.06),vec3(.008,.014,.017),smoothstep(0.,.5,h)); n+=vec3(.10,.065,.035)*exp(-h*9.);",
+    "  vec3 d=mix(vec3(.88,.76,.64),vec3(.44,.54,.62),smoothstep(0.,.55,h)); return mix(n,d,uDawn); }",
+    "vec3 scene(float x,float y,float hz){ vec3 c=sky(y,hz); vec4 a=layer(x+uPar*0.5,y,hz,34.,0.,0.78,1.); if(a.w>0.) c=a.rgb; vec4 b=layer(x+uPar,y,hz,17.,1.,1.,0.); if(b.w>0.) c=b.rgb;",
+    "  float pr=step(abs(y-hz-0.004),0.0015)*step(0.55,hash(vec2(floor((x+uPar)*46.),3.)))*step(abs(fract((x+uPar)*46.)-0.5),0.12);",
+    "  c+=vec3(1.,.62,.2)*pr*0.7*(1.-uDawn); return c; }",
+    "void main(){",
+    "  vec2 uv=gl_FragCoord.xy/uRes; float asp=uRes.x/uRes.y; float x=uv.x*asp; float y=uv.y; float t=uTime; float tw=t*(1.+uRush*2.5); float hz=uHz; vec3 col;",
+    "  float fxp=mod(t*0.016+uRush*t*0.02,asp+0.6)-0.3; float fyp=hz-0.045;",
+    "  if(y>=hz){ col=scene(x,y,hz); }",
+    "  else { float dy=hz-y; float wob=(noise(vec2(x*7.,y*140.-tw*0.9))-.5)*0.022*(dy*4.+0.08);",
+    "    vec3 r=scene(x+wob,hz+dy*1.04,hz); col=r*0.30+vec3(.006,.01,.012)+mix(vec3(0.),vec3(.10,.12,.13),uDawn);",
+    "    float jit=((noise(vec2(y*55.,tw*2.3))-.5)+(noise(vec2(y*130.,tw*3.1+5.))-.5)*.6)*0.11/sqrt(uN);",
+    "    float d=x-(uLampX+jit); float w=0.003+dy*0.018; float colm=exp(-d*d/(w*w))*smoothstep(0.,0.015,dy);",
+    "    col+=vec3(1.,.62,.17)*colm*0.95*(1.-uDawn*0.97)*uLamp;",
+    "    float fbelow=fyp-y; float fd=x-(fxp+(noise(vec2(y*90.,tw*2.))-.5)*0.01);",
+    "    col+=vec3(1.,.93,.82)*uFerry*exp(-fd*fd/(0.00004+fbelow*fbelow*0.002))*step(0.,fbelow)*exp(-fbelow*12.)*0.55;",
+    "    float wk=exp(-pow((y-fyp)/0.003,2.))*step(x,fxp)*exp(-(fxp-x)*9.)*uFerry; col+=vec3(.7,.75,.72)*wk*0.2*(0.6+0.4*noise(vec2(x*80.,tw*3.))); }",
+    "  float fn=fbm(vec2(x*1.4+tw*0.015,y*3.2-t*0.004)); float fn2=fbm(vec2(x*3.3-tw*0.02,y*7.+3.));",
+    "  float band=0.5+0.75*exp(-abs(y-hz-0.05)*7.);",
+    "  float fog=clamp((uFog+uMist*0.45*exp(-abs(y-hz-0.12)*4.))*(0.32+1.9*fn*fn2*1.6)*band,0.,0.96)*(1.-uFlash);",
+    "  vec3 fogc=mix(vec3(0.15,0.17,0.165),vec3(0.74,0.77,0.75),uDawn)+vec3(.12,.08,.04)*exp(-abs(y-hz)*5.)*(1.-uDawn);",
+    "  col=mix(col,fogc,fog);",
+    "  vec2 lp=vec2(uLampX,hz+0.012); float ld=length(vec2(x,y)-lp);",
+    "  col+=vec3(1.,.64,.2)*(exp(-ld*110.)*1.5+exp(-ld*9.)*0.14*(0.4+uFog))*(1.-uDawn*0.97)*uLamp;",
+    "  float fl=length(vec2(x-fxp,(y-fyp)*1.6)); col+=vec3(1.,.94,.84)*uFerry*(exp(-fl*260.)*1.4+exp(-fl*30.)*0.08);",
+    "  float pxp=mod(t*0.022,asp+0.5)-0.25; float pyp=hz+0.40+0.025*sin(pxp*2.);",
+    "  float pl=length(vec2(x-pxp,y-pyp)); float blink=step(0.82,fract(t*0.9));",
+    "  col+=uPlane*(vec3(1.)*exp(-pl*420.)*(0.5+1.6*blink)+vec3(1.,.25,.2)*exp(-length(vec2(x-pxp+0.006,y-pyp))*700.)*0.9);",
+    "  if(y<uPier){ col=mix(vec3(0.012,0.014,0.015),vec3(.18,.19,.2),uDawn); }",
+    "  float rail=smoothstep(0.0025,0.0,abs(y-(uPier+0.05)))+step(y,uPier+0.05)*step(uPier,y)*step(fract((x+uPar*1.4)*8.),0.03);",
+    "  col=mix(col,mix(vec3(0.008),vec3(.12,.13,.14),uDawn),clamp(rail,0.,1.)*0.95);",
+    "  vec2 vq=uv-0.5; col*=1.-dot(vq,vq)*0.5;",
+    "  col+=(hash(uv*uRes+fract(t*7.)*100.)-.5)*0.03;",
+    "  gl_FragColor=vec4(col,1.);",
+    "}"].join("\n");
+  var UN = ["uTime", "uFog", "uDawn", "uN", "uFlash", "uHz", "uPier", "uLampX", "uMidX", "uDownX", "uPar", "uAmp", "uFerry", "uPlane", "uMist", "uRush", "uLamp"];
+  function makeGL(canvas) {
+    var gl = null;
+    try { gl = canvas.getContext("webgl", { preserveDrawingBuffer: true, antialias: false }) || canvas.getContext("experimental-webgl"); } catch (e) { gl = null; }
+    if (!gl) return null;
+    function sh(type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; }
+    var v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS); if (!v || !f) return null;
+    var p = gl.createProgram(); gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null; gl.useProgram(p);
+    var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    var loc = gl.getAttribLocation(p, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    var U = { uRes: gl.getUniformLocation(p, "uRes") }; UN.forEach(function (n) { U[n] = gl.getUniformLocation(p, n); });
+    return { gl: gl, draw: function (s) { gl.viewport(0, 0, canvas.width, canvas.height); gl.uniform2f(U.uRes, canvas.width, canvas.height); UN.forEach(function (n) { gl.uniform1f(U[n], s[n]); }); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); } };
+  }
+
+  /* Chapter compositions: one camera and a few living details per chapter; the scene glides between them as you scroll. */
+  var SHOTS = {
+    home:     { hz: 0.30, par: 0.00, amp: 1.00, ferry: 0, plane: 0, mist: 0.0, lamp: 1.0, lampx: 0.72 },
+    projects: { hz: 0.50, par: 0.22, amp: 0.92, ferry: 1, plane: 0, mist: 0.0, lamp: 1.0, lampx: 0.56 },
+    research: { hz: 0.17, par: 0.42, amp: 1.05, ferry: 0, plane: 0, mist: 0.9, lamp: 0.45, lampx: 0.30 },
+    path:     { hz: 0.33, par: 0.72, amp: 1.00, ferry: 0, plane: 1, mist: 0.0, lamp: 0.0, lampx: -0.2 },
+    contact:  { hz: 0.30, par: 0.95, amp: 1.00, ferry: 0.7, plane: 0, mist: 0.0, lamp: 0.0, lampx: -0.3 }
+  };
+  var ORDER = ["home", "projects", "research", "path", "contact"];
+  var KEYP = [0, 0.3, 0.55, 0.78, 1];
+  function shotAt(p) {
+    var i = 0; while (i < KEYP.length - 2 && p > KEYP[i + 1]) i++;
+    var t = sstep(KEYP[i], KEYP[i + 1], p), a = SHOTS[ORDER[i]], b = SHOTS[ORDER[i + 1]], o = {};
+    for (var k in a) o[k] = lerp(a[k], b[k], t); return o;
+  }
+  function stateAt(p, asp, t, extra) {
+    var land = asp >= 1, sh = shotAt(p);
+    var s = {
+      uTime: t, uFog: 0.92 - 0.58 * sstep(0.04, 0.92, p), uDawn: sstep(0.8, 0.98, p), uN: 512, uFlash: 0,
+      uHz: sh.hz + (land ? 0 : 0.06), uPier: land ? 0.06 : 0.05, uLampX: asp * (land ? sh.lampx : sh.lampx * 0.94), uLamp: sh.lamp, uMidX: asp * (land ? 0.6 : 0.3), uDownX: asp * (land ? 0.95 : 0.88),
+      uPar: sh.par, uAmp: sh.amp, uFerry: sh.ferry, uPlane: sh.plane, uMist: sh.mist, uRush: 0
+    };
+    for (var k in extra) s[k] = extra[k];
+    return s;
+  }
+  var CLOCKS = [124, 372];
+  function clockAt(p) { var m = Math.round(CLOCKS[0] + p * (CLOCKS[1] - CLOCKS[0])), h = Math.floor(m / 60), mm = m % 60; return h + ":" + (mm < 10 ? "0" : "") + mm + " a.m."; }
+
+  /* ---------- render mode: the static fallback frames come from this very shader ---------- */
+  if (location.hash === "#render") {
+    var rc = document.getElementById("world"), rr = makeGL(rc), jobs = [], sizes = { land: [1440, 900], port: [720, 1440] };
+    ["land", "port"].forEach(function (o) { KEYP.forEach(function (p, i) { jobs.push([o, i, p]); }); });
+    (function next() {
+      var j = jobs.shift(); if (!j) { document.title = "RENDER-DONE"; return; }
+      var w = sizes[j[0]][0], h = sizes[j[0]][1]; rc.width = w; rc.height = h;
+      rr.draw(stateAt(j[2], w / h, 11.0, {}));
+      rc.toBlob(function (blob) { fetch("/save?name=" + j[0] + j[1] + ".jpg", { method: "POST", body: blob }).then(next); }, "image/jpeg", 0.8);
+    })();
+    return;
+  }
+
+  /* ---------- live world, or the static fallback ---------- */
+  var canvas = document.getElementById("world"), fb = document.getElementById("fallback"), R = makeGL(canvas);
+  if (!R) root.classList.add("nogl");
+  var imgs = { land: [], port: [] };
+  if (window.FALLBACK) ["land", "port"].forEach(function (o) { window.FALLBACK[o].forEach(function (src) { var im = new Image(); im.alt = ""; im.decoding = "async"; im.src = src; fb.appendChild(im); imgs[o].push(im); }); });
+  function nogl() { return root.classList.contains("nogl"); }
+
+  var p = 0, t0 = performance.now(), flash = 0, gust = 0, rush = 0, nStart = performance.now(), dirty = true, mx = 0;
+  function bgSize() { var b = canvas.parentNode.getBoundingClientRect(); return [Math.max(1, b.width), Math.max(1, b.height)]; }
+  function progress() { var max = document.documentElement.scrollHeight - window.innerHeight; return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0; }
+  /* Key positions come from where each chapter actually sits on the page. */
+  function measure() {
+    var max = document.documentElement.scrollHeight - window.innerHeight; if (max <= 0) return;
+    var ks = ORDER.map(function (id, i) { if (i === 0) return 0; if (i === ORDER.length - 1) return 1; var s = document.querySelector('[data-sec="' + id + '"]'); return Math.min(0.97, Math.max(0.03, (s.offsetTop - window.innerHeight * 0.25) / max)); });
+    for (var i = 1; i < ks.length; i++) if (ks[i] <= ks[i - 1]) ks[i] = ks[i - 1] + 0.01;
+    KEYP = ks;
+    document.querySelectorAll("[data-time]").forEach(function (e) { var sec = e.closest("[data-sec]"); if (!sec) return; var k = KEYP[ORDER.indexOf(sec.dataset.sec)]; e.textContent = e.textContent.replace(/^\d+:\d\d a\.m\./, clockAt(k)); });
+    document.querySelectorAll("[data-tsec]").forEach(function (e) { e.textContent = clockAt(KEYP[ORDER.indexOf(e.dataset.tsec)]).replace(" a.m.", ""); });
+  }
+  function resize() { var s = bgSize(), pr = Math.min(1, window.devicePixelRatio || 1); canvas.width = Math.round(s[0] * pr); canvas.height = Math.round(s[1] * pr); measure(); dirty = true; }
+  var clocks = document.querySelectorAll("[data-clock]"), nEl = document.querySelector("[data-n]");
+  function onScroll() {
+    p = progress(); dirty = true;
+    var c = clockAt(p); clocks.forEach(function (e) { e.textContent = c; });
+    root.classList.toggle("morning", sstep(0.8, 0.98, p) > 0.55);
+    if (nogl()) paintFallback();
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", resize);
+  window.addEventListener("pointermove", function (e) { mx = e.clientX / window.innerWidth - 0.5; }, { passive: true });
+
+  function paintFallback() {
+    var s = bgSize(), o = s[0] / s[1] >= 1 ? "land" : "port", i = 0;
+    while (i < KEYP.length - 2 && p > KEYP[i + 1]) i++;
+    var f = sstep(KEYP[i], KEYP[i + 1], p);
+    ["land", "port"].forEach(function (oo) { imgs[oo].forEach(function (im, j) { im.style.opacity = oo !== o ? 0 : (j === i ? 1 : j === i + 1 ? f : 0); }); });
+  }
+
+  function frame() {
+    if (nogl() || !R) return;
+    var now = performance.now(), still = rm();
+    var t = still ? 11 : (now - t0) / 1000;
+    var k = still ? 9 : Math.min(9, Math.floor(((now - nStart) / 1000) / 1.1)), n = Math.pow(2, k);
+    if (nEl) nEl.textContent = n;
+    flash = Math.max(0, flash - 0.012); gust = Math.max(0, gust - 0.02);
+    var s = bgSize(), st = stateAt(p, s[0] / s[1], t, {});
+    st.uN = n; st.uFlash = still ? 0 : Math.min(1, flash * 1.6); st.uFog = Math.min(0.97, st.uFog + (still ? 0 : gust * 0.35));
+    st.uRush = still ? 0 : rush; st.uPar += still ? 0 : mx * 0.03;
+    R.draw(st); dirty = false;
+  }
+  setInterval(function () { if (document.hidden) return; if (!rm() || dirty) frame(); }, 33);
+  resize(); onScroll(); frame();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); onScroll(); });
+  window.addEventListener("load", function () { measure(); onScroll(); });
+
+  /* ---------- chapters: active nav, transitions as fog gusts ---------- */
+  var current = "home", navLinks = document.querySelectorAll("[data-nav]");
+  if (window.IntersectionObserver) {
+    var so = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return; var id = e.target.dataset.sec; if (id === current) return;
+        current = id; if (!rm()) gust = 1;
+        navLinks.forEach(function (a) { a.setAttribute("aria-current", a.dataset.nav === id ? "true" : "false"); });
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    document.querySelectorAll("[data-sec]").forEach(function (s) { so.observe(s); });
+  }
+
+  /* ---------- beats: results land with a stamp and the fog snaps clear ---------- */
+  function beat(el) { if (!rm()) { el.classList.remove("landed"); void el.offsetWidth; el.classList.add("landed"); flash = 1; } }
+  if (window.IntersectionObserver) {
+    var bo = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && !e.target._done) { e.target._done = true; beat(e.target); if (e.target.hasAttribute("data-beat-fog")) drawBars(document.querySelector(".ev.on")); } }); }, { threshold: 0.6 });
+    document.querySelectorAll("[data-beat], [data-beat-fog]").forEach(function (b) { bo.observe(b); });
+  }
+
+  /* ---------- mobile menu ---------- */
+  var menuBtn = document.querySelector(".menu-btn"), sheet = document.getElementById("menu");
+  function openMenu(on) {
+    sheet.hidden = !on; menuBtn.setAttribute("aria-expanded", on ? "true" : "false");
+    document.body.style.overflow = on ? "hidden" : "";
+    if (on) sheet.querySelector("a").focus(); else menuBtn.focus();
+  }
+  menuBtn.addEventListener("click", function () { openMenu(true); });
+  sheet.querySelector(".close").addEventListener("click", function () { openMenu(false); });
+  sheet.querySelectorAll("a[href^='#']").forEach(function (a) { a.addEventListener("click", function () { sheet.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); document.body.style.overflow = ""; }); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !sheet.hidden) openMenu(false); });
+
+  /* =================== Exhibit 1: binomial tree vs Black-Scholes =================== */
+  var S0 = 100, R0 = 0.04, TT = 1;
+  function erf(x) { var s = x < 0 ? -1 : 1; x = Math.abs(x); var t = 1 / (1 + 0.3275911 * x); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x)); }
+  function ncdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+  function bs(K, sig) { var d1 = (Math.log(S0 / K) + (R0 + sig * sig / 2) * TT) / (sig * Math.sqrt(TT)), d2 = d1 - sig * Math.sqrt(TT); return S0 * ncdf(d1) - K * Math.exp(-R0 * TT) * ncdf(d2); }
+  function crrParams(N, sig) { var dt = TT / N, u = Math.exp(sig * Math.sqrt(dt)), d = 1 / u, pp = (Math.exp(R0 * dt) - d) / (u - d); return { dt: dt, u: u, d: d, p: pp, disc: Math.exp(-R0 * dt) }; }
+  function tree(N, K, sig, keep) {
+    var q = crrParams(N, sig), V = new Float64Array(N + 1), rows = [];
+    for (var j = 0; j <= N; j++) V[j] = Math.max(S0 * Math.pow(q.u, j) * Math.pow(q.d, N - j) - K, 0);
+    if (N <= keep) rows[N] = Array.prototype.slice.call(V);
+    for (var i = N - 1; i >= 0; i--) { for (j = 0; j <= i; j++) V[j] = q.disc * (q.p * V[j + 1] + (1 - q.p) * V[j]); if (i <= keep) rows[i] = Array.prototype.slice.call(V, 0, i + 1); }
+    return { price: V[0], rows: rows, q: q };
+  }
+  var nIn = document.getElementById("dwN"), sIn = document.getElementById("dwS"), kIn = document.getElementById("dwK");
+  var nOut = document.getElementById("dwNo"), sOut = document.getElementById("dwSo"), kOut = document.getElementById("dwKo");
+  var binEl = document.getElementById("dwBin"), bsEl = document.getElementById("dwBS"), gapEl = document.getElementById("dwGap"), liveEl = document.getElementById("dwLive"), capEl = document.getElementById("dwTreeCap");
+  var tc = document.getElementById("dwTree"), cc = document.getElementById("dwChart");
+  var curve = [], curveKey = "", sweepT = 1, sweepTimer = null, last = null;
+  function fmt(x) { return x.toFixed(4); }
+  function sizeCanvas(c, h) { var w = c.clientWidth || 600, pr = Math.min(2, window.devicePixelRatio || 1); c.width = Math.round(w * pr); c.height = Math.round(h * pr); var g = c.getContext("2d"); g.setTransform(pr, 0, 0, pr, 0, 0); return { g: g, w: w, h: h }; }
+  function compute() {
+    var N = +nIn.value, sig = sIn.value / 100, K = +kIn.value, maxShow = (tc.clientWidth || 600) < 420 ? 5 : 6;
+    nOut.textContent = N; sOut.textContent = sIn.value + "%"; kOut.textContent = K;
+    var key = sig + "|" + K;
+    if (key !== curveKey) { curve = []; for (var n = 1; n <= 200; n++) curve.push(tree(n, K, sig, -1).price); curveKey = key; }
+    var keep = Math.min(N, maxShow), tr = tree(N, K, sig, keep), ref = bs(K, sig), gap = tr.price - ref;
+    binEl.textContent = fmt(tr.price); bsEl.textContent = fmt(ref); gapEl.textContent = (gap >= 0 ? "+" : "−") + fmt(Math.abs(gap));
+    liveEl.textContent = "N = " + N + " · u = " + tr.q.u.toFixed(5) + " · d = " + tr.q.d.toFixed(5) + " · p = " + tr.q.p.toFixed(5);
+    capEl.textContent = (N <= maxShow ? "All " + N + " step" + (N > 1 ? "s" : "") : "First " + maxShow + " of " + N + " steps") + ". Each node shows the option's value there, worked back from expiry.";
+    last = { N: N, K: K, sig: sig, tr: tr, ref: ref, keep: keep };
+  }
+  function drawTree() {
+    if (!last) return; var s = sizeCanvas(tc, 300), g = s.g, W = s.w, H = s.h, L = last, k = L.keep, rows = L.tr.rows;
+    g.clearRect(0, 0, W, H);
+    var padX = 36, padY = 26, front = k * (1 - sweepT);
+    function X(i) { return padX + (k === 0 ? 0 : i * (W - 2 * padX - 40) / k); }
+    function Y(i, j) { return H / 2 - (2 * j - i) * (H / 2 - padY) / Math.max(1, k); }
+    g.lineWidth = 1;
+    for (var i = 0; i < k; i++) for (var j = 0; j <= i; j++) {
+      [[i + 1, j], [i + 1, j + 1]].forEach(function (b) {
+        var hot = sweepT < 1 && i >= front - 1 && i <= front;
+        g.strokeStyle = hot ? "rgba(255,166,43,0.9)" : "rgba(195,203,198,0.3)"; g.beginPath(); g.moveTo(X(i), Y(i, j)); g.lineTo(X(b[0]), Y(b[0], b[1])); g.stroke();
+      });
+    }
+    var fs = W < 420 ? 12 : 13;
+    for (i = 0; i <= k; i++) for (j = 0; j <= i; j++) {
+      var shown = i >= front - 0.001, hot2 = sweepT < 1 && Math.abs(i - front) < 0.6;
+      g.fillStyle = hot2 || i === 0 ? "#FFA62B" : "#C3CBC6";
+      if (hot2) { g.shadowColor = "#FFA62B"; g.shadowBlur = 12; }
+      g.beginPath(); g.arc(X(i), Y(i, j), i === 0 ? 5 : 3, 0, 6.283); g.fill(); g.shadowBlur = 0;
+      if (shown && rows[i]) { g.fillStyle = i === 0 ? "#FFC873" : "rgba(230,235,231,0.85)"; g.font = (i === 0 ? fs + 2 : fs) + "px 'Geist Mono', monospace"; g.textAlign = "center"; g.fillText(rows[i][j].toFixed(2), X(i), Y(i, j) - 9); }
+    }
+    if (L.N > k) { g.fillStyle = "#9AA39E"; g.font = "13px Geist, sans-serif"; g.textAlign = "right"; g.fillText("… " + (L.N - k) + " more steps to expiry", W - 4, H - 6); }
+  }
+  function drawChart() {
+    if (!last) return; var s = sizeCanvas(cc, 230), g = s.g, W = s.w, H = s.h, L = last;
+    g.clearRect(0, 0, W, H);
+    var lo = Math.min.apply(null, curve.slice(2)), hi = Math.max.apply(null, curve.slice(2)); lo = Math.min(lo, L.ref); hi = Math.max(hi, L.ref);
+    var pad = (hi - lo) * 0.25 + 0.02; lo -= pad; hi += pad;
+    var Lx = 56, Rx = W - 10, T = 14, B = H - 30;
+    function X(n) { return Lx + (n - 1) / 199 * (Rx - Lx); } function Y(v) { return B - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * (B - T); }
+    g.strokeStyle = "rgba(195,203,198,0.25)"; g.beginPath(); g.moveTo(Lx, T); g.lineTo(Lx, B); g.lineTo(Rx, B); g.stroke();
+    g.fillStyle = "#9AA39E"; g.font = "12px 'Geist Mono', monospace"; g.textAlign = "right";
+    [lo + pad, L.ref, hi - pad].forEach(function (v) { g.fillText(v.toFixed(2), Lx - 6, Y(v) + 4); });
+    g.textAlign = "center"; [1, 50, 100, 150, 200].forEach(function (n) { g.fillText(n, X(n), B + 17); });
+    g.setLineDash([5, 5]); g.strokeStyle = "#FFA62B"; g.beginPath(); g.moveTo(Lx, Y(L.ref)); g.lineTo(Rx, Y(L.ref)); g.stroke(); g.setLineDash([]);
+    g.fillStyle = "rgba(230,235,231,0.75)"; for (var n = 1; n <= 200; n++) { g.beginPath(); g.arc(X(n), Y(curve[n - 1]), 1.5, 0, 6.283); g.fill(); }
+    var mx2 = X(L.N), my = Y(curve[L.N - 1]); g.strokeStyle = "rgba(255,166,43,0.5)"; g.beginPath(); g.moveTo(mx2, T); g.lineTo(mx2, B); g.stroke();
+    g.fillStyle = "#FFA62B"; g.shadowColor = "#FFA62B"; g.shadowBlur = 10; g.beginPath(); g.arc(mx2, my, 5, 0, 6.283); g.fill(); g.shadowBlur = 0;
+  }
+  function sweep() {
+    if (rm()) { sweepT = 1; drawTree(); return; }
+    clearInterval(sweepTimer); sweepT = 0; var s0 = performance.now();
+    sweepTimer = setInterval(function () { sweepT = Math.min(1, (performance.now() - s0) / 650); drawTree(); if (sweepT >= 1) clearInterval(sweepTimer); }, 30);
+  }
+  function update(withSweep) { compute(); drawChart(); if (withSweep) sweep(); else drawTree(); }
+  [nIn, sIn, kIn].forEach(function (inp) { inp.addEventListener("input", function () { update(false); }); inp.addEventListener("change", function () { update(true); }); });
+  update(false);
+
+  /* =================== Exhibit 2: the fast moment, market making (a toy, clearly labelled) =================== */
+  var mmC = document.getElementById("mmCanvas"), mmT = document.getElementById("mmT"), mmE = document.getElementById("mmE"), mmL = document.getElementById("mmL"), mmU = document.getElementById("mmU"), mmN = document.getElementById("mmN"), mmEq = document.getElementById("mmEq"), mmBig = document.getElementById("mmBig");
+  var ALPHA = 0.55, HALF = 1, MOVE = 2, MM = null, mmTimer = null;
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  function mmReset() { MM = { r: rng(20261106), mid: 0, path: [0], fills: [], n: 0, earned: 0, lost: 0, noise: 0 }; }
+  /* Each trade: the market maker earns the half-spread; an informed trader always trades in the direction of the next move, so the maker loses that move; a noise trader trades at random, so on average the move nets out. */
+  function mmStep() {
+    var r = MM.r, informed = r() < ALPHA, move = r() < 0.5 ? MOVE : -MOVE;
+    var side = informed ? (move > 0 ? 1 : -1) : (r() < 0.5 ? 1 : -1);
+    var markout = -side * move;
+    MM.n++; MM.earned += HALF;
+    if (informed) MM.lost += -markout; else MM.noise += markout;
+    MM.fills.push({ i: MM.path.length - 1, side: side, informed: informed });
+    MM.mid += move; MM.path.push(MM.mid);
+    if (MM.path.length > 160) { MM.path.shift(); MM.fills = MM.fills.map(function (f) { return { i: f.i - 1, side: f.side, informed: f.informed }; }).filter(function (f) { return f.i >= 0; }); }
+  }
+  /* All P&L components are integers in ticks; the net shown is computed from exactly the three components shown. */
+  function sgn(v) { return (v >= 0 ? "+" : "−") + Math.abs(v).toLocaleString("en-US"); }
+  function mmText() {
+    var net = MM.earned - MM.lost + MM.noise;
+    mmT.textContent = MM.n.toLocaleString("en-US");
+    mmE.textContent = sgn(MM.earned); mmL.textContent = sgn(-MM.lost); mmU.textContent = sgn(MM.noise); mmN.textContent = sgn(net);
+    mmEq.innerHTML = sgn(MM.earned) + " " + (MM.lost >= 0 ? "−" : "+") + " " + Math.abs(MM.lost).toLocaleString("en-US") + " " + (MM.noise >= 0 ? "+" : "−") + " " + Math.abs(MM.noise).toLocaleString("en-US") + " = <b>" + sgn(net) + "</b> ticks";
+  }
+  function mmDraw(dim) {
+    var s = sizeCanvas(mmC, 250), g = s.g, W = s.w, H = s.h, P = MM.path, n = P.length;
+    g.clearRect(0, 0, W, H);
+    var lo = Math.min.apply(null, P) - 4, hi = Math.max.apply(null, P) + 4;
+    function X(i) { return 40 + i / 159 * (W - 48); } function Y(v) { return H - 14 - (v - lo) / (hi - lo) * (H - 28); }
+    g.globalAlpha = dim ? 0.4 : 1;
+    [HALF, -HALF].forEach(function (o) { g.strokeStyle = "rgba(195,203,198,0.35)"; g.lineWidth = 1; g.beginPath(); for (var i = 0; i < n; i++) { var y = Y(P[i] + o); if (i === 0) g.moveTo(X(i), y); else g.lineTo(X(i), y); } g.stroke(); });
+    g.strokeStyle = "rgba(230,235,231,0.75)"; g.lineWidth = 1.4; g.beginPath(); for (var i = 0; i < n; i++) { if (i === 0) g.moveTo(X(i), Y(P[i])); else g.lineTo(X(i), Y(P[i])); } g.stroke();
+    MM.fills.forEach(function (f) { var y = Y(P[f.i] + f.side * HALF); g.fillStyle = f.informed ? "#FFA62B" : "rgba(230,235,231,0.85)"; g.beginPath(); g.arc(X(f.i), y, f.informed ? 3.2 : 2.4, 0, 6.283); g.fill(); });
+    g.globalAlpha = 1;
+    g.fillStyle = "#9AA39E"; g.font = "13px Geist, sans-serif"; g.textAlign = "left";
+    g.fillText("ask", 4, Y(P[0] + HALF) + 4); g.fillText("bid", 4, Y(P[0] - HALF) + 4);
+  }
+  function mmFinish() { mmText(); mmDraw(true); rush = 0; flash = 1; if (!rm()) { mmBig.classList.remove("landed"); void mmBig.offsetWidth; mmBig.classList.add("landed"); } }
+  function mmRun() {
+    clearTimeout(mmTimer); mmReset();
+    if (rm()) { for (var k = 0; k < 420; k++) mmStep(); mmText(); mmDraw(false); return; }
+    var start = performance.now(), DUR = 4200;
+    (function tick() {
+      var el = performance.now() - start, f = Math.min(1, el / DUR);
+      var batch = Math.max(1, Math.round(Math.pow(f, 2.4) * 14)); for (var k = 0; k < batch; k++) mmStep();
+      rush = Math.min(1, f * 1.15); mmText(); mmDraw(false);
+      if (f < 1) mmTimer = setTimeout(tick, Math.max(16, 200 * Math.pow(1 - f, 2.2))); else mmFinish();
+    })();
+  }
+  mmReset(); for (var q0 = 0; q0 < 420; q0++) mmStep(); mmText();
+  document.getElementById("mmReplay").addEventListener("click", mmRun);
+  if (window.IntersectionObserver) new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && !e.target._ran) { e.target._ran = true; mmRun(); } }); }, { threshold: 0.45 }).observe(document.querySelector(".mm-stage"));
+
+  if (window.ResizeObserver) new ResizeObserver(function () { compute(); drawTree(); drawChart(); if (MM) mmDraw(false); }).observe(tc);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { drawTree(); drawChart(); if (MM) mmDraw(false); });
+
+  /* =================== More projects: rail + stage (opens inline on phones) =================== */
+  var WORK = [
+    { t: "YieldShock", f: "Interest rates · 2026", q: "Pick an inflation-regime shock and a Treasury book: where does the loss actually come from?", r: "The engine reprices every cash flow under the shocked curve, attributes the P&L across duration, convexity, curve-shape, real-rate and breakeven channels, and measures what a rule-based hedge overlay recovers. It is the rates engine behind the research memo.", g: [["10", "shock scenarios"], ["4", "hedge overlays"], ["5", "attribution channels"]], l: "https://yieldshock.netlify.app", c: "https://github.com/VM25/inflation-lab" },
+    { t: "Signal Survival", f: "Trading strategy · 2026", q: "Which well-known strategies survive trading costs, unseen years and changed settings?", r: "Over twenty years of real data, three of five survived. One works only as a brake, and one was dropped because costs ate everything it earned.", g: [["5", "strategies"], ["20", "years of data"], ["3 of 5", "survived"]], l: "https://alpha-research.netlify.app", c: "https://github.com/VM25/research-lab" },
+    { t: "Currency Options Desk", f: "Foreign exchange · 2026", q: "What does a sharp move cost a dollar–peso options book, and what does a hedge fix?", r: "The hedge removes the directional risk entirely and leaves the rest: what remains is the risk of the market moving sharply rather than simply moving.", g: [["$4.65M", "position"], ["95%", "loss-estimate confidence"], ["100%", "directional risk hedged"]], l: "https://fxrisklab.netlify.app", c: "https://github.com/VM25/fx-options-risk-lab" },
+    { t: "Lending Decisions", f: "Credit risk · 2026", q: "Can borrower and payment signals become decisions that hold up: approve, review, decline, block?", r: "The fraud side works well. The lending model separates borrowers only modestly, so it is marked for monitoring rather than presented as solved.", g: [["95,000", "applicants"], ["180", "policy scenarios"], ["1 of 3", "models flagged"]], l: "https://credits-engine.netlify.app", c: "https://github.com/VM25/credits-lab" },
+    { t: "Allocation Study", f: "Portfolios · 2026", q: "The allocation side of the research memo below.", r: "A regime-aware allocation across 13 assets, tested against equal weight, minimum variance, maximum Sharpe, SPY and a static 60/40, with transaction costs, position limits and crisis analysis for 2008, 2020 and 2022.", g: [["13", "assets"], ["2007–2026", "sample"], ["3", "crises analysed"]], l: "https://pra-analytics.netlify.app", c: "https://github.com/VM25/portfolio-lab" },
+    { t: "ApexGP", f: "Prediction markets · 2025", q: "Can a full Formula 1 season be run as a market?", r: "Treated as a book, a season can be priced, limited and audited from the first lap to the last.", g: [["500+", "positions"], ["24", "races settled"], ["30% / 15%", "exposure limits"]], l: "https://apexgp-markets.netlify.app", c: "https://github.com/VM25/apexgp-markets" }
+  ];
+  var more = document.getElementById("more"), rail = more.querySelector(".rail"), stage = more.querySelector(".stage"), sel = 0;
+  stage.id = "more-stage";
+  WORK.forEach(function (w, i) {
+    var b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "tab"); b.id = "tab" + i; b.setAttribute("aria-selected", i === 0 ? "true" : "false"); b.setAttribute("aria-controls", "more-stage");
+    b.innerHTML = '<b style="font-weight:400"><i class="dot" aria-hidden="true"></i>' + w.t + "</b><span>" + w.f.split(" · ")[0] + "</span>";
+    b.addEventListener("click", function () { pick(i, true); });
+    b.addEventListener("keydown", function (e) { if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); var n = (sel + (e.key === "ArrowDown" ? 1 : WORK.length - 1)) % WORK.length; pick(n, true); document.getElementById("tab" + n).focus(); } });
+    rail.appendChild(b);
+  });
+  function narrow() { return more.getBoundingClientRect().width < 860; }
+  function place() { var btn = document.getElementById("tab" + sel); if (narrow()) { if (btn.nextSibling !== stage) btn.after(stage); } else if (stage.parentNode !== more) more.appendChild(stage); }
+  function pick(i, user) {
+    sel = i; WORK.forEach(function (w, k) { var b = document.getElementById("tab" + k); b.setAttribute("aria-selected", k === i ? "true" : "false"); b.tabIndex = k === i ? 0 : -1; });
+    var w = WORK[i]; stage.setAttribute("aria-labelledby", "tab" + i);
+    stage.innerHTML = '<div class="swap" style="display:grid;gap:14px"><p class="fld">' + w.f + "</p><h4>" + w.t + '</h4><p class="q">' + w.q + '</p><p class="r">' + w.r + '</p><div class="figs">' + w.g.map(function (x) { return "<span><b>" + x[0] + "</b>" + x[1] + "</span>"; }).join("") + '</div><div class="ex-links"><a href="' + w.l + '" target="_blank" rel="noopener">Open the project ↗</a><a href="' + w.c + '" target="_blank" rel="noopener">Source ↗</a></div></div>';
+    place();
+    if (user && narrow()) { var btn = document.getElementById("tab" + i), r = btn.getBoundingClientRect(); if (r.top < 70 || r.top > window.innerHeight * 0.55) window.scrollBy({ top: r.top - 90, behavior: rm() ? "auto" : "smooth" }); }
+  }
+  pick(0, false);
+  if (window.ResizeObserver) new ResizeObserver(place).observe(more);
+
+  /* =================== Exhibit 3: claims and their evidence =================== */
+  var claims = document.querySelectorAll(".claim");
+  function drawBars(ev) {
+    if (!ev) return; var bars = ev.querySelectorAll(".bar");
+    if (rm()) { bars.forEach(function (b) { b.style.transition = "none"; b.style.transform = "none"; }); return; }
+    bars.forEach(function (b) { b.style.transition = "none"; b.style.transform = b.dataset.ax === "y" ? "scaleY(0)" : "scaleX(0)"; });
+    void ev.offsetWidth;
+    setTimeout(function () { bars.forEach(function (b) { b.style.transition = ""; b.style.transform = "none"; }); }, 60);
+  }
+  claims.forEach(function (c) {
+    c.addEventListener("click", function () {
+      claims.forEach(function (o) { var on = o === c; o.setAttribute("aria-expanded", on ? "true" : "false"); document.getElementById(o.getAttribute("aria-controls")).classList.toggle("on", on); });
+      drawBars(document.getElementById(c.getAttribute("aria-controls")));
+    });
+  });
+
+  /* =================== contact =================== */
+  document.getElementById("copyMail").addEventListener("click", function () {
+    var b = this, txt = document.getElementById("mail").textContent;
+    function done(ok) { b.textContent = ok ? "Copied" : "Select it"; setTimeout(function () { b.textContent = "Copy"; }, 1800); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+
+  /* =================== prototype controls =================== */
+  var tPhone = document.getElementById("tPhone"), tRM = document.getElementById("tRM"), tNoGL = document.getElementById("tNoGL");
+  tRM.checked = rm(); tNoGL.checked = nogl(); if (!R) tNoGL.disabled = true;
+  tPhone.addEventListener("change", function () { root.classList.toggle("phone", tPhone.checked); setTimeout(function () { resize(); onScroll(); place(); compute(); drawTree(); drawChart(); if (MM) mmDraw(false); frame(); }, 40); });
+  tRM.addEventListener("change", function () { root.classList.toggle("rm", tRM.checked); dirty = true; frame(); });
+  tNoGL.addEventListener("change", function () { root.classList.toggle("nogl", tNoGL.checked); if (tNoGL.checked) paintFallback(); else { dirty = true; frame(); } });
+  if (mqRM.addEventListener) mqRM.addEventListener("change", function (e) { root.classList.toggle("rm", e.matches); tRM.checked = e.matches; });
+  if (nogl()) paintFallback();
+})();
+</script>

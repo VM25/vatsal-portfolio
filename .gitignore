@@ -47,3 +47,6 @@ next-env.d.ts
 /skills-lock.json
 /.impeccable/
 .Rhistory
+
+# SDD workspace scratch
+/.superpowers/
