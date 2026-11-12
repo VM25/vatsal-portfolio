@@ -14,11 +14,11 @@ export const route = [
 export const study: Study[] = [
   {
     id: "asu",
-    detail: "Aug 2021 – May 2025 · GPA 3.74 · Magna Cum Laude",
+    detail: ["Aug 2021 – May 2025", "GPA 3.74", "Magna Cum Laude"],
   },
   {
     id: "stevens",
-    detail: "Sep 2025 – Dec 2026 · GPA 3.67 · Graduate Certificate in Financial Risk Engineering",
+    detail: ["Sep 2025 – Dec 2026", "GPA 3.67", "Graduate Certificate in Financial Risk Engineering"],
   },
 ];
 

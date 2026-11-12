@@ -1,7 +1,7 @@
 export const profile = {
   name: "Vatsal Maniar",
   lede: "Financial engineer. I build models for markets, risk, and portfolios.",
-  availability: "Graduating December 2026 · open to full-time quantitative roles",
+  availability: "Graduating December 2026, open to full-time quantitative roles",
   status:
     "Graduating in December 2026 and looking for full-time quantitative roles from January 2027.",
   email: "vatsalmaniar2003@gmail.com",

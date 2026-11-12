@@ -30,7 +30,13 @@ export function Path() {
                 <div className={i === last ? "stop here" : "stop"} key={r.place}>
                   <h3>{r.place}</h3>
                   <p className="w">{r.note}</p>
-                  {s && <p className="d">{s.detail}</p>}
+                  {s && (
+                    <p className="d">
+                      {s.detail.map((line) => (
+                        <span key={line}>{line}</span>
+                      ))}
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -41,7 +47,7 @@ export function Path() {
             <em>{frm.body}</em> {frm.title}
           </b>
           <span>
-            {frm.full} · {frm.sitting}
+            {frm.full}, {frm.sitting}
           </span>
         </div>
         <div className="roles">

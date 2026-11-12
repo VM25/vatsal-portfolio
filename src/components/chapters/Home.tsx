@@ -10,7 +10,6 @@ export function Home() {
         <h1 id="home-h">{profile.name}</h1>
         <p className="lede">{profile.lede}</p>
         <p className="avail">
-          <i aria-hidden="true" />
           {profile.availability}
         </p>
         <div className="acts">

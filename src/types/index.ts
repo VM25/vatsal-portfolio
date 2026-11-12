@@ -21,5 +21,6 @@ export interface Post {
 /** The school and degree are in the route note; this is the line under it. */
 export interface Study {
   id: string;
-  detail: string;
+  /** One fact per line: dates, grade, honours. */
+  detail: string[];
 }

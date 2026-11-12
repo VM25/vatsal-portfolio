@@ -75,8 +75,8 @@ export function Projects() {
           copy={copy}
           intro={
             <>
-              <p className="fld">{dw.field}</p>
               <h3 id="dw-h">{dw.title}</h3>
+              <p className="fld">{dw.field}</p>
               <p className="q">{dw.question}</p>
             </>
           }
@@ -87,14 +87,6 @@ export function Projects() {
               </p>
               <p>{dw.result.line}</p>
               <p>{counts(dw.result.caveat)}</p>
-              <div className="figs">
-                {dw.result.figures.map(([n, label]) => (
-                  <span key={label}>
-                    <b>{n}</b>
-                    {label}
-                  </span>
-                ))}
-              </div>
               <div className="ex-links">
                 <NewTab href={dw.live}>{dw.openLabel}</NewTab>
                 <NewTab href={dw.code}>{dw.sourceLabel}</NewTab>
@@ -107,8 +99,8 @@ export function Projects() {
           copy={lpCopy}
           intro={
             <>
-              <p className="fld">{lp.field}</p>
               <h3 id="lp-h">{lp.title}</h3>
+              <p className="fld">{lp.field}</p>
               <p className="q">{lp.question}</p>
             </>
           }
